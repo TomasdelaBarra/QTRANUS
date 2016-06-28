@@ -13,6 +13,10 @@ from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
+from classes.GeneralObject import GeneralObject
+from classes.Indicator import Indicator
+from classes.MapData import MapData
+
 
 import os
 import re
@@ -280,6 +284,15 @@ def loadProjectIndicators(path):
             allIndicators[result.group(1)] = loadIndicators(path+"/"+fn)
     return allIndicators
     
+def load_map_indicators(path):
+    files = [f for f in listdir(path) if isfile(join(path, f))]
+    prog = re.compile('location_indicators_(.*)\..*')
+    indicators = Indicator()
+    for fn in files:
+        result=prog.match(fn)
+        if result != None:
+            indicators.load_indicator_file(path+"/"+fn)
+    return indicators
     
 class QTranusProject(object):
     def __init__(self, proj):
@@ -287,6 +300,7 @@ class QTranusProject(object):
         self.tranus_project = None
         self.shape = None
         self.load()
+        self.map_data = MapData()
 
 
     def load(self):
@@ -318,15 +332,25 @@ class QTranusProject(object):
             
         project = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         #print(project)
-        indicators = loadProjectIndicators(project)
+        #indicators = loadProjectIndicators(project)
+        selectedScenario = next((sc for sc in self.map_data.indicators.scenarios if sc.id == scenario), None)
+        if selectedScenario is None: 
+            print ("The scenario {0} doesn't exist.".format(scenario))
+            return False
 
         fieldname = fieldname.strip()
+        #table = evaluateExpression(indicators[scenario], expression, fieldname)
 
-        table = evaluateExpression(indicators[scenario], expression, fieldname)
+        selectedSector = next((se for se in selectedScenario.sectors if se.name == expression), None)
+        if selectedSector is None:
+            print ("The sector {0} doesn't exist in the scenario {1}.".format(expression, scenario))
+            return False
+        
+        
 
        #table = evaluateExpression(indicators[scenario], expression,"(Indus+2*Govm)/(Health+1)", "Price")
         
-        print(table)
+        #print(table)
             
 #        vpr = layer.dataProvider()
         
@@ -347,7 +371,31 @@ class QTranusProject(object):
         #Random.ran
             
         pr = layer.dataProvider()
-        pr.addAttributes([QgsField(key, QVariant.Double)])
+        #pr.addAttributes([QgsField(key, QVariant.Double)])
+        fields = pr.fields()
+        newField = ''
+        if fieldname.upper() == 'TOTPROD':
+            newField = 'TotProd'
+        if fieldname.upper() == 'TOTDEM':
+            newField = 'TotDem'
+        if fieldname.upper() == 'PRODCOST':
+            newField = 'ProdCost'
+        if fieldname.upper() == 'PRICE':
+            newField = 'Price'
+        if fieldname.upper() == 'MINRES':
+            newField = 'MinRes'
+        if fieldname.upper() == 'MAXRES':
+            newField = 'MaxRes'
+        if fieldname.upper() == 'ADJUST':
+            newField = 'Adjust'
+        
+        existsField = False
+        for field in fields:
+            if field.name().upper() == newField.upper():
+                existsField = True
+        
+        if newField != '' and existsField == False:
+            pr.addAttributes([QgsField(newField, QVariant.Double)])
         layer.updateFields()
         
         # #print("Voy")
@@ -360,14 +408,35 @@ class QTranusProject(object):
         maxval = -1e100
         
         for feature in iter:
-            att = key
+            #att = key
+            att = newField
             # #feature[att] = 666
             # #print(feature.id)
             print(feature[0])
-            value = table[str(int(feature[0]))]
+            #value = table[str(int(feature[0]))]
+            
+            selectedZone =  next((sz for sz in selectedSector.zones if int(sz.id) == feature[0]), None)
+            if selectedZone is not None:
+                if newField.upper() == 'TOTPROD':
+                    value = float(selectedZone.totProd)
+                if newField.upper() == 'TOTDEM':
+                    value = float(selectedZone.totDem)
+                if newField.upper() == 'PRODCOST':
+                    value = float(selectedZone.prodCost)
+                if newField.upper() == 'PRICE':
+                    value = float(selectedZone.price)
+                if newField.upper() == 'MINRES':
+                    value = float(selectedZone.minRes)
+                if newField.upper() == 'MAXRES':
+                    value = float(selectedZone.maxRes)
+                if newField.upper() == 'ADJUST':
+                    value = float(selectedZone.adjust)
+            else:
+                value = 0
             minval = min(minval, value)
             maxval = max(maxval, value)
-            pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[att] : value}})
+            #pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[att] : value}})
+            pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[newField] : value}})
             i = i + 1            
             
         # #layer.startEditing()            
@@ -386,8 +455,8 @@ class QTranusProject(object):
         # #layer.updateExtents()
             
         iter = layer.getFeatures()    
-        for feature in iter:
-            print(str(feature[0])+"  "+str(feature[1])+"  "+str(feature[2])+"  "+str(feature[3])+" "+str(feature[key]))
+#         for feature in iter:
+#             print(str(feature[0])+"  "+str(feature[1])+"  "+str(feature[2])+"  "+str(feature[3])+" "+str(feature[key]))
             
         #1/0
         
@@ -423,7 +492,8 @@ class QTranusProject(object):
             myRange = QgsRendererRangeV2(v0,v1, symbol, "")
             ranges.append(myRange)
          
-        renderer = QgsGraduatedSymbolRendererV2(key, ranges )
+        #renderer = QgsGraduatedSymbolRendererV2(key, ranges )
+        renderer = QgsGraduatedSymbolRendererV2(newField, ranges )
         renderer.setSourceColorRamp(ramp)
         layer.setRendererV2(renderer)
 
@@ -470,6 +540,10 @@ class QTranusProject(object):
 
         #project = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]            
         self.indicators = loadProjectIndicators(project)
+        if self.map_data.indicators is not None:
+            if len(self.map_data.indicators.scenarios) == 0:
+                self.map_data.indicators = load_map_indicators(project)
+                self.map_data.load_dictionaries()
         #print(indicators)
 
         #print(project)

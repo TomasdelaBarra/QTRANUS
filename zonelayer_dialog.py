@@ -39,19 +39,23 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
 
         self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenarioChanged)
 
-        self.fill_base_scenario()
-        self.fill_sectors()
+        #self.fill_base_scenario()
+        #self.fill_sectors()
+        self.__load_scenarios_combobox()
+        self.__load_sectors_combobox()
+        self.__load_fields_combobox()
 
     def scenarioChanged(self, newIndex):
-        self.fields.clear()
-        currentScenarioId = self.baseScenario.currentText()
-
-        if currentScenarioId in self.project.indicators:
-            scenario = self.project.indicators[currentScenarioId]
-            for field in scenario.fields:  
-                self.fields.addItem(field)
-        else:
-            print ("Error")
+        pass
+#         self.fields.clear()
+#         currentScenarioId = self.baseScenario.currentText()
+# 
+#         if currentScenarioId in self.project.indicators:
+#             scenario = self.project.indicators[currentScenarioId]
+#             for field in scenario.fields:  
+#                 self.fields.addItem(field)
+#         else:
+#             print ("Error")
 
 
         
@@ -159,3 +163,15 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
 
         for sector in scenario.get_sectors():
             self.sectors.addItem(sector)
+            
+    def __load_scenarios_combobox(self):
+        items = self.project.map_data.get_sorted_scenarios()
+        self.base_scenario.addItems(items)
+        
+    def __load_sectors_combobox(self):
+        items = self.project.map_data.get_sorted_sectors()
+        self.sectors.addItems(items)
+        
+    def __load_fields_combobox(self):
+        items = self.project.map_data.get_sorted_fields()
+        self.fields.addItems(items)
