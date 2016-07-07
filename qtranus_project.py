@@ -7,7 +7,7 @@ from os.path import isfile, join
 
 from .tranus import TranusProject
 
-from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsField, QgsFeature, QgsRendererRangeV2, QgsStyleV2, QgsGraduatedSymbolRendererV2 , QgsSymbolV2
+from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsField, QgsFeature, QgsRendererRangeV2, QgsStyleV2, QgsGraduatedSymbolRendererV2 , QgsSymbolV2 
 
 from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
@@ -323,13 +323,16 @@ class QTranusProject(object):
     def addLayer(self, layerName, expression, scenario, fieldname):
         #print("Add:"+layerName+" "+expression+" "+scenario)
         registry = QgsMapLayerRegistry.instance()
+        layersCount = len(registry.mapLayers())
+        #print(layersCount)
+        #print ('No. Layers {0}'.format(layersCount))
         group = self.get_layers_group()
         layer = QgsVectorLayer(self.shape, layerName, 'ogr') # memory???
         if not layer.isValid():
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
             return False
-            
+             
         project = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         #print(project)
         #indicators = loadProjectIndicators(project)
@@ -337,39 +340,39 @@ class QTranusProject(object):
         if selectedScenario is None: 
             print ("The scenario {0} doesn't exist.".format(scenario))
             return False
-
+ 
         fieldname = fieldname.strip()
         #table = evaluateExpression(indicators[scenario], expression, fieldname)
-
+ 
         selectedSector = next((se for se in selectedScenario.sectors if se.name == expression), None)
         if selectedSector is None:
             print ("The sector {0} doesn't exist in the scenario {1}.".format(expression, scenario))
             return False
-        
-        
-
+         
+         
+ 
        #table = evaluateExpression(indicators[scenario], expression,"(Indus+2*Govm)/(Health+1)", "Price")
-        
+         
         #print(table)
-            
+             
 #        vpr = layer.dataProvider()
-        
+         
         #fields = vpr.fields()
-        
+         
         #print(fields)
-        
-            
+         
+             
         #print("test")        
-
-        if self['zones_shape_id']:
-            existing_tree = self.proj.layerTreeRoot().findLayer(self['zones_shape_id'])
-            if existing_tree:
-                existing = existing_tree.layer()
-                registry.removeMapLayer(existing.id())  # OJO TODO, lo puse en el if, estaba afuera!
-            
-        key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+ 
+#         if self['zones_shape_id']:
+#             existing_tree = self.proj.layerTreeRoot().findLayer(self['zones_shape_id'])
+#             if existing_tree:
+#                 existing = existing_tree.layer()
+#                 registry.removeMapLayer(existing.id())  # OJO TODO, lo puse en el if, estaba afuera!
+             
+#        key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         #Random.ran
-            
+             
         pr = layer.dataProvider()
         #pr.addAttributes([QgsField(key, QVariant.Double)])
         fields = pr.fields()
@@ -388,25 +391,25 @@ class QTranusProject(object):
             newField = 'MaxRes'
         if fieldname.upper() == 'ADJUST':
             newField = 'Adjust'
-        
+         
         existsField = False
         for field in fields:
             if field.name().upper() == newField.upper():
                 existsField = True
-        
+         
         if newField != '' and existsField == False:
             pr.addAttributes([QgsField(newField, QVariant.Double)])
         layer.updateFields()
-        
+         
         # #print("Voy")
         # #print(pr.fieldNameMap())
-        
+         
         i = 0
-
+ 
         iter = layer.getFeatures()
         minval = 1e100
         maxval = -1e100
-        
+         
         for feature in iter:
             #att = key
             att = newField
@@ -414,7 +417,7 @@ class QTranusProject(object):
             # #print(feature.id)
             print(feature[0])
             #value = table[str(int(feature[0]))]
-            
+             
             selectedZone =  next((sz for sz in selectedSector.zones if int(sz.id) == feature[0]), None)
             if selectedZone is not None:
                 if newField.upper() == 'TOTPROD':
@@ -438,29 +441,27 @@ class QTranusProject(object):
             #pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[att] : value}})
             pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[newField] : value}})
             i = i + 1            
-            
+             
         # #layer.startEditing()            
         # #layer.addAttribute(QgsField("ComputedValue", QVariant.Double))
         # #layer.updateFields()        
         # #layer.changeAttributeValue(7, fieldIndex, value)
-        
+         
       # #  newFeature = QgsFeature()
-        
+         
         # #iter = layer.getFeatures()
         # #for feature in iter:
         # #    feature['computedValue'] = 666
             # #feature.setAttributes([feature[0], feature[1], feature[2], feature[3], 666])
-            
+             
         # #layer.commitChanges()
         # #layer.updateExtents()
-            
+             
         iter = layer.getFeatures()    
 #         for feature in iter:
 #             print(str(feature[0])+"  "+str(feature[1])+"  "+str(feature[2])+"  "+str(feature[3])+" "+str(feature[key]))
-            
+             
         #1/0
-        
-        # renderer = layer.rendererV2()
         myStyle = QgsStyleV2().defaultStyle()
         defaultColorRampNames = myStyle.colorRampNames()        
         ramp = myStyle.colorRamp(defaultColorRampNames[0])
@@ -491,18 +492,19 @@ class QTranusProject(object):
             #print(i)
             myRange = QgsRendererRangeV2(v0,v1, symbol, "")
             ranges.append(myRange)
-         
+          
         #renderer = QgsGraduatedSymbolRendererV2(key, ranges )
         renderer = QgsGraduatedSymbolRendererV2(newField, ranges )
         renderer.setSourceColorRamp(ramp)
         layer.setRendererV2(renderer)
-
+ 
         #newRenderer = QgsCategorizedSymbolRendererV2()
         #layer.setRendererV2(newRenderer)
         #print "Type:", renderer.type()
-
+ 
+        #QgsMapLayerRegistry.instance().addMapLayer(layer)
         registry.addMapLayer(layer, False)
-        group.insertLayer(0, layer)
+        group.insertLayer((layersCount+1), layer)
         self['zones_shape'] = layer.source()
         self['zones_shape_id'] = layer.id()
         return True        
