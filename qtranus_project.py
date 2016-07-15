@@ -7,7 +7,7 @@ from os.path import isfile, join
 
 from .tranus import TranusProject
 
-from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsField, QgsFeature, QgsRendererRangeV2, QgsStyleV2, QgsGraduatedSymbolRendererV2 , QgsSymbolV2 
+from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsField, QgsFeature, QgsRendererRangeV2, QgsStyleV2, QgsGraduatedSymbolRendererV2 , QgsSymbolV2, QgsVectorJoinInfo 
 
 from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
@@ -321,193 +321,84 @@ class QTranusProject(object):
         # analize()
         
     def addLayer(self, layerName, expression, scenario, fieldname):
+        
+        if scenario is None:
+            print  ("Please select an scenario.")
+            return False
+        
         #print("Add:"+layerName+" "+expression+" "+scenario)
         registry = QgsMapLayerRegistry.instance()
         layersCount = len(registry.mapLayers())
-        #print(layersCount)
-        #print ('No. Layers {0}'.format(layersCount))
+        #print ('Number of Layers: {0}'.format(layersCount))
         group = self.get_layers_group()
         layer = QgsVectorLayer(self.shape, layerName, 'ogr') # memory???
+        registry.addMapLayer(layer, False)
         if not layer.isValid():
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
             return False
-             
+        
+        # Gets shape's file folder
         project = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         #print(project)
-        #indicators = loadProjectIndicators(project)
-        selectedScenario = next((sc for sc in self.map_data.indicators.scenarios if sc.id == scenario), None)
-        if selectedScenario is None: 
-            print ("The scenario {0} doesn't exist.".format(scenario))
-            return False
- 
+        
+        # Gets field name
         fieldname = fieldname.strip()
-        #table = evaluateExpression(indicators[scenario], expression, fieldname)
- 
-        selectedSector = next((se for se in selectedScenario.sectors if se.name == expression), None)
-        if selectedSector is None:
-            print ("The sector {0} doesn't exist in the scenario {1}.".format(expression, scenario))
-            return False
-         
-         
- 
-       #table = evaluateExpression(indicators[scenario], expression,"(Indus+2*Govm)/(Health+1)", "Price")
-         
-        #print(table)
-             
-#        vpr = layer.dataProvider()
-         
-        #fields = vpr.fields()
-         
-        #print(fields)
-         
-             
-        #print("test")        
- 
-#         if self['zones_shape_id']:
-#             existing_tree = self.proj.layerTreeRoot().findLayer(self['zones_shape_id'])
-#             if existing_tree:
-#                 existing = existing_tree.layer()
-#                 registry.removeMapLayer(existing.id())  # OJO TODO, lo puse en el if, estaba afuera!
-             
-#        key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-        #Random.ran
-             
-        pr = layer.dataProvider()
-        #pr.addAttributes([QgsField(key, QVariant.Double)])
-        fields = pr.fields()
-        newField = ''
-        if fieldname.upper() == 'TOTPROD':
-            newField = 'TotProd'
-        if fieldname.upper() == 'TOTDEM':
-            newField = 'TotDem'
-        if fieldname.upper() == 'PRODCOST':
-            newField = 'ProdCost'
-        if fieldname.upper() == 'PRICE':
-            newField = 'Price'
-        if fieldname.upper() == 'MINRES':
-            newField = 'MinRes'
-        if fieldname.upper() == 'MAXRES':
-            newField = 'MaxRes'
-        if fieldname.upper() == 'ADJUST':
-            newField = 'Adjust'
-         
-        existsField = False
-        for field in fields:
-            if field.name().upper() == newField.upper():
-                existsField = True
-         
-        if newField != '' and existsField == False:
-            pr.addAttributes([QgsField(newField, QVariant.Double)])
-        layer.updateFields()
-         
-        # #print("Voy")
-        # #print(pr.fieldNameMap())
-         
-        i = 0
- 
-        iter = layer.getFeatures()
-        minval = 1e100
-        maxval = -1e100
-         
-        for feature in iter:
-            #att = key
-            att = newField
-            # #feature[att] = 666
-            # #print(feature.id)
-            print(feature[0])
-            #value = table[str(int(feature[0]))]
-             
-            selectedZone =  next((sz for sz in selectedSector.zones if int(sz.id) == feature[0]), None)
-            if selectedZone is not None:
-                if newField.upper() == 'TOTPROD':
-                    value = float(selectedZone.totProd)
-                if newField.upper() == 'TOTDEM':
-                    value = float(selectedZone.totDem)
-                if newField.upper() == 'PRODCOST':
-                    value = float(selectedZone.prodCost)
-                if newField.upper() == 'PRICE':
-                    value = float(selectedZone.price)
-                if newField.upper() == 'MINRES':
-                    value = float(selectedZone.minRes)
-                if newField.upper() == 'MAXRES':
-                    value = float(selectedZone.maxRes)
-                if newField.upper() == 'ADJUST':
-                    value = float(selectedZone.adjust)
-            else:
-                value = 0
-            minval = min(minval, value)
-            maxval = max(maxval, value)
-            #pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[att] : value}})
-            pr.changeAttributeValues({feature.id() : {pr.fieldNameMap()[newField] : value}})
-            i = i + 1            
-             
-        # #layer.startEditing()            
-        # #layer.addAttribute(QgsField("ComputedValue", QVariant.Double))
-        # #layer.updateFields()        
-        # #layer.changeAttributeValue(7, fieldIndex, value)
-         
-      # #  newFeature = QgsFeature()
-         
-        # #iter = layer.getFeatures()
-        # #for feature in iter:
-        # #    feature['computedValue'] = 666
-            # #feature.setAttributes([feature[0], feature[1], feature[2], feature[3], 666])
-             
-        # #layer.commitChanges()
-        # #layer.updateExtents()
-             
-        iter = layer.getFeatures()    
-#         for feature in iter:
-#             print(str(feature[0])+"  "+str(feature[1])+"  "+str(feature[2])+"  "+str(feature[3])+" "+str(feature[key]))
-             
-        #1/0
-        myStyle = QgsStyleV2().defaultStyle()
-        defaultColorRampNames = myStyle.colorRampNames()        
-        ramp = myStyle.colorRamp(defaultColorRampNames[0])
-        ranges  = []
-        nCats = ramp.count()
-        print("Total colors: "+str(nCats))
-        rng = maxval - minval
-        red0 = 255
-        red1 = 0
-        green0 = 255
-        green1 = 0
-        blue0 = 255
-        blue1 = 255
-        nCats = 50
-        for i in range(0,nCats):
-            v0 = minval + rng/float(nCats)*i
-            v1 = minval + rng/float(nCats)*(i+1)
-            #v2 = minval + rng/float(nCats)*(i+1)
-            #print(str(minval)+" "+str(maxval)+" "+str(v)+" "+str(i))
-            symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
-            red = red0 + float(i)/float(nCats-1)*(red1-red0)
-            green = green0 + float(i)/float(nCats-1)*(green1-green0)
-            blue = blue0 + float(i)/float(nCats-1)*(blue1-blue0)
-            symbol.setColor(QColor(red, green, blue))
-            #print(red)
-            #print(green)
-            #print(blue)
-            #print(i)
-            myRange = QgsRendererRangeV2(v0,v1, symbol, "")
-            ranges.append(myRange)
-          
-        #renderer = QgsGraduatedSymbolRendererV2(key, ranges )
-        renderer = QgsGraduatedSymbolRendererV2(newField, ranges )
-        renderer.setSourceColorRamp(ramp)
-        layer.setRendererV2(renderer)
- 
-        #newRenderer = QgsCategorizedSymbolRendererV2()
-        #layer.setRendererV2(newRenderer)
-        #print "Type:", renderer.type()
- 
-        #QgsMapLayerRegistry.instance().addMapLayer(layer)
-        registry.addMapLayer(layer, False)
-        group.insertLayer((layersCount+1), layer)
-        self['zones_shape'] = layer.source()
-        self['zones_shape_id'] = layer.id()
-        return True        
+        
+        # Creation of CSV file to be used for JOIN operation
+        result, minValue, maxValue, rowCounter = self.map_data.create_csv_file(layerName, expression, scenario, fieldname, project)
+        if result:
+            csvFile_uri = "file:///" + project + "/" + layerName + ".csv?delimiter=,"
+            #print(csvFile_uri)
+            csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
+            registry.addMapLayer(csvFile, False)
+            shpField = 'zoneID'
+            csvField = 'ZoneId'
+            joinObject = QgsVectorJoinInfo()
+            joinObject.joinLayerId = csvFile.id()
+            joinObject.joinFieldName = csvField
+            joinObject.targetFieldName = shpField
+            joinObject.memoryCache = True
+            layer.addJoin(joinObject)
+            
+            print(minValue, maxValue, rowCounter)
+            
+            myStyle = QgsStyleV2().defaultStyle()
+            defaultColorRampNames = myStyle.colorRampNames()        
+            ramp = myStyle.colorRamp(defaultColorRampNames[0])
+            ranges  = []
+            nCats = ramp.count()
+            #print("nCats: {0}".format(nCats))
+            print("Total colors: "+str(nCats))
+            rng = maxValue - minValue
+            red0 = 255
+            red1 = 0
+            green0 = 255
+            green1 = 0
+            blue0 = 255
+            blue1 = 255
+            nCats = 50
+            for i in range(0,nCats):
+                v0 = minValue + rng/float(nCats)*i
+                v1 = minValue + rng/float(nCats)*(i+1)
+                symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
+                red = red0 + float(i)/float(nCats-1)*(red1-red0)
+                green = green0 + float(i)/float(nCats-1)*(green1-green0)
+                blue = blue0 + float(i)/float(nCats-1)*(blue1-blue0)
+                symbol.setColor(QColor(red, green, blue))
+                myRange = QgsRendererRangeV2(v0,v1, symbol, "")
+                ranges.append(myRange)
+            
+            # QgsGraduatedSymbolRendererV2(attrName, QgsRangeList)
+            renderer = QgsGraduatedSymbolRendererV2(layerName +"_" + fieldname, ranges)
+            renderer.setSourceColorRamp(ramp)
+            layer.setRendererV2(renderer)
+
+            group.insertLayer((layersCount+1), layer)
+            self['zones_shape'] = layer.source()
+            self['zones_shape_id'] = layer.id()
+
+        return True
         
     def load_scenarios(self):
         pass #self.scenarios = loadProjectIndicators(self['tranus_folder'])
