@@ -70,9 +70,10 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
     def ready(self):  # called when accept button is clicked
 
         print "ready?"
-        if self.project.checkExpression(self.expression.text(), str(self.fields.currentText()), str(self.baseScenario.currentText())):
+        result, expression = self.project.checkExpression(self.expression.text(), str(self.fields.currentText()), str(self.baseScenario.currentText()))
+        if result:
             print "yes"
-            self.project.addLayer(self.layerName.text(), self.expression.text(), str(self.baseScenario.currentText()), str(self.fields.currentText()))
+            self.project.addLayer(self.layerName.text(), self.expression.text(), str(self.baseScenario.currentText()), str(self.fields.currentText()), expression)
         else:
             print "no"
             pass

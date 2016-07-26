@@ -1,9 +1,7 @@
 from Indicator import Indicator
-from _ast import operator
+from ExpressionData import ExpressionData
 
 import csv
-from lib2to3.fixer_util import Newline
-from asyncore import write
 
 class MapData(object):
     def __init__(self):
@@ -53,72 +51,83 @@ class MapData(object):
         self.__set_data_fields()
     
     """ Create a csv file to be used in the new layer """
-    def create_csv_file(self, layerName, expression, scenario, fieldName, filePath):
+    def create_csv_file(self, layerName, expression, scenario, fieldName, filePath, stackOfExpression):
         newField = ''
-        minValue = 1e100
-        maxValue = -1e100
+        minValue = float(1e100)
+        maxValue = float(-1e100)
         rowCounter = 0
         
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
-        if selectedScenario is None: 
+        if selectedScenario is None:
             print ("The scenario {0} doesn't exist.".format(scenario))
-            return False
+            return False, 0, 0, 0
  
-        selectedSector = next((se for se in selectedScenario.sectors if se.name == expression), None)
-        if selectedSector is None:
-            print ("The sector {0} doesn't exist in the scenario {1}.".format(expression, scenario))
-            return False
-        else:
-            rowCounter = len(selectedSector.zones) 
-            
-        if fieldName.upper() == 'TOTPROD':
-            newField = 'TotProd'
-        if fieldName.upper() == 'TOTDEM':
-            newField = 'TotDem'
-        if fieldName.upper() == 'PRODCOST':
-            newField = 'ProdCost'
-        if fieldName.upper() == 'PRICE':
-            newField = 'Price'
-        if fieldName.upper() == 'MINRES':
-            newField = 'MinRes'
-        if fieldName.upper() == 'MAXRES':
-            newField = 'MaxRes'
-        if fieldName.upper() == 'ADJUST':
-            newField = 'Adjust'
+        if stackOfExpression is None:
+            print ("There is no expression to evaluate.")
+            return False, 0, 0, 0
         
-        if newField == '':
-            print ("The field selected doesn't exist.")
+        operand1 = None
+        operand2 = None
+        zoneList = None 
+        stackLen = len(stackOfExpression.data)
+        for item in stackOfExpression.data:
+            if ExpressionData.is_operator(item):
+                zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
+                operand1 = zoneList
+                operand2 = None
+            else:
+                selectedSector = next((se for se in selectedScenario.sectors if se.name == item), None)
+                if selectedSector is None:
+                    print ("The sector {0} doesn't exist in the scenario {1}.".format(item, scenario))
+                    return False, 0, 0, 0
+                else:
+                    rowCounter = len(selectedSector.zones)
+                    if stackLen == 1:
+                        zoneList =  selectedSector.zones
+                    else:
+                        if operand1 is None:
+                            operand1 = selectedSector.zones
+                        else:
+                            if operand2 is None:
+                                operand2 = selectedSector.zones
+        
+        if zoneList is None:
+            print ("There was not data to evaluate.")
+            return False, 0, 0, 0
+        else:
+            del operand1
+            del operand2
             
         csvFile = open(filePath + "\\" + layerName + ".csv", "wb")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
         print ('Writing CSV File "{0}"'.format(layerName))
         
         # Write header
-        newFile.writerow(["ZoneId", "\tZoneName", "\t" + newField])
-        for itemZone in selectedSector.zones:
+        newFile.writerow(["ZoneId", "\tZoneName", "\tJoinField" + fieldName])
+        for itemZone in zoneList:
             value = 0
-            if newField.upper() == 'TOTPROD':
+            if fieldName.upper() == 'TOTPROD':
                 value = float(itemZone.totProd)
-            if newField.upper() == 'TOTDEM':
+            if fieldName.upper() == 'TOTDEM':
                 value = float(itemZone.totDem)
-            if newField.upper() == 'PRODCOST':
+            if fieldName.upper() == 'PRODCOST':
                 value = float(itemZone.prodCost)
-            if newField.upper() == 'PRICE':
+            if fieldName.upper() == 'PRICE':
                 value = float(itemZone.price)
-            if newField.upper() == 'MINRES':
+            if fieldName.upper() == 'MINRES':
                 value = float(itemZone.minRes)
-            if newField.upper() == 'MAXRES':
+            if fieldName.upper() == 'MAXRES':
                 value = float(itemZone.maxRes)
-            if newField.upper() == 'ADJUST':
+            if fieldName.upper() == 'ADJUST':
                 value = float(itemZone.adjust)
         
             minValue = min(minValue, value)
             maxValue = max(maxValue, value)
-        
+
             newFile.writerow([itemZone.id, "\t" + itemZone.name, "\t" + str(value)])
         
         del newFile, itemZone
         csvFile.close()
         del csvFile
-        
+        print("Min: {0}, Max: {1}, Counter: {2}").format(minValue, maxValue, rowCounter)
         return True, minValue, maxValue, rowCounter

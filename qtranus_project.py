@@ -16,37 +16,13 @@ from qgis.core import QgsMessageLog  # for debugging
 from classes.GeneralObject import GeneralObject
 from classes.Indicator import Indicator
 from classes.MapData import MapData
+from classes.Stack import Stack
 
 
 import os
 import re
 import random
 import string
-
-class Stack:
-
-    def __init__(self):
-        self.data = []
-        self.tp = 0
-
-    def push(self, value):
-        self.data.append(value)
-        self.tp = self.tp + 1
-
-    def pop(self):
-        topval = self.data.pop()     
-        self.tp = self.tp - 1
-        return topval
-
-    def empty(self):
-        return self.tp == 0
-
-    def top(self):
-        return self.data[self.tp - 1]
-
-    def __str__(self):
-        return str(self.data)
-
 
 class Scenario:
 
@@ -214,11 +190,11 @@ def checkExpression(expr, field, scenario, indicators):
 
     if nOperators+1 != nOperands:
         print "Returning False"
-        return False
+        return False, None
 
     # we could simulate the evaluation... if the stack gets empty and we have an operator, return False
     print "Returning True"
-    return True
+    return True, output
 
 
 
@@ -316,11 +292,12 @@ class QTranusProject(object):
         print scenario
         project = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         indicators = loadProjectIndicators(project)
-        return checkExpression(expr, field, scenario, indicators)
+        result, output = checkExpression(expr, field, scenario, indicators) 
+        return result, output
 
         # analize()
         
-    def addLayer(self, layerName, expression, scenario, fieldname):
+    def addLayer(self, layerName, expression, scenario, fieldname, stackOfExpession):
         
         if scenario is None:
             print  ("Please select an scenario.")
@@ -346,7 +323,7 @@ class QTranusProject(object):
         fieldname = fieldname.strip()
         
         # Creation of CSV file to be used for JOIN operation
-        result, minValue, maxValue, rowCounter = self.map_data.create_csv_file(layerName, expression, scenario, fieldname, project)
+        result, minValue, maxValue, rowCounter = self.map_data.create_csv_file(layerName, expression, scenario, fieldname, project, stackOfExpession)
         if result:
             csvFile_uri = "file:///" + project + "/" + layerName + ".csv?delimiter=,"
             #print(csvFile_uri)
@@ -389,8 +366,9 @@ class QTranusProject(object):
                 myRange = QgsRendererRangeV2(v0,v1, symbol, "")
                 ranges.append(myRange)
             
-            # QgsGraduatedSymbolRendererV2(attrName, QgsRangeList)
-            renderer = QgsGraduatedSymbolRendererV2(layerName +"_" + fieldname, ranges)
+            # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            renderer = QgsGraduatedSymbolRendererV2(layerName + "_JoinField" + fieldname, ranges)
+            
             renderer.setSourceColorRamp(ramp)
             layer.setRendererV2(renderer)
 
