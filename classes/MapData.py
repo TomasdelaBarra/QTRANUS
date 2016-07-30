@@ -23,7 +23,7 @@ class MapData(object):
         if self.indicators is not None:
             if self.indicators.scenarios is not None:
                 scenario = self.indicators.scenarios[0]
-                if scenario.sectors is not None: 
+                if scenario.sectors is not None:
                     for sector in scenario.sectors:
                         self.sectors_dic[sector.id] = sector.name
 
@@ -76,20 +76,28 @@ class MapData(object):
                 operand1 = zoneList
                 operand2 = None
             else:
-                selectedSector = next((se for se in selectedScenario.sectors if se.name == item), None)
-                if selectedSector is None:
-                    print ("The sector {0} doesn't exist in the scenario {1}.".format(item, scenario))
-                    return False, 0, 0, 0
-                else:
-                    rowCounter = len(selectedSector.zones)
-                    if stackLen == 1:
-                        zoneList =  selectedSector.zones
+                if item.isdigit():
+                    if operand1 is None:
+                        operand1 = float(item)
+                    elif operand2 is None:
+                        operand2 = float(item)
+                elif item.isalpha():
+                    selectedSector = next((se for se in selectedScenario.sectors if se.name == item), None)
+                    if selectedSector is None:
+                        print ("The sector {0} doesn't exist in the scenario {1}.".format(item, scenario))
+                        return False, 0, 0, 0
                     else:
-                        if operand1 is None:
-                            operand1 = selectedSector.zones
+                        rowCounter = len(selectedSector.zones)
+                        if stackLen == 1:
+                            zoneList =  selectedSector.zones
                         else:
-                            if operand2 is None:
-                                operand2 = selectedSector.zones
+                            if operand1 is None:
+                                operand1 = selectedSector.zones
+                            elif operand2 is None:
+                                    operand2 = selectedSector.zones
+                else:
+                    print ("Item {0}, is not recognized.").format(item)
+                    return False, 0, 0, 0
         
         if zoneList is None:
             print ("There was not data to evaluate.")
