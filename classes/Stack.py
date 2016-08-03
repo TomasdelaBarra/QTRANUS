@@ -1,5 +1,5 @@
 """ Stack Class """
-class Stack:
+class Stack(object):
     def __init__(self):
         self.data = []
         self.tp = 0

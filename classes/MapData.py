@@ -1,10 +1,14 @@
 from Indicator import Indicator
 from ExpressionData import ExpressionData
+from Stack import Stack
 
 import csv
 
 class MapData(object):
     def __init__(self):
+        """
+            @summary: Constructor
+        """
         self.indicators = Indicator()
         self.scenarios_dic = {}
         self.sectors_dic = {}
@@ -14,12 +18,18 @@ class MapData(object):
         print (self.__class__.__name__, "destroyed")
         
     def __set_scenarios(self):
+        """
+            @summary: Sets the scenarios dictionary
+        """
         if self.indicators is not None:
             if self.indicators.scenarios is not None:
                 for scenario in self.indicators.scenarios:
                     self.scenarios_dic[scenario.id] = scenario.name
 
     def __set_sectors(self):
+        """
+            @summary: Sets sectors dictionary  
+        """
         if self.indicators is not None:
             if self.indicators.scenarios is not None:
                 scenario = self.indicators.scenarios[0]
@@ -28,30 +38,81 @@ class MapData(object):
                         self.sectors_dic[sector.id] = sector.name
 
     def __set_data_fields(self):
+        """
+            @summary: Sets fields dictionary 
+        """
         self.data_fields_dic = {0:"TotProd", 1:"TotDem", 2:"ProdCost", 3:"Price", 4:"MinRes", 5:"MaxRes", 6:"Adjust" }
 
     def get_sorted_scenarios(self):
+        """
+            @summary: Method that gets the scenarios sorted
+            @return: Scenarios dictionary
+        """
         if self.scenarios_dic is not None:
             return sorted(self.scenarios_dic.values())
         return None
         
     def get_sorted_sectors(self):
+        """
+            @summary: Method that gets the sectors sorted
+            @return: Sectors dictionary
+        """
         if self.sectors_dic is not None:
             return sorted(self.sectors_dic.values())
         return None
         
     def get_sorted_fields(self):
+        """
+            @summary: Method that gets fields sorted
+            @return: Fields dictionary 
+        """
         if self.data_fields_dic is not None:
             return sorted(self.data_fields_dic.values())
         return None
 
     def load_dictionaries(self):
+        """
+            @summary: Loads dictionaries 
+        """
         self.__set_scenarios()
         self.__set_sectors()
         self.__set_data_fields()
     
-    """ Create a csv file to be used in the new layer """
+    def get_sector_zones(self, scenario, sectorName):
+        """
+            @summary: Method that gets sector zones
+            @param scenario: Scenario that contains the list of sector 
+            @type: scenario: Scenario object
+            @param sectorName: Sector that contains the list of zones
+            @type sectorName: String   
+            @return: Zone list 
+        """
+        zoneList = None
+        selectedSector = next((se for se in scenario.sectors if se.name == sectorName), None)
+        if selectedSector is None:
+            print ("The sector {0} doesn't exist in the scenario {1}.".format(sectorName, scenario.name))
+        else:
+            zoneList =  selectedSector.zones
+            
+        return zoneList
+    
     def create_csv_file(self, layerName, expression, scenario, fieldName, filePath, stackOfExpression):
+        """
+            @summary: Method that creates a csv file to be used in the new layer
+            @param layerName: Layer name 
+            @type: layerName: String
+            @param expression: Expression to be evaluated
+            @type expression: String
+            @param scenario: Scenario
+            @type scenario: Scenario object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @param filePath: Path to save the file
+            @type filePath: String
+            @param stackOfExpression: Expression in reverse polish notation
+            @type stackOfExpression: Stack object    
+            @return: Result of the file creation, minValue, maxValue, rowCounter 
+        """
         newField = ''
         minValue = float(1e100)
         maxValue = float(-1e100)
@@ -70,41 +131,53 @@ class MapData(object):
         operand2 = None
         zoneList = None 
         stackLen = len(stackOfExpression.data)
+        operandsStack = Stack()
         for item in stackOfExpression.data:
             if ExpressionData.is_operator(item):
+                operand1 = operandsStack.pop()
+                if type(operand1) is not list:
+                    if operand1.isalpha():
+                        operand1 = self.get_sector_zones(selectedScenario, operand1)
+                    elif operand1.isdigit():
+                        operand1 = float(operand1)
+                    
+                operand2 = operandsStack.pop()
+                if type(operand2) is not list:
+                    if operand2.isalpha():
+                        operand2 = self.get_sector_zones(selectedScenario, operand2)
+                    elif operand2.isdigit():
+                        operand2 = float(operand2)
+                
                 zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
-                operand1 = zoneList
+                operandsStack.push(zoneList)
+                operand1 = None
                 operand2 = None
             else:
                 if item.isdigit():
-                    if operand1 is None:
-                        operand1 = float(item)
-                    elif operand2 is None:
-                        operand2 = float(item)
-                elif item.isalpha():
-                    selectedSector = next((se for se in selectedScenario.sectors if se.name == item), None)
-                    if selectedSector is None:
-                        print ("The sector {0} doesn't exist in the scenario {1}.".format(item, scenario))
+                    if stackLen == 1:
+                        print ("There is not data to evaluate.")
                         return False, 0, 0, 0
                     else:
-                        rowCounter = len(selectedSector.zones)
-                        if stackLen == 1:
-                            zoneList =  selectedSector.zones
-                        else:
-                            if operand1 is None:
-                                operand1 = selectedSector.zones
-                            elif operand2 is None:
-                                    operand2 = selectedSector.zones
+                        operandsStack.push(item)
+
+                elif item.isalpha():
+                    if stackLen == 1:
+                        zoneList =  selectedSector.zones
+                    else:
+                        operandsStack.push(item)
+
                 else:
                     print ("Item {0}, is not recognized.").format(item)
                     return False, 0, 0, 0
         
         if zoneList is None:
-            print ("There was not data to evaluate.")
+            print ("There is not data to evaluate.")
             return False, 0, 0, 0
         else:
+            rowCounter = len(zoneList)
             del operand1
             del operand2
+            del operandsStack
             
         csvFile = open(filePath + "\\" + layerName + ".csv", "wb")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
