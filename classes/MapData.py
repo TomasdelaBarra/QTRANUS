@@ -162,7 +162,7 @@ class MapData(object):
 
                 elif item.isalpha():
                     if stackLen == 1:
-                        zoneList =  selectedSector.zones
+                        zoneList =  self.get_sector_zones(selectedScenario, item)
                     else:
                         operandsStack.push(item)
 
