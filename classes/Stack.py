@@ -1,6 +1,9 @@
 """ Stack Class """
 class Stack(object):
     def __init__(self):
+        """
+            @summary: Constructor
+        """
         self.data = []
         self.tp = 0
 
@@ -23,4 +26,7 @@ class Stack(object):
         return str(self.data)
     
     def __del__(self):
+        """
+            @summary: Destroys the object
+        """
         print (self.__class__.__name__, "destroyed")

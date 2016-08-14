@@ -8,7 +8,9 @@
         begin                : 2015-07-20
         git sha              : $Format:%H$
         copyright            : (C) 2015 by qtranus
-        email                : pedroburonv@gmail.com
+        Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Omar Valladolid      - omar.valladolidg@gmail.com
+                               Pedro Buron          - pedroburonv@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -31,21 +33,21 @@ from .scenarios_model import ScenariosModel
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
 
-class ValidStringLength(QtGui.QValidator):
-    def __init__(self, min, max, parent):
-        QtGui.QValidator.__init__(self, parent)
-
-        self.min = min
-        self.max = max
-
-    def validate(self, s, pos):
-        if self.max > -1 and len(s) > self.max:
-            return QtGui.QValidator.Invalid, s, pos
-
-        if self.min > -1 and len(s) < self.min:
-            return QtGui.QValidator.Intermediate, s, pos
-
-        return QtGui.QValidator.Acceptable, s, pos
+# class ValidStringLength(QtGui.QValidator):
+#     def __init__(self, min, max, parent):
+#         QtGui.QValidator.__init__(self, parent)
+# 
+#         self.min = min
+#         self.max = max
+# 
+#     def validate(self, s, pos):
+#         if self.max > -1 and len(s) > self.max:
+#             return QtGui.QValidator.Invalid, s, pos
+# 
+#         if self.min > -1 and len(s) < self.min:
+#             return QtGui.QValidator.Intermediate, s, pos
+# 
+#         return QtGui.QValidator.Acceptable, s, pos
 
 
 class QTranusDialog(QtGui.QDialog, FORM_CLASS):

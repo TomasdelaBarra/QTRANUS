@@ -15,6 +15,9 @@ class MapData(object):
         self.data_fields_dic = None
     
     def __del__(self):
+        """
+            @summary: Destroys the object
+        """
         print (self.__class__.__name__, "destroyed")
         
     def __set_scenarios(self):
@@ -82,10 +85,10 @@ class MapData(object):
         """
             @summary: Method that gets sector zones
             @param scenario: Scenario that contains the list of sector 
-            @type: scenario: Scenario object
+            @type scenario: Scenario object
             @param sectorName: Sector that contains the list of zones
             @type sectorName: String   
-            @return: Zone list 
+            @return: Zones list object
         """
         zoneList = None
         selectedSector = next((se for se in scenario.sectors if se.name == sectorName), None)
@@ -94,90 +97,152 @@ class MapData(object):
         else:
             zoneList =  selectedSector.zones
             
-        return zoneList
+        return zoneList    
     
-    def create_csv_file(self, layerName, expression, scenario, fieldName, filePath, stackOfExpression):
+    def evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression):
         """
-            @summary: Method that creates a csv file to be used in the new layer
-            @param layerName: Layer name 
-            @type: layerName: String
-            @param expression: Expression to be evaluated
-            @type expression: String
-            @param scenario: Scenario
-            @type scenario: Scenario object
+            @summary: Method that evaluate sectors expression
+            @param scenario: Scenario where the expression will be evaluated
+            @type scenario: String
             @param fieldName: Field to be evaluated
             @type fieldName: String
-            @param filePath: Path to save the file
-            @type filePath: String
-            @param stackOfExpression: Expression in reverse polish notation
-            @type stackOfExpression: Stack object    
-            @return: Result of the file creation, minValue, maxValue, rowCounter 
+            @param sectorsExpression: Sectors expression to be evaluated for each scenario
+            @type sectorsExpression: Stack object
+            @return: Zones list object  
         """
-        newField = ''
-        minValue = float(1e100)
-        maxValue = float(-1e100)
-        rowCounter = 0
-        
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
         if selectedScenario is None:
             print ("The scenario {0} doesn't exist.".format(scenario))
-            return False, 0, 0, 0
- 
-        if stackOfExpression is None:
+            return None
+
+        if sectorsExpression is None:
             print ("There is no expression to evaluate.")
-            return False, 0, 0, 0
+            return None
         
         operand1 = None
         operand2 = None
-        zoneList = None 
-        stackLen = len(stackOfExpression.data)
-        operandsStack = Stack()
-        for item in stackOfExpression.data:
+        zoneList = None
+        stackLen = len(sectorsExpression.data)
+        operands = Stack()
+        for item in sectorsExpression.data:
             if ExpressionData.is_operator(item):
-                operand1 = operandsStack.pop()
-                if type(operand1) is not list:
-                    if operand1.isalpha():
-                        operand1 = self.get_sector_zones(selectedScenario, operand1)
-                    elif operand1.isdigit():
-                        operand1 = float(operand1)
-                    
-                operand2 = operandsStack.pop()
+                operand2 = operands.pop()
                 if type(operand2) is not list:
                     if operand2.isalpha():
                         operand2 = self.get_sector_zones(selectedScenario, operand2)
                     elif operand2.isdigit():
                         operand2 = float(operand2)
+                    
+                operand1 = operands.pop()
+                if type(operand1) is not list:
+                    if operand1.isalpha():
+                        operand1 = self.get_sector_zones(selectedScenario, operand1)
+                    elif operand1.isdigit():
+                        operand1 = float(operand1)
                 
                 zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
-                operandsStack.push(zoneList)
+                operands.push(zoneList)
                 operand1 = None
                 operand2 = None
             else:
                 if item.isdigit():
                     if stackLen == 1:
                         print ("There is not data to evaluate.")
-                        return False, 0, 0, 0
+                        return None
                     else:
-                        operandsStack.push(item)
+                        operands.push(item)
 
                 elif item.isalpha():
                     if stackLen == 1:
                         zoneList =  self.get_sector_zones(selectedScenario, item)
                     else:
-                        operandsStack.push(item)
+                        operands.push(item)
 
                 else:
                     print ("Item {0}, is not recognized.").format(item)
-                    return False, 0, 0, 0
-        
+                    return None
+                
         if zoneList is None:
             print ("There is not data to evaluate.")
-            return False, 0, 0, 0
+            return None
         else:
-            rowCounter = len(zoneList)
             del operand1
             del operand2
-            del operandsStack
+            del operands
+            return zoneList
+    
+    def evaluate_scenarios_expression(self, scenariosExpression, sectorsExpression, fieldName):
+        """
+        @summary: Method that evaluate scenarios expression
+        @param scenariosExpression: Scenarios expression
+        @type scenariosExpression: Stack object
+        @param sectorsExpression: Sectors expression to be evaluated for each scenario
+        @type sectorsExpression: Stack object
+        @param fieldName: Field to be evaluated
+        @type fieldName: String
+        @return: Zones list object, result of scenarios evaluation 
+        """
+        operand1 = None
+        operand2 = None
+        zoneList = None
+        stackLen = len(scenariosExpression.data)
+        generalOperands = Stack()
+        
+        for item in scenariosExpression.data:
+            if ExpressionData.is_operator(item):                
+                operand2 = generalOperands.pop()
+                operand2 = self.evaluate_sectors_expression(operand2, fieldName, sectorsExpression)
+                
+                operand1 = generalOperands.pop()
+                operand1 = self.evaluate_sectors_expression(operand1, fieldName, sectorsExpression)
+                
+                zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
+                generalOperands.push(zoneList)
+                operand1 = None
+                operand2 = None
+            else:
+                if stackLen == 1:
+                    zoneList = self.evaluate_sectors_expression(item, fieldName, sectorsExpression)
+                else:
+                    generalOperands.push(item)
+
+        if zoneList is None:
+            print ("There is not data to evaluate scenarios expression.")
+            return False
+        else:
+            del operand1
+            del operand2
+            del generalOperands
+            
+        return zoneList
+
+    
+    def create_csv_file(self, layerName, scenariosExpression, fieldName, filePath, sectorsExpression):
+        """
+            @summary: Method that creates a csv file to be used in the new layer
+            @param layerName: Layer name
+            @type: layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @param filePath: Path to save the file
+            @type filePath: String
+            @param sectorsExpression: Expression to be evaluated in reverse polish notation
+            @type sectorsExpression: Stack object    
+            @return: Result of the file creation, minValue, maxValue, rowCounter 
+        """
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+        rowCounter = 0
+        
+        zoneList = self.evaluate_scenarios_expression(scenariosExpression, sectorsExpression, fieldName)
+
+        if zoneList is None:
+            print ("There is not data to evaluate.")
+            return False, minValue, maxValue, rowCounter
+        else:
+            rowCounter = len(zoneList)
             
         csvFile = open(filePath + "\\" + layerName + ".csv", "wb")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)

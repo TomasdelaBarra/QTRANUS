@@ -1,9 +1,11 @@
 from GeneralObject import GeneralObject
 
-""" Zone Class"""
+""" Zone Class """
 class Zone(GeneralObject):
-    """ Init Method """
     def __init__(self):
+        """
+            @summary: Constructor
+        """
         GeneralObject.__init__(self)
         self.totProd = 0.0
         self.totDem = 0.0
@@ -14,4 +16,7 @@ class Zone(GeneralObject):
         self.adjust = 0.0
         
     def __del__(self):
+        """
+            @summary: Destroys the object
+        """
         print (self.__class__.__name__, "destroyed")

@@ -8,7 +8,9 @@
         begin                : 2015-07-20
         git sha              : $Format:%H$
         copyright            : (C) 2015 by qtranus
-        email                : pedroburonv@gmail.com
+        Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Omar Valladolid      - omar.valladolidg@gmail.com
+                               Pedro Buron          - pedroburonv@gmail.com
  ***************************************************************************/
 
 /***************************************************************************

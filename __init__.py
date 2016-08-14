@@ -6,8 +6,11 @@
  qtranus
                              -------------------
         begin                : 2015-07-20
-        copyright            : (C) 2015 by qtranus
-        email                : pedroburonv@gmail.com
+        copyright            : (C) 2016 by qtranus
+        Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Omar Valladolid      - omar.valladolidg@gmail.com
+                               Pedro Buron          - pedroburonv@gmail.com
+        
         git sha              : $Format:%H$
  ***************************************************************************/
 

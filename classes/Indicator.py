@@ -1,34 +1,56 @@
-from Scenario import Scenari
+from Scenario import Scenario
 from Sector import Sector
 from Zone import Zone
 
-""" Indicator Class"""
+""" Indicator Class """
 class Indicator:
     def __init__(self):
+        """
+            @summary: Constructor
+        """
         self.scenarios = []
            
     def __del__(self):
+        """
+            @summary: Destroys the object
+        """
         print (self.__class__.__name__, "destroyed")
         
     def add_scenario(self, scenario):
+        """
+            @summary: Adds a new scenario
+            @param scenario: Scenario to be added
+            @type scenario: Scenario object
+        """
         self.scenarios.append(scenario)
         
     def load_indicator_file(self, indicatorFile):
+        """
+            @summary: Loads file indicator
+            @param indicatorFile: Indicator file
+            @type indicatorFile: String
+        """
         f = open(indicatorFile)
         fileData = f.readlines()
-        scenario = Scenari()
+        scenario = Scenario()
         scenario = self.__read_file(fileData)
         self.add_scenario(scenario)
         
         f.close()
-        
+    
     """ Read File Method """
     def __read_file(self, fileData):
+        """
+            @summary: Reads indicator file
+            @param fileData: File data
+            @type fileData: String
+            @return: Scenario object
+        """
         newScenario = None
         newSector = None
         
         if fileData is not None:
-            newScenario = Scenari()
+            newScenario = Scenario()
             newScenario.id, newScenario.name = fileData[1].split(',')[0].strip(), fileData[1].split(',')[0].strip()
             
             fileDataLen = len(fileData)
