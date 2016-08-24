@@ -38,7 +38,7 @@ class MapData(object):
                 scenario = self.indicators.scenarios[0]
                 if scenario.sectors is not None:
                     for sector in scenario.sectors:
-                        self.sectors_dic[sector.id] = sector.name
+                        self.sectors_dic[int(sector.id)] = sector.name
 
     def __set_data_fields(self):
         """

@@ -6,7 +6,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
 
     def __init__(self, parent):
         super(ScenariosModel, self).__init__(parent)
-        self.setHorizontalHeaderLabels(['Escenarios'])
+        self.setHorizontalHeaderLabels(['Scenarios'])
 
         if parent.project.tranus_project:
             self.scenarios = parent.project.tranus_project.scenarios
@@ -14,7 +14,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
             self.root_item = self.add_scenario(root)
             self.appendRow(self.root_item)
         else:
-            self.root_item = QtGui.QStandardItem("No se ha cargado")
+            self.root_item = QtGui.QStandardItem("There is no data to load")
             self.root_item.setEditable(False)
             self.appendRow(self.root_item)
             self.scenarios = None

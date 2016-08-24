@@ -42,12 +42,15 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.buttonBox.accepted.connect(self.ready)
         self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
         self.operators.connect(self.operators, SIGNAL("currentIndexChanged(int)"), self.operator_changed)
+        self.sectors.itemDoubleClicked.connect(self.sector_selected)
+        
 
         # Loads combo-box controls
         self.__load_scenarios_combobox()
         self.__load_sectors_combobox()
         self.__load_fields_combobox()
         self.__load_operators()
+        self.reload_scenarios()
 
     def scenario_changed(self, newIndex):
         """
@@ -59,7 +62,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
 
     def operator_changed(self, newIndex):
         """
-            @summary: Detect when an operator was changed
+            @summary: Detects when an operator was changed
         """
         currentOperator = self.operators.currentText()
         if self.operators.currentText() == '':
@@ -70,7 +73,19 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
                 self.alternateScenario.setEnabled(True)
                 self.alternateScenario.clear()
                 self.__load_alternate_scenario_combobox()
-        
+    
+    def sector_selected(self, item):
+        """
+            @summary: Detects when an item in the list is double clicked
+            @param item: Item selected
+            @type item: QListWidget item 
+        """
+        self.expression.setText(self.expression.text() + item.text())
+    
+    def reload_scenarios(self):
+        self.scenarios_model = ScenariosModel(self)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
         
     def ready(self):
         """
@@ -93,9 +108,10 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Loads sectors combo-box
         """
-        items = self.project.map_data.get_sorted_sectors()
-        #items = self.project.map_data.sectors_dic.values()
-        self.sectors.addItems(items)
+        for key in sorted(self.project.map_data.sectors_dic):
+            #print("key: {0}, Value: {1}").format(key, self.project.map_data.sectors_dic[key])
+            self.sectors.addItem(self.project.map_data.sectors_dic[key])
+
         
     def __load_fields_combobox(self):
         """
