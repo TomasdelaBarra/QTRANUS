@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>803</width>
+    <width>791</width>
     <height>365</height>
    </rect>
   </property>
@@ -20,13 +20,6 @@
    <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_7">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Configuración del proyecto: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;QTRANUS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -43,7 +36,7 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
+         <width>80</width>
          <height>20</height>
         </size>
        </property>
@@ -59,12 +52,12 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Nombre del proyecto QTranus&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Layers group name:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="project_name">
+          <widget class="QLineEdit" name="layers_group_name">
            <property name="minimunWidth" stdset="0">
             <number>3</number>
            </property>
@@ -73,7 +66,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>Carpeta de trabajo Tranus</string>
+            <string>Tranus workspace:</string>
            </property>
           </widget>
          </item>
@@ -113,7 +106,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Archivo shape de las zonas</string>
+            <string>Zones shape file:</string>
            </property>
           </widget>
          </item>
@@ -138,7 +131,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Archivo shape de la red</string>
+            <string>Network shape file:</string>
            </property>
           </widget>
          </item>
@@ -159,7 +152,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Archivo shape de centroides</string>
+            <string>Centroid shape file:</string>
            </property>
           </widget>
          </item>
@@ -180,23 +173,6 @@
         </layout>
        </item>
        <item>
-        <widget class="QLabel" name="label_6">
-         <property name="visible">
-           <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Expresión:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="expression">
-                   <property name="visible">
-           <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -210,17 +186,67 @@
         </spacer>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QCommandLinkButton" name="configure">
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item alignment="Qt::AlignVCenter">
+          <widget class="QCommandLinkButton" name="zones">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Configurar</string>
+            <string>Zones</string>
            </property>
           </widget>
          </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item alignment="Qt::AlignVCenter">
+          <widget class="QCommandLinkButton" name="network">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Network</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item alignment="Qt::AlignVCenter">
+          <widget class="QCommandLinkButton" name="matrix">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Matrix</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
           <spacer name="horizontalSpacer">
            <property name="orientation">
@@ -250,8 +276,31 @@
      </item>
     </layout>
    </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Project Configuration: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;QTRANUS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scenarios</tabstop>
+  <tabstop>layers_group_name</tabstop>
+  <tabstop>tranus_folder</tabstop>
+  <tabstop>tranus_folder_btn</tabstop>
+  <tabstop>zone_shape</tabstop>
+  <tabstop>zones_shape_btn</tabstop>
+  <tabstop>net_shape</tabstop>
+  <tabstop>net_shape_btn</tabstop>
+  <tabstop>centroid_shape</tabstop>
+  <tabstop>toolButton_4</tabstop>
+  <tabstop>zones</tabstop>
+  <tabstop>network</tabstop>
+  <tabstop>matrix</tabstop>
+  <tabstop>button_box</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -261,8 +310,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>605</x>
+     <y>350</y>
     </hint>
     <hint type="destinationlabel">
      <x>20</x>
@@ -277,8 +326,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>605</x>
+     <y>350</y>
     </hint>
     <hint type="destinationlabel">
      <x>20</x>

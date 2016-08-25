@@ -8,7 +8,9 @@
         begin                : 2015-07-20
         git sha              : $Format:%H$
         copyright            : (C) 2015 by qtranus
-        email                : pedroburonv@gmail.com
+        Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Omar Valladolid      - omar.valladolidg@gmail.com
+                               Pedro Buron          - pedroburonv@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,28 +27,12 @@ import os
 
 from PyQt4 import QtGui, uic
 
-from .settings_dialog import SettingsDialog
+#from .settings_dialog import SettingsDialog
+from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
-
-class ValidStringLength(QtGui.QValidator):
-    def __init__(self, min, max, parent):
-        QtGui.QValidator.__init__(self, parent)
-
-        self.min = min
-        self.max = max
-
-    def validate(self, s, pos):
-        if self.max > -1 and len(s) > self.max:
-            return QtGui.QValidator.Invalid, s, pos
-
-        if self.min > -1 and len(s) < self.min:
-            return QtGui.QValidator.Intermediate, s, pos
-
-        return QtGui.QValidator.Acceptable, s, pos
-
 
 class QTranusDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, project, parent=None):
@@ -61,34 +47,28 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
         self.project = project
 
-        self.project_name = self.findChild(QtGui.QLineEdit, 'project_name')
-        self.project_name.textEdited.connect(self.save_project_name)
+        self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
+        self.layers_group_name.textEdited.connect(self.save_layers_group_name)
         self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtGui.QLineEdit, 'zone_shape')
         self.net_shape = self.findChild(QtGui.QLineEdit, 'net_shape')
         self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
-        self.configure = self.findChild(QtGui.QCommandLinkButton, 'configure')
-        self.configure.clicked.connect(self.configure_dialog)
+        self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
+        self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.net_shape_btn = self.findChild(QtGui.QToolButton, 'net_shape_btn')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
-        self.expression = self.findChild(QtGui.QLineEdit, 'expression')
-        self.expression.textEdited.connect(self.expression_changes)
         self.reload_scenarios()
 		
-    def expression_changes(self):
-        self.project['expression'] = self.expression.text()
-    
-    def save_project_name(self):
-        self.project['project_name'] = self.project_name.text()
+    def save_layers_group_name(self):
+        self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
 
     def select_zones_shape(self, file_name):
-        # expr = self.expression.text()
         if self.project.load_zones_shape(file_name):
             self.zone_shape.setText(file_name)
         else:
@@ -96,7 +76,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.check_configure()
 
     def select_tranus_folder(self):
-        folder = QtGui.QFileDialog.getExistingDirectory(self, "Select Directory")
+        folder = QtGui.QFileDialog.getExistingDirectory(self, "Select directory")
         if folder:
             self.tranus_folder.setText(folder)
             if not self.project.load_tranus_folder(folder):
@@ -106,25 +86,24 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
     def select_shape(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Elija el archivo", filter="*.*, *.shp")
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select file", filter="*.*, *.shp")
             if file_name:
                 callback(file_name)
 
         return select_file
 
-    def configure_dialog(self):
-        settings = SettingsDialog(parent=self, project=self.project)
-        settings.show()
-
-        result = settings.exec_()
+    def zone_layer_dialog(self):
+        dialog = ZoneLayerDialog(parent=self)
+        dialog.show()
+        result = dialog.exec_()
 
     def show(self):
         self.project.load()
         if self.project['project_name']:
-            self.project_name.setText(self.project['project_name'])
+            self.layers_group_name.setText(self.project['project_name'])
         else:
-            self.project_name.setText('QTranus Project')
-            self.project_name.selectAll()
+            self.layers_group_name.setText('QTranus Project')
+            self.layers_group_name.selectAll()
         if self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
         if self.project.tranus_project:
@@ -141,4 +120,4 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
 
     def check_configure(self):
-        self.configure.setEnabled(self.project.is_valid())
+        self.zones_btn.setEnabled(self.project.is_valid())
