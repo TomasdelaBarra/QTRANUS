@@ -175,6 +175,10 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
         
         if scenariosExpressionResult:
-            sectorsExpressionResult, sectorsExpressionStack = ExpressionData.validate_sectors_expression(self.expression.text().strip())
+            sectorsExpressionResult, sectorsExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
         
-        return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionStack 
+        if scenariosExpressionStack.tp > 1 and len(sectorsExpressionList) > 1:
+            print("Expression with conditionals only apply for one scenario.")
+            return False, None, None
+        
+        return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionList 

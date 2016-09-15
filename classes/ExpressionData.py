@@ -1,17 +1,42 @@
 from Zone import Zone
 from Stack import Stack
 from _hashlib import new
+from lib2to3.fixer_base import ConditionalFix
 
 class ExpressionData(object):
     @staticmethod
-    def is_operator(st):
+    def is_operator(operator):
         """
-            @summary: Method that compare is the string sent is an operator
-            @param st: String to evaluate 
-            @type st: String
+            @summary: Method that compares if the string sent is an operator
+            @param operator: String to evaluate 
+            @type operator: String
             @return: Boolean result of the evaluation 
         """
-        return st=='+' or st=='-' or st=='*' or st=='/'
+        return operator=='+' or operator=='-' or operator=='*' or operator=='/'
+    
+    @staticmethod
+    def is_conditional(conditional):
+        """
+            @summary: Method that validates if the string sent is a conditional
+            @param conditional: String to evaluate
+            @type conditional: String
+            @return: Boolean result of the evaluation
+        """
+        return conditional == '>' or conditional == '<' or conditional == '>=' or conditional == '<=' or conditional == '!=' or conditional == '=='
+    
+    @staticmethod
+    def is_number(number):
+        """
+            @summary: Method that validates if the string sent is a number
+            @param number: String to evaluate
+            @type number: String
+            @return: Boolean result of the evaluation
+        """
+        try:
+            float(number)
+            return True
+        except ValueError:
+            return False
     
     @staticmethod
     def keep_iterating(o1, o2):
@@ -23,14 +48,23 @@ class ExpressionData(object):
             @summary: Split the expression in tokens
             @param expression: Expression to split 
             @type expression: String
-            @return: Expression splitted in tokens
+            @return: Expression split in tokens
         """
         tokens = []
         i = 0
+        temp = None
         while i < len(expression):
             if expression[i] == '(' or expression[i] == ')' or expression[i] == '*' or expression[i] == '/' or expression[i] == '+' or expression[i] == '-':
                 tokens.append(expression[i])
                 i = i + 1
+            elif  expression[i] == '>' or expression[i] == '<' or expression[i] == '!' or expression[i] == '=':
+                temp = expression[i]
+                if expression[i + 1] == '=':
+                    tokens.append(expression[i] + expression[i+1])
+                    i = i + 2
+                else:
+                    tokens.append(expression[i])
+                    i = i + 1
             elif expression[i] == ' ' or expression[i]=='\t':
                 i = i + 1
             elif expression[i].isdigit():
@@ -47,6 +81,7 @@ class ExpressionData(object):
                 tokens.append(nextToken)
             else:
                 print("Unexpected token: {0}").format(expression[i])
+                i = i + 1
         return tokens
 
     @staticmethod
@@ -59,6 +94,7 @@ class ExpressionData(object):
         """
         output = Stack()
         operators = Stack()
+        outputType = []
         result = True
         try:
             for token in tokens:
@@ -103,30 +139,59 @@ class ExpressionData(object):
         """
             @summary: Validates sectors expression
             @param expression: Sectors expression
-            @param expression: String  
+            @type expression: String  
             @return: Boolean result of validation and expression stack in reverse polish notation
         """
         tokens = None
+        outputExpressions = []
         
         if expression is None:
             print("There is not sectors expression to evaluate.")
             return False, None
         
         if len(expression.strip()) == 0:
-            print("There is not sectors  expression to evaluate.")
+            print("There is not sectors expression to evaluate.")
             return False, None        
         
         tokens = ExpressionData.tokenize(expression)
-        result, output = ExpressionData.shutting_yard_parsing(tokens)
+        tokensResult, tokensList, hasConditionals = ExpressionData.validate_conditionals(tokens)
         
-        return result, output
+        if not tokensResult:
+            print("Incorrect expression, please validate it.")
+            return False, None
+        else:
+            if not hasConditionals:
+                result, output = ExpressionData.shutting_yard_parsing(tokensList)
+                if result:
+                    #item = [result, output]
+                    outputExpressions.append(output)
+                else:
+                    return False, None
+            else:        
+                for listItem in tokensList:
+                    if type(listItem) is list:
+                        result, output = ExpressionData.shutting_yard_parsing(listItem)
+                        #item = [result, output]
+                        if result:
+                            outputExpressions.append(output)
+                        else:
+                            return False, None
+                    else:
+                        if ExpressionData.is_conditional(listItem):
+                            item = [True, listItem]
+                            outputExpressions.append(listItem)
+                        else:
+                            return False, None
+                    #outputExpressions.append(item)
+        
+        return result, outputExpressions
     
     @staticmethod
     def validate_scenarios_expression(expression):
         """
             @summary: Validates scenarios expression
             @param expression: Scenarios expression
-            @param expression: String  
+            @type expression: String  
             @return: Boolean result of validation and expression stack in reverse polish notation 
         """
         result = True
@@ -146,6 +211,57 @@ class ExpressionData(object):
         return result, output
     
     @staticmethod
+    def validate_conditionals(tokens):
+        """
+            @summary: Validates if the expression tokens has a conditional, if so also validates both sides of the conditional
+            @param tokens: Expression tokens
+            @type tokens: List of strings
+            @return: Boolean result of validation and a list of expressions
+        """
+        result = True
+        output = None
+        hasConditional = False
+        
+        conditionals = ['>', '<', '<=', '>=', '!=', '==']
+        uncompletedConditionals = ['!', '='] 
+        conditionalFound = {}
+        uncompletedConditionalsFound = {}
+        tokensList = []
+        
+        # Looks for completed conditionals
+        for conditional in conditionals:
+            if conditional in tokens:
+                conditionalFound[tokens.index(conditional)] = conditional
+        
+        # Looks for uncompleted conditionals
+        for uncompletedConditional in uncompletedConditionals:
+            if uncompletedConditional in tokens:
+                uncompletedConditionalsFound[tokens.index(uncompletedConditional)] = uncompletedConditional
+
+        # If there is one or more uncompleted conditionals the expression is incorrect
+        if len(uncompletedConditionalsFound) > 0:
+            print("Uncompleted conditionals.")
+            return False, None, True
+
+        # If there is more than one conditional the expression is incorrect
+        if len(conditionalFound) > 1:
+            print("There is more than one conditional.")
+            return False, None, True
+        # If it has one conditional is valid
+        elif len(conditionalFound) == 1:
+            tokensList.append(tokens[0:conditionalFound.keys()[0]])
+            tokensList.append(tokens[(conditionalFound.keys()[0] + 1):(len(tokens) + 1)])
+            tokensList.append(conditionalFound[conditionalFound.keys()[0]])
+            output = tokensList
+            hasConditional = True
+        # If it has not conditionals is valid
+        else:
+            output = tokens
+            hasConditional = False
+        
+        return result, output, hasConditional
+    
+    @staticmethod
     def perform_arithmetic(value1, value2, operator):
         """
             @summary: Method that perform the arithmetic operation between two operands
@@ -161,22 +277,58 @@ class ExpressionData(object):
         if operator == '+':
             result = value1 + value2
             
-        if operator == '-':
+        elif operator == '-':
             result = value1 - value2
             
-        if operator == '*':
+        elif operator == '*':
             result = value1 * value2
         
-        if operator == '/':
+        elif operator == '/':
             if value2 == 0:
                 result = 0
             else:
                 result = value1 / value2
         
+        elif operator == '>':
+            if value1 > value2:
+                result = 1
+            else:
+                result = 0
+                
+        elif operator == '<':
+            if value1 < value2:
+                result = 1
+            else:
+                result = 0
+                
+        elif operator == '>=':
+            if value1 >= value2:
+                result = 1
+            else:
+                result = 0
+        
+        elif operator == '<=':
+            if value1 <= value2:
+                result = 1
+            else:
+                result = 0
+        
+        elif operator == '!=':
+            if value1 != value2:
+                result = 1
+            else:
+                result = 0
+        
+        elif operator == '==':
+            if value1 == value2:
+                result = 1
+            else:
+                result = 0
+        
         return result
     
     @staticmethod
-    def fill__zone_data(zone, itemOp1, itemOp2, operator, fieldName):
+    def fill_zone_data(zone, itemOp1, itemOp2, operator, fieldName):
         """
             @summary: Method that fills the Zone Object
             @param zone: Object to be filled 
@@ -314,7 +466,7 @@ class ExpressionData(object):
                 newZone.id = itemOp1.id
                 newZone.name = itemOp1.name
     
-                ExpressionData.fill__zone_data(newZone, itemOp1, itemOp2, operator, fieldName)
+                ExpressionData.fill_zone_data(newZone, itemOp1, itemOp2, operator, fieldName)
                 
                 zoneList.append(newZone)
                 del newZone
@@ -325,7 +477,7 @@ class ExpressionData(object):
                 newZone.id = itemOp1.id
                 newZone.name = itemOp1.name
     
-                ExpressionData.fill__zone_data(newZone, itemOp1, operand2, operator, fieldName)
+                ExpressionData.fill_zone_data(newZone, itemOp1, operand2, operator, fieldName)
                 
                 zoneList.append(newZone)
                 del newZone
@@ -336,9 +488,12 @@ class ExpressionData(object):
                 newZone.id = itemOp2.id
                 newZone.name = itemOp2.name
     
-                ExpressionData.fill__zone_data(newZone, operand1, itemOp2, operator, fieldName)
+                ExpressionData.fill_zone_data(newZone, operand1, itemOp2, operator, fieldName)
                 
                 zoneList.append(newZone)
                 del newZone
+        if type(operand1) is not list and type(operand2) is not list:
+            print("There are not sectors to evaluate.")
+            zoneList = None
         
         return zoneList
