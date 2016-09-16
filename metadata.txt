@@ -10,8 +10,9 @@
 name=qtranus
 qgisMinimumVersion=2.0
 description=qtranus
+version=1.0.1
 author=qtranus
-email=pedroburonv@gmail.com
+email=omar.valladolidg@gmail.com
 
 # End of mandatory metadata
 

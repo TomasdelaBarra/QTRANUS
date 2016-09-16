@@ -1,7 +1,5 @@
 from Zone import Zone
 from Stack import Stack
-from _hashlib import new
-from lib2to3.fixer_base import ConditionalFix
 
 class ExpressionData(object):
     @staticmethod
