@@ -2,8 +2,10 @@
 from Indicator import Indicator
 from ExpressionData import ExpressionData
 from Stack import Stack
+from PyQt4.Qt import QMessageBox
 
 import csv
+
 
 class MapData(object):
     def __init__(self):
@@ -94,7 +96,8 @@ class MapData(object):
         zoneList = None
         selectedSector = next((se for se in scenario.sectors if se.name == sectorName), None)
         if selectedSector is None:
-            print ("The sector {0} doesn't exist in the scenario {1}.".format(sectorName, scenario.name))
+            QMessageBox.warning(None, "Sector selected", ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name))
+            print ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name)
         else:
             zoneList =  selectedSector.zones
             
@@ -113,10 +116,12 @@ class MapData(object):
         """
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
         if selectedScenario is None:
+            QMessageBox.warning(None, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario))
             print ("The scenario {0} doesn't exist.".format(scenario))
             return None
 
         if sectorsExpression is None:
+            QMessageBox.warning(None, "Sectors expression", "There is no expression to evaluate.")
             print ("There is no expression to evaluate.")
             return None
         
@@ -133,7 +138,6 @@ class MapData(object):
                         operand2 = float(operand2) 
                     elif operand2.isalpha():
                         operand2 = self.get_sector_zones(selectedScenario, operand2)
-                    #elif operand2.isdigit():
                     
                 operand1 = operands.pop()
                 if type(operand1) is not list:
@@ -141,7 +145,6 @@ class MapData(object):
                         operand1 = float(operand1)
                     elif operand1.isalpha():
                         operand1 = self.get_sector_zones(selectedScenario, operand1)
-                    #elif operand1.isdigit():
                 
                 zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
                 operands.push(zoneList)
@@ -149,12 +152,12 @@ class MapData(object):
                 operand2 = None
             else:
                 if ExpressionData.is_number(item):
-                #if item.isdigit():
                     item = float(item)
                     if stackLen == 1:
                         if conditionalFlag:
                             return item
                         else:
+                            QMessageBox.warning(None, "Sectors expression", "There is not data to evaluate.")
                             print ("There is not data to evaluate.")
                             return None
                     else:
@@ -167,10 +170,12 @@ class MapData(object):
                         operands.push(item)
 
                 else:
+                    QMessageBox.warning(None, "Sectors expression", "Item {0}, is not recognized.".format(item))
                     print ("Item {0}, is not recognized.").format(item)
                     return None
                 
         if zoneList is None:
+            QMessageBox.warning(None, "Sectors expression", "There is not data to evaluate.")
             print ("There is not data to evaluate.")
             return None
         else:
@@ -209,12 +214,14 @@ class MapData(object):
                     zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
                     
                     if zoneList is None:
-                        raise Exception("There is not data to evaluate sectors expression.")
+                        QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for sectors expression.")
+                        raise Exception("There is not data to evaluate for sectors expression.")
                     else:
                         if len(zoneList) > 0:                
                             generalOperands.push(zoneList)
                         else:
-                            raise Exception("There is not data to evaluate sectors expression.")
+                            QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for sectors expression.")
+                            raise Exception("There is not data to evaluate for sectors expression.")
                     
                     operand1 = None
                     operand2 = None
@@ -228,6 +235,7 @@ class MapData(object):
             print(inst)
             zoneList = None
         except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
             print("Unexpected error:", sys.exc_info()[0])
             zoneList = None
         finally:
@@ -268,11 +276,13 @@ class MapData(object):
                         zoneList = ExpressionData.execute_expression(operand1, operand2, sectorExpression, fieldName)
                         
                         if zoneList is None:
-                            raise Exception("There is not data to evaluate conditional expression.")
+                            QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for conditional expression.")
+                            raise Exception("There is not data to evaluate for conditional expression.")
                         else:
                             if len(zoneList) > 0:                
                                 generalOperands.push(zoneList)
                             else:
+                                QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for conditional expression.")
                                 raise Exception("There is not data to evaluate conditional expression.")
                         
                         operand1 = None
@@ -282,6 +292,7 @@ class MapData(object):
             print (inst)
             zoneList = None
         except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
             print("Unexpected error:", sys.exc_info()[0])
             zoneList = None
         finally:
@@ -319,6 +330,7 @@ class MapData(object):
             
 
         if zoneList is None:
+            QMessageBox.warning(None, "Zone data", "There is not data to evaluate.")
             print ("There is not data to evaluate.")
             return False, minValue, maxValue, rowCounter
         else:

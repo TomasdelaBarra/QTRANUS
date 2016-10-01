@@ -23,9 +23,11 @@
  ***************************************************************************/
 """
 
-import os
+import os, webbrowser
+
 
 from PyQt4 import QtGui, uic
+from PyQt4.Qt import QMessageBox
 
 #from .settings_dialog import SettingsDialog
 from .zonelayer_dialog import ZoneLayerDialog
@@ -47,23 +49,36 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
         self.project = project
 
+        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
-        self.layers_group_name.textEdited.connect(self.save_layers_group_name)
         self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtGui.QLineEdit, 'zone_shape')
         self.net_shape = self.findChild(QtGui.QLineEdit, 'net_shape')
         self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
         self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
-        self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
-        self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
-        self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.net_shape_btn = self.findChild(QtGui.QToolButton, 'net_shape_btn')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
+        
+        # Control Actions
+        self.help.clicked.connect(self.open_help)
+        self.layers_group_name.textEdited.connect(self.save_layers_group_name)
+        self.zones_btn.clicked.connect(self.zone_layer_dialog)
+        self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
+        self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
+        
+        # Loads
         self.reload_scenarios()
-		
+	
+    def open_help(self):
+        """
+            @summary: Opens QTranus users help
+        """
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'index.html')
+        webbrowser.open_new_tab(filename)
+    	
     def save_layers_group_name(self):
         self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
@@ -93,9 +108,13 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         return select_file
 
     def zone_layer_dialog(self):
-        dialog = ZoneLayerDialog(parent=self)
-        dialog.show()
-        result = dialog.exec_()
+        if self.project.map_data.get_sorted_fields() is None:
+            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
+            print ("There are no fields to load, please reload SHP file.")
+        else:
+            dialog = ZoneLayerDialog(parent=self)
+            dialog.show()
+            result = dialog.exec_()
 
     def show(self):
         self.project.load()

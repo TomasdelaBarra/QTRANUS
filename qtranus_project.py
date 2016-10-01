@@ -13,6 +13,7 @@ from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
+from PyQt4.Qt import QMessageBox
 from classes.GeneralObject import GeneralObject
 from classes.Indicator import Indicator
 from classes.MapData import MapData
@@ -55,6 +56,7 @@ class QTranusProject(object):
         """
         
         if scenariosExpression is None:
+            QMessageBox.warning(None, "Scenarios expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
             return False
         

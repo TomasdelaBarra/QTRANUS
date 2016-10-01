@@ -1,5 +1,6 @@
 from Zone import Zone
 from Stack import Stack
+from PyQt4.Qt import QMessageBox
 
 class ExpressionData(object):
     @staticmethod
@@ -51,18 +52,23 @@ class ExpressionData(object):
         tokens = []
         i = 0
         temp = None
-        while i < len(expression):
+        expressionLen = len(expression)
+        while i < expressionLen:
             if expression[i] == '(' or expression[i] == ')' or expression[i] == '*' or expression[i] == '/' or expression[i] == '+' or expression[i] == '-':
                 tokens.append(expression[i])
                 i = i + 1
             elif  expression[i] == '>' or expression[i] == '<' or expression[i] == '!' or expression[i] == '=':
                 temp = expression[i]
-                if expression[i + 1] == '=':
-                    tokens.append(expression[i] + expression[i+1])
-                    i = i + 2
+                if (i + 1) >= expressionLen:
+                    print("Incorrect expression, right part missing.")
+                    return None
                 else:
-                    tokens.append(expression[i])
-                    i = i + 1
+                    if expression[i + 1] == '=':
+                        tokens.append(expression[i] + expression[i+1])
+                        i = i + 2
+                    else:
+                        tokens.append(expression[i])
+                        i = i + 1
             elif expression[i] == ' ' or expression[i]=='\t':
                 i = i + 1
             elif expression[i].isdigit():
@@ -120,6 +126,7 @@ class ExpressionData(object):
                     nOperands = nOperands + 1
                     
             if nOperators+1 != nOperands:
+                QMessageBox.warning(None, "Parsing", "Incorrect expression, please validate it.")
                 print("Incorrect expression, please validate it.")
                 result = False
                 output = None
@@ -127,6 +134,7 @@ class ExpressionData(object):
         except Exception as e:
             result = False
             output = None
+            QMessageBox.warning(None, "Parsing", ("There was an error parsing the expression:\nErr. Codes:{0}\nErr. Message:{1}").format(e.errcode, e.errmsg))
             print("There was an error parsing the expression:\nErr. Codes:{0}\nErr. Message:{1}").format(e.errcode, e.errmsg)
 
         finally:
@@ -144,24 +152,31 @@ class ExpressionData(object):
         outputExpressions = []
         
         if expression is None:
+            QMessageBox.warning(None, "Sectors expression", "There is not sectors expression to evaluate.")
             print("There is not sectors expression to evaluate.")
             return False, None
         
         if len(expression.strip()) == 0:
+            QMessageBox.warning(None, "Sectors expression", "There is not sectors expression to evaluate.")
             print("There is not sectors expression to evaluate.")
             return False, None        
         
         tokens = ExpressionData.tokenize(expression)
-        tokensResult, tokensList, hasConditionals = ExpressionData.validate_conditionals(tokens)
+        if tokens is None:
+            QMessageBox.warning(None, "Sectors expression", "Incorrect expression, please validate it.")
+            print("Incorrect expression, please validate it.")
+            return False, None
+        else:
+            tokensResult, tokensList, hasConditionals = ExpressionData.validate_conditionals(tokens)
         
         if not tokensResult:
+            QMessageBox.warning(None, "Sectors expression", "Incorrect expression, please validate it.")
             print("Incorrect expression, please validate it.")
             return False, None
         else:
             if not hasConditionals:
                 result, output = ExpressionData.shutting_yard_parsing(tokensList)
                 if result:
-                    #item = [result, output]
                     outputExpressions.append(output)
                 else:
                     return False, None
@@ -169,7 +184,6 @@ class ExpressionData(object):
                 for listItem in tokensList:
                     if type(listItem) is list:
                         result, output = ExpressionData.shutting_yard_parsing(listItem)
-                        #item = [result, output]
                         if result:
                             outputExpressions.append(output)
                         else:
@@ -180,7 +194,6 @@ class ExpressionData(object):
                             outputExpressions.append(listItem)
                         else:
                             return False, None
-                    #outputExpressions.append(item)
         
         return result, outputExpressions
     
@@ -196,10 +209,12 @@ class ExpressionData(object):
         output = None
                 
         if expression is None:
+            QMessageBox.warning(None, "Scenarios validation", "There is not scenarios expression to evaluate.")
             print("There is not scenarios expression to evaluate.")
             result = False
             output = None
         if len(expression) == 0:
+            QMessageBox.warning(None, "Scenarios validation", "There is not scenarios expression to evaluate.")
             print("There is not scenarios expression to evaluate.")
             result = False
             output = None
@@ -238,11 +253,13 @@ class ExpressionData(object):
 
         # If there is one or more uncompleted conditionals the expression is incorrect
         if len(uncompletedConditionalsFound) > 0:
+            QMessageBox.warning(None, "Conditionals validation", "Uncompleted conditionals.")
             print("Uncompleted conditionals.")
             return False, None, True
 
         # If there is more than one conditional the expression is incorrect
         if len(conditionalFound) > 1:
+            QMessageBox.warning(None, "Conditionals validation", "There is more than one conditional.")
             print("There is more than one conditional.")
             return False, None, True
         # If it has one conditional is valid
