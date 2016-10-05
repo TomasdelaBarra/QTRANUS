@@ -13,6 +13,7 @@ from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
+from PyQt4.Qt import QMessageBox
 from classes.GeneralObject import GeneralObject
 from classes.Indicator import Indicator
 from classes.MapData import MapData
@@ -55,6 +56,7 @@ class QTranusProject(object):
         """
         
         if scenariosExpression is None:
+            QMessageBox.warning(None, "Scenarios expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
             return False
         
@@ -76,11 +78,13 @@ class QTranusProject(object):
         # Gets field name
         fieldname = fieldname.strip()
         
+        #layerName = layerName.encode('UTF-8')
+        
         # Creation of CSV file to be used for JOIN operation
         result, minValue, maxValue, rowCounter = self.map_data.create_csv_file(layerName, scenariosExpression, fieldname, project, sectorsExpression)
         if result:
-            csvFile_uri = "file:///" + project + "/" + layerName + ".csv?delimiter=,"
-            #print(csvFile_uri)
+            csvFile_uri = ("file:///" + project + "/" + layerName + ".csv?delimiter=,").encode('utf-8')
+            print(csvFile_uri)
             csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
             registry.addMapLayer(csvFile, False)
             shpField = 'zoneID'
@@ -122,6 +126,7 @@ class QTranusProject(object):
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
             renderer = QgsGraduatedSymbolRendererV2(layerName + "_JoinField" + fieldname, ranges)
+            #renderer = QgsGraduatedSymbolRendererV2("JoinField" + fieldname, ranges)
             
             renderer.setSourceColorRamp(ramp)
             layer.setRendererV2(renderer)

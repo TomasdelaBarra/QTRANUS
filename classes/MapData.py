@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 from Indicator import Indicator
 from ExpressionData import ExpressionData
 from Stack import Stack
+from PyQt4.Qt import QMessageBox
 
 import csv
+
 
 class MapData(object):
     def __init__(self):
@@ -93,13 +96,14 @@ class MapData(object):
         zoneList = None
         selectedSector = next((se for se in scenario.sectors if se.name == sectorName), None)
         if selectedSector is None:
-            print ("The sector {0} doesn't exist in the scenario {1}.".format(sectorName, scenario.name))
+            QMessageBox.warning(None, "Sector selected", ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name))
+            print ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name)
         else:
             zoneList =  selectedSector.zones
             
         return zoneList    
     
-    def evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression):
+    def evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression, conditionalFlag):
         """
             @summary: Method that evaluate sectors expression
             @param scenario: Scenario where the expression will be evaluated
@@ -112,10 +116,12 @@ class MapData(object):
         """
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
         if selectedScenario is None:
+            QMessageBox.warning(None, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario))
             print ("The scenario {0} doesn't exist.".format(scenario))
             return None
 
         if sectorsExpression is None:
+            QMessageBox.warning(None, "Sectors expression", "There is no expression to evaluate.")
             print ("There is no expression to evaluate.")
             return None
         
@@ -125,30 +131,35 @@ class MapData(object):
         stackLen = len(sectorsExpression.data)
         operands = Stack()
         for item in sectorsExpression.data:
-            if ExpressionData.is_operator(item):
+            if ExpressionData.is_operator(item) or ExpressionData.is_conditional(item):
                 operand2 = operands.pop()
                 if type(operand2) is not list:
-                    if operand2.isalpha():
+                    if ExpressionData.is_number(operand2):
+                        operand2 = float(operand2) 
+                    elif operand2.isalpha():
                         operand2 = self.get_sector_zones(selectedScenario, operand2)
-                    elif operand2.isdigit():
-                        operand2 = float(operand2)
                     
                 operand1 = operands.pop()
                 if type(operand1) is not list:
-                    if operand1.isalpha():
-                        operand1 = self.get_sector_zones(selectedScenario, operand1)
-                    elif operand1.isdigit():
+                    if ExpressionData.is_number(operand1):  
                         operand1 = float(operand1)
+                    elif operand1.isalpha():
+                        operand1 = self.get_sector_zones(selectedScenario, operand1)
                 
                 zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
                 operands.push(zoneList)
                 operand1 = None
                 operand2 = None
             else:
-                if item.isdigit():
+                if ExpressionData.is_number(item):
+                    item = float(item)
                     if stackLen == 1:
-                        print ("There is not data to evaluate.")
-                        return None
+                        if conditionalFlag:
+                            return item
+                        else:
+                            QMessageBox.warning(None, "Sectors expression", "There is not data to evaluate.")
+                            print ("There is not data to evaluate.")
+                            return None
                     else:
                         operands.push(item)
 
@@ -159,10 +170,12 @@ class MapData(object):
                         operands.push(item)
 
                 else:
+                    QMessageBox.warning(None, "Sectors expression", "Item {0}, is not recognized.".format(item))
                     print ("Item {0}, is not recognized.").format(item)
                     return None
                 
         if zoneList is None:
+            QMessageBox.warning(None, "Sectors expression", "There is not data to evaluate.")
             print ("There is not data to evaluate.")
             return None
         else:
@@ -173,49 +186,121 @@ class MapData(object):
     
     def evaluate_scenarios_expression(self, scenariosExpression, sectorsExpression, fieldName):
         """
-        @summary: Method that evaluate scenarios expression
-        @param scenariosExpression: Scenarios expression
-        @type scenariosExpression: Stack object
-        @param sectorsExpression: Sectors expression to be evaluated for each scenario
-        @type sectorsExpression: Stack object
-        @param fieldName: Field to be evaluated
-        @type fieldName: String
-        @return: Zones list object, result of scenarios evaluation 
+            @summary: Method that evaluate scenarios expression
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param sectorsExpression: Sectors expression to be evaluated for each scenario
+            @type sectorsExpression: Stack object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @return: Zones list object, result of scenarios evaluation 
         """
         operand1 = None
         operand2 = None
         zoneList = None
-        stackLen = len(scenariosExpression.data)
-        generalOperands = Stack()
         
-        for item in scenariosExpression.data:
-            if ExpressionData.is_operator(item):                
-                operand2 = generalOperands.pop()
-                operand2 = self.evaluate_sectors_expression(operand2, fieldName, sectorsExpression)
-                
-                operand1 = generalOperands.pop()
-                operand1 = self.evaluate_sectors_expression(operand1, fieldName, sectorsExpression)
-                
-                zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
-                generalOperands.push(zoneList)
-                operand1 = None
-                operand2 = None
-            else:
-                if stackLen == 1:
-                    zoneList = self.evaluate_sectors_expression(item, fieldName, sectorsExpression)
+        try:
+            stackLen = len(scenariosExpression.data)
+            generalOperands = Stack()
+            
+            for item in scenariosExpression.data:
+                if ExpressionData.is_operator(item):            
+                    operand2 = generalOperands.pop()
+                    operand2 = self.evaluate_sectors_expression(operand2, fieldName, sectorsExpression[0], False)
+                    
+                    operand1 = generalOperands.pop()
+                    operand1 = self.evaluate_sectors_expression(operand1, fieldName, sectorsExpression[0], False)
+                    
+                    zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
+                    
+                    if zoneList is None:
+                        QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for sectors expression.")
+                        raise Exception("There is not data to evaluate for sectors expression.")
+                    else:
+                        if len(zoneList) > 0:                
+                            generalOperands.push(zoneList)
+                        else:
+                            QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for sectors expression.")
+                            raise Exception("There is not data to evaluate for sectors expression.")
+                    
+                    operand1 = None
+                    operand2 = None
                 else:
-                    generalOperands.push(item)
-
-        if zoneList is None:
-            print ("There is not data to evaluate scenarios expression.")
-            return False
-        else:
+                    if stackLen == 1:
+                        zoneList = self.evaluate_sectors_expression(item, fieldName, sectorsExpression[0], False)
+                    else:
+                        generalOperands.push(item)
+                        
+        except Exception as inst:
+            print(inst)
+            zoneList = None
+        except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            print("Unexpected error:", sys.exc_info()[0])
+            zoneList = None
+        finally:
             del operand1
             del operand2
             del generalOperands
             
         return zoneList
 
+    def evaluate_conditional_expression(self, scenariosExpression, generalSectorsExpression, fieldName):
+        """
+            @summary: Method that evaluate conditional expression
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param generalSectorsExpression: A list of sectors expression to be evaluated for each scenario
+            @type generalSectorsExpression: List object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @return: Zones list object, result of conditional evaluation 
+        """
+        operand1 = None
+        operand2 = None
+        zoneList = None
+        
+        try:
+            stackLen = len(scenariosExpression.data)
+            generalOperands = Stack()
+            
+            for scenario in scenariosExpression.data:
+                for sectorExpression in generalSectorsExpression:
+                    if type(sectorExpression) is Stack:
+                        generalOperands.push(sectorExpression)
+                        
+                    elif ExpressionData.is_conditional(sectorExpression):
+                        operand2 = self.evaluate_sectors_expression(scenario, fieldName, generalOperands.pop(), True)
+                        operand1 = self.evaluate_sectors_expression(scenario, fieldName, generalOperands.pop(), True)
+                        
+                        zoneList = ExpressionData.execute_expression(operand1, operand2, sectorExpression, fieldName)
+                        
+                        if zoneList is None:
+                            QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for conditional expression.")
+                            raise Exception("There is not data to evaluate for conditional expression.")
+                        else:
+                            if len(zoneList) > 0:                
+                                generalOperands.push(zoneList)
+                            else:
+                                QMessageBox.warning(None, "Scenarios expression", "There is not data to evaluate for conditional expression.")
+                                raise Exception("There is not data to evaluate conditional expression.")
+                        
+                        operand1 = None
+                        operand2 = None
+                        
+        except Exception as inst:
+            print (inst)
+            zoneList = None
+        except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            print("Unexpected error:", sys.exc_info()[0])
+            zoneList = None
+        finally:
+            del operand1
+            del operand2
+            del generalOperands
+            
+        return zoneList
     
     def create_csv_file(self, layerName, scenariosExpression, fieldName, filePath, sectorsExpression):
         """
@@ -236,9 +321,16 @@ class MapData(object):
         maxValue = float(-1e100)
         rowCounter = 0
         
-        zoneList = self.evaluate_scenarios_expression(scenariosExpression, sectorsExpression, fieldName)
+        expressionsPreResult = Stack()
+        
+        if len(sectorsExpression) > 1:
+            zoneList = self.evaluate_conditional_expression(scenariosExpression, sectorsExpression, fieldName)
+        else:
+            zoneList = self.evaluate_scenarios_expression(scenariosExpression, sectorsExpression, fieldName)
+            
 
         if zoneList is None:
+            QMessageBox.warning(None, "Zone data", "There is not data to evaluate.")
             print ("There is not data to evaluate.")
             return False, minValue, maxValue, rowCounter
         else:
@@ -246,7 +338,7 @@ class MapData(object):
             
         csvFile = open(filePath + "\\" + layerName + ".csv", "wb")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
-        print ('Writing CSV File "{0}"'.format(layerName))
+        print ('Writing CSV File "{0}"'.format(layerName.encode('utf-8')))
         
         # Write header
         newFile.writerow(["ZoneId", "\tZoneName", "\tJoinField" + fieldName])
