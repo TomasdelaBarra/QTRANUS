@@ -41,7 +41,7 @@ class QTranusProject(object):
         self.shape = None
         self.load()
         self.map_data = MapData()
-
+        self.zonesIdFieldName = None
 
     def load(self):
         self.tranus_project = None
@@ -58,6 +58,11 @@ class QTranusProject(object):
         if scenariosExpression is None:
             QMessageBox.warning(None, "Scenarios expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
+            return False
+        
+        if (self.zonesIdFieldName is None) or (self.zonesIdFieldName == ''):
+            QMessageBox(None, "Zone Id", "Zone Id Field Name was not specified.")
+            print("Zone Id Field Name was not specified.")
             return False
         
         registry = QgsMapLayerRegistry.instance()
@@ -87,7 +92,7 @@ class QTranusProject(object):
             print(csvFile_uri)
             csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
             registry.addMapLayer(csvFile, False)
-            shpField = 'zoneID'
+            shpField = self.zonesIdFieldName
             csvField = 'ZoneId'
             joinObject = QgsVectorJoinInfo()
             joinObject.joinLayerId = csvFile.id()
@@ -161,8 +166,10 @@ class QTranusProject(object):
         if not layer.isValid():
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
-            return False
-            
+            return False, None
+        
+        zones_shape_fields = [field.name() for field in layer.pendingFields()]
+        
         project = shape[0:max(shape.rfind('\\'), shape.rfind('/'))]     
             
         if self.map_data.indicators is not None:
@@ -180,7 +187,7 @@ class QTranusProject(object):
         group.insertLayer(0, layer)
         self['zones_shape'] = layer.source()
         self['zones_shape_id'] = layer.id()
-        return True
+        return True, zones_shape_fields 
 
     def __getitem__(self, key):
         value, _ = self.proj.readEntry('qtranus', key)
@@ -210,3 +217,4 @@ class QTranusProject(object):
         for layer in layers_group.findLayers():
             if layer.layer().source() == zones_shape:
                 self['zones_shape_id'] = layer.layer().id()
+            

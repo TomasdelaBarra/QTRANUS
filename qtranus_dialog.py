@@ -32,6 +32,7 @@ from PyQt4.Qt import QMessageBox
 #from .settings_dialog import SettingsDialog
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
+from .matrixlayer_dialog import MatrixLayerDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -49,6 +50,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
         self.project = project
 
+        # Linking objects with controls
         self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
         self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
@@ -57,17 +59,21 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
         self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
+        self.matrix_btn = self.findChild(QtGui.QCommandLinkButton, 'matrix')
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
         self.net_shape_btn = self.findChild(QtGui.QToolButton, 'net_shape_btn')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
+        self.zones_shape_fields = self.findChild(QtGui.QComboBox, 'cb_zones_shape_fields')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
+        self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
+        self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
         
         # Loads
         self.reload_scenarios()
@@ -84,8 +90,10 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.check_configure()
 
     def select_zones_shape(self, file_name):
-        if self.project.load_zones_shape(file_name):
+        result, zoneShapeFieldNames = self.project.load_zones_shape(file_name) 
+        if result:
             self.zone_shape.setText(file_name)
+            self.load_zone_shape_fields(zoneShapeFieldNames)
         else:
             self.zone_shape.setText('')
         self.check_configure()
@@ -116,6 +124,11 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             dialog.show()
             result = dialog.exec_()
 
+    def matrix_layer_dialog(self):
+        dialog = MatrixLayerDialog(parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
     def show(self):
         self.project.load()
         if self.project['project_name']:
@@ -140,3 +153,23 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
     def check_configure(self):
         self.zones_btn.setEnabled(self.project.is_valid())
+        #self.matrix_btn.setEnabled(self.project.is_valid())
+
+    def load_zone_shape_fields(self, fields):
+        if fields is None:
+            QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
+            print ("There are no fields to load.")
+        else:
+            print(fields)
+            self.zones_shape_fields.setEnabled(True)
+            #items = sorted(fields.values())
+            self.zones_shape_fields.addItems(fields)
+            
+    def zones_shape_fields_changed(self):
+        """
+            @summary: Detects when the zones shape fields combo change
+        """
+        if self.zones_shape_fields.currentText() != '':
+            self.project.zonesIdFieldName = self.zones_shape_fields.currentText()
+            print(self.zones_shape_fields.currentText())
+            
