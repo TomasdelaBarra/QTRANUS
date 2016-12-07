@@ -4,7 +4,7 @@ from ExpressionData import ExpressionData
 from Stack import Stack
 from PyQt4.Qt import QMessageBox
 
-import csv
+import csv, numpy as np
 
 
 class MapData(object):
@@ -16,6 +16,10 @@ class MapData(object):
         self.scenarios_dic = {}
         self.sectors_dic = {}
         self.data_fields_dic = None
+        self.matrix_zones_dic = {}
+        self.matrix_categories_dic = {}
+        self.trip_matrices = []
+        self.zoneCentroids = []
     
     def __del__(self):
         """
@@ -102,6 +106,16 @@ class MapData(object):
             zoneList =  selectedSector.zones
             
         return zoneList    
+    
+    def get_matrix_zones(self):
+        if self.matrix_zones_dic is not None:
+            return (self.matrix_zones_dic.values())
+        return None
+    
+    def get_matrix_categories(self):
+        if self.matrix_categories_dic is not None:
+            return (self.matrix_categories_dic.values())
+        return None
     
     def evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression, conditionalFlag):
         """
@@ -369,3 +383,80 @@ class MapData(object):
         del csvFile
         print("Min: {0}, Max: {1}, Counter: {2}").format(minValue, maxValue, rowCounter)
         return True, minValue, maxValue, rowCounter
+    
+    def load_matrix_zones(self):
+        """
+            @summary: Loads matrix zones and categories dictionaries
+        """
+        if self.trip_matrices is not None:
+            if len(self.trip_matrices) > 0:
+                temp_matrix = self.trip_matrices[0]
+                if temp_matrix is not None:
+                    if temp_matrix.size > 0:
+                        temp_zone = None
+                        temp_cat = None
+                        for item in np.nditer(temp_matrix):
+                            if temp_zone is None:
+                                temp_zone = item.item(0)[0]
+                                self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1]
+                            else:
+                                if temp_zone != item.item(0)[0]:
+                                    temp_zone = item.item(0)[0]
+                                    self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1]
+                                    
+                            if temp_cat is None:
+                                temp_cat = item.item(0)[4]
+                                self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
+                            else:
+                                if temp_cat != item.item(0)[4]:
+                                    temp_cat = item.item(0)[4]
+                                    self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
+    
+    def create_zone_centroids_csv_file(self, filePath, layerName):
+        if self.zoneCentroids is not None:
+            csvFile = open(filePath + "\\" + layerName + "_Centroids.csv", "wb")
+            newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
+            newFile.writerow(["ZoneId", "\tZoneName", "\tPointX", "\tPointY"])
+            for itemCentroid in self.zoneCentroids:
+                newFile.writerow([itemCentroid.id, "\t" + itemCentroid.name, "\t" + str(itemCentroid.longitude), "\t" + str(itemCentroid.latitude)])
+            
+            del newFile, itemCentroid
+            csvFile.close()
+            del csvFile
+        else:
+            print('There is not Zone Centroids data to create Centroids CSV File.')
+            
+    def create_trip_matrix_csv_file(self, filePath):
+        if self.trip_matrices is not None:
+            if len(self.trip_matrices) > 0:
+                csvFile = open(filePath + "\\trips_map.csv", "wb")
+                newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                newFile.writerow(['OrZoneId_DestZoneId', 'Geom', 'Trip'])
+                for tripMatrix in self.trip_matrices:
+                    if tripMatrix.size > 0:
+                        originZoneCentroid = None
+                        destinationZoneCentroid = None
+                        for trip in np.nditer(tripMatrix):
+                            if originZoneCentroid is None:
+                                originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+                            else:
+                                if originZoneCentroid != trip.item(0)[0]:
+                                    originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+                                    
+                            if destinationZoneCentroid is None:
+                                destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+                            else:
+                                if destinationZoneCentroid != trip.item(0)[2]:
+                                    destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+                            if originZoneCentroid is not None and destinationZoneCentroid is not None:
+                                newFile.writerow([str(trip.item(0)[0]) + "_" + str(trip.item(0)[2]),  
+                                        "LINESTRING("
+                                        + str(originZoneCentroid.longitude) + " " + str(originZoneCentroid.latitude)
+                                        + ","
+                                        + str(destinationZoneCentroid.longitude) + " " + str(destinationZoneCentroid.latitude)
+                                        + ")", str(trip.item(0)[6])])
+                            
+                        #del trip
+                del newFile, tripMatrix
+                csvFile.close
+                del csvFile

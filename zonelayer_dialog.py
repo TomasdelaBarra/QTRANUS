@@ -37,7 +37,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')        
 
         # Control Actions
-        self.layerName.keyPressEvent = self.keyPressEvent 
+        self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.ready)
         self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
         self.operators.connect(self.operators, SIGNAL("currentIndexChanged(int)"), self.operator_changed)

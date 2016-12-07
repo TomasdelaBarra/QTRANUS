@@ -162,7 +162,7 @@
             <widget class="QLineEdit" name="centroid_shape"/>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButton_4">
+            <widget class="QToolButton" name="centroid_shape_btn">
              <property name="text">
               <string>...</string>
              </property>
@@ -336,7 +336,7 @@
   <tabstop>net_shape</tabstop>
   <tabstop>net_shape_btn</tabstop>
   <tabstop>centroid_shape</tabstop>
-  <tabstop>toolButton_4</tabstop>
+  <tabstop>centroid_shape_btn</tabstop>
   <tabstop>zones</tabstop>
   <tabstop>network</tabstop>
   <tabstop>matrix</tabstop>

@@ -63,8 +63,10 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
         self.net_shape_btn = self.findChild(QtGui.QToolButton, 'net_shape_btn')
+        self.centroid_shape_btn = self.findChild(QtGui.QToolButton, 'centroid_shape_btn')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtGui.QComboBox, 'cb_zones_shape_fields')
+        
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -73,6 +75,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
+        self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
         self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
         
         # Loads
@@ -86,10 +89,18 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         webbrowser.open_new_tab(filename)
     	
     def save_layers_group_name(self):
+        """
+            @summary: Saves layer group name
+        """
         self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
 
     def select_zones_shape(self, file_name):
+        """
+            @summary: Loads selected zone shape file
+            @param file_name: Path and name of the shape file
+            @type file_name: String
+        """
         result, zoneShapeFieldNames = self.project.load_zones_shape(file_name) 
         if result:
             self.zone_shape.setText(file_name)
@@ -97,8 +108,23 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         else:
             self.zone_shape.setText('')
         self.check_configure()
+        
+    def select_centroid_shape(self, file_name):
+        """
+            @summary: Loads selected centroid shape file
+            @param file_name: Path and name of the shape file
+            @type file_name: String
+        """
+        result = self.project.load_centroid_file(file_name)
+        if result:
+            self.centroid_shape.setText(file_name)
+        else:
+            self.centroid_shape.setText('')
 
     def select_tranus_folder(self):
+        """
+            @summary: Sets selected Tranus workspace
+        """
         folder = QtGui.QFileDialog.getExistingDirectory(self, "Select directory")
         if folder:
             self.tranus_folder.setText(folder)
@@ -108,14 +134,31 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.check_configure()
 
     def select_shape(self, callback):
+        """
+            @summary: Opens selected zone shape file
+        """
         def select_file():
             file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select file", filter="*.*, *.shp")
             if file_name:
                 callback(file_name)
 
         return select_file
+    
+    def select_centroid_shape_file(self, callback):
+        """
+            @summary: Opens selected centroid shape file
+        """
+        def select_file():
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select file', directory='', filter='*.*, *.shp')
+            if file_name:
+                callback(file_name)
+        
+        return select_file
 
     def zone_layer_dialog(self):
+        """
+            @summary: Opens zone layer window
+        """
         if self.project.map_data.get_sorted_fields() is None:
             QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
             print ("There are no fields to load, please reload SHP file.")
@@ -125,11 +168,17 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             result = dialog.exec_()
 
     def matrix_layer_dialog(self):
+        """
+            @summary: Opens matrix layer window 
+        """
         dialog = MatrixLayerDialog(parent = self)
         dialog.show()
         result = dialog.exec_()
 
     def show(self):
+        """
+            @summary: Opens dialog window
+        """
         self.project.load()
         if self.project['project_name']:
             self.layers_group_name.setText(self.project['project_name'])
@@ -144,18 +193,33 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         super(QTranusDialog, self).show()
 
     def close(self):
+        """
+            @summary: Closes the main window
+        """
         pass
 
     def reload_scenarios(self):
+        """
+            @summary: Reloads scenarios
+        """        
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
 
     def check_configure(self):
+        """
+            @summary: Validates configuration
+        """
         self.zones_btn.setEnabled(self.project.is_valid())
-        #self.matrix_btn.setEnabled(self.project.is_valid())
+        self.matrix_btn.setEnabled(self.project.is_valid())
 
     def load_zone_shape_fields(self, fields):
+        """
+            @summary: Loads zone shape fields combo
+            @param fields: Zone shape fields
+            @type fields: List object
+        """
+        
         if fields is None:
             QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
             print ("There are no fields to load.")
