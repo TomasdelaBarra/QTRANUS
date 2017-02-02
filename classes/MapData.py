@@ -4,8 +4,7 @@ from ExpressionData import ExpressionData
 from Stack import Stack
 from PyQt4.Qt import QMessageBox
 
-import csv, numpy as np
-
+import csv, numpy as np, sys
 
 class MapData(object):
     def __init__(self):
@@ -149,13 +148,13 @@ class MapData(object):
                 operand2 = operands.pop()
                 if type(operand2) is not list:
                     if ExpressionData.is_number(operand2):
-                        operand2 = float(operand2) 
+                        operand2 = float(operand2)
                     elif operand2.isalpha():
                         operand2 = self.get_sector_zones(selectedScenario, operand2)
                     
                 operand1 = operands.pop()
                 if type(operand1) is not list:
-                    if ExpressionData.is_number(operand1):  
+                    if ExpressionData.is_number(operand1):
                         operand1 = float(operand1)
                     elif operand1.isalpha():
                         operand1 = self.get_sector_zones(selectedScenario, operand1)
@@ -392,10 +391,10 @@ class MapData(object):
             if len(self.trip_matrices) > 0:
                 temp_matrix = self.trip_matrices[0]
                 if temp_matrix is not None:
-                    if temp_matrix.size > 0:
+                    if temp_matrix.tripMatrix.size > 0:
                         temp_zone = None
                         temp_cat = None
-                        for item in np.nditer(temp_matrix):
+                        for item in np.nditer(temp_matrix.tripMatrix):
                             if temp_zone is None:
                                 temp_zone = item.item(0)[0]
                                 self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1]
@@ -411,6 +410,164 @@ class MapData(object):
                                 if temp_cat != item.item(0)[4]:
                                     temp_cat = item.item(0)[4]
                                     self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
+                                    
+    def get_matrix_row(self, scenarioData, originZone, destZone, category):
+        rowData = None
+        rowData = scenarioData.tripMatrix[
+                                          (scenarioData.tripMatrix['OrZonName'] == originZone)
+                                          &
+                                          (scenarioData.tripMatrix['DeZonName'] == destZone)
+                                          &
+                                          (scenarioData.tripMatrix['CatName'] == category)
+                                         ]
+        
+        
+        if rowData is not None:
+            if rowData.size == 0:
+            #QMessageBox.warning(None, "Data selected", ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category))
+            #print ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category)
+                rowData = None
+        
+        return rowData
+        
+        
+    def evaluate_matrix_expression(self, scenario, originList, destinationList, matrixExpression, conditionalFlag):
+        
+        scenarioData = next((sc for sc in self.trip_matrices if sc.Id == scenario), None)
+        if scenarioData is None:
+            QMessageBox.warning(None, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario))
+            print ("The scenario {0} doesn't exist.".format(scenario))
+            return None
+        
+        if matrixExpression is None:
+            QMessageBox.warning(None, "Matrix expression", "There is no expression to evaluate.")
+            print ("There is no expression to evaluate.")
+            return None
+            
+        operand1 = None
+        operand2 = None
+        stackLen = len(matrixExpression[0].data)
+        operands = Stack()
+        matrixData = None
+        try:
+            
+            # Origin Zones
+            for origin in originList:
+                # Destination Zones
+                for dest in destinationList:
+                    if origin != dest:
+                        # Matrix Expression
+                        expCounter = 0
+                        for item in matrixExpression[0].data:
+                            expCounter +=1
+                            if ExpressionData.is_operator(item) or ExpressionData.is_conditional(item):
+                                operand2 = operands.pop()
+                                if type(operand2)is not np.ndarray:
+                                    if ExpressionData.is_number(operand2):
+                                        operand2 = float(operand2)
+                                    elif operand2.isalpha():
+                                        operand2 = self.get_matrix_row(scenarioData, origin, dest, operand2)
+                                    
+                                operand1 = operands.pop()
+                                if type(operand1) is not np.ndarray:
+                                    if ExpressionData.is_number(operand1):
+                                        operand1 = float(operand1)
+                                    elif operand1.isalpha():
+                                        operand1 = self.get_matrix_row(scenarioData, origin, dest, operand1)
+    
+                                rowData = ExpressionData.execute_matrix_expression(operand1, operand2, item, scenarioData.tripMatrix.dtype)
+
+                                if rowData is not None:
+                                    if expCounter < stackLen:
+                                        operands.push(rowData)
+                                    else:
+                                        if matrixData is None:
+                                            matrixData = rowData
+                                        else:
+                                            matrixData = np.concatenate((matrixData, rowData))
+                                
+                            else:
+                                if ExpressionData.is_number(item):
+                                    item = float(item)
+                                    if stackLen == 1:
+                                        if conditionalFlag:
+                                            return item
+                                        else:
+                                            QMessageBox.warning(None, "Matrix expression", "There is not data to evaluate.")
+                                            print ("There is not data to evaluate.")
+                                            return None
+                                    else:
+                                        operands.push(item)
+                                
+                                if item.isalpha():
+                                    if stackLen == 1:
+                                        rowData = self.get_matrix_row(scenarioData, origin, dest, item)
+                                        if matrixData is None:
+                                             matrixData = rowData
+                                        else:
+                                             matrixData = np.concatenate((matrixData, rowData))
+                                    else:
+                                        operands.push(item)
+                                        
+                                else:
+                                    QMessageBox.warning(None, "Matrix expression", "Item {0}, is not recognized.".format(item))
+                                    print ("Item {0}, is not recognized.").format(item)
+                                    return None
+                        
+            
+            if matrixData is None:
+                QMessageBox.warning(None, "Matrix expression", "There is not data to evaluate.")
+                print ("There is not data to evaluate.")
+                return None
+            else:
+                del operand1
+                del operand2
+                del operands
+                return matrixData
+        
+        except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            matrixData = None
+            
+        
+        return None
+                    
+    def evaluate_matrix_scenarios_expression(self, scenariosExpression, matrixExpression, originList, destinationList):
+        operand1 = None
+        operand2 = None
+        matrixData = None
+        
+        try:
+            if self.trip_matrices is not None:
+                if len(self.trip_matrices) > 0:
+            
+                    stackLen = len(scenariosExpression.data)
+                    generalOperands = Stack()
+                            
+                    for item in scenariosExpression.data:
+                        if ExpressionData.is_operator(item):
+                            #Not ready this section
+                            operand2 = generalOperands.pop()
+                            operand2 = 1 # Gets value from 
+                        else:
+                            if stackLen == 1:
+                                matrixData = self.evaluate_matrix_expression(item, originList, destinationList, matrixExpression, False)
+
+
+        except Exception as inst:
+            print(inst)
+            #QMessageBox.warning(None, "Error", "Item: {0}, matrixExpression: {1}".format(item, matrixExpression))
+            QMessageBox.warning(None, "Error", "Unexpected error: {0}".format(inst))
+        except:
+            QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            print("Unexpected error:", sys.exc_info()[0])
+            matrixData = None
+        finally:
+            del operand1
+            del operand2
+            del generalOperands
+            
+        return matrixData
     
     def create_zone_centroids_csv_file(self, filePath, layerName):
         if self.zoneCentroids is not None:
@@ -423,40 +580,53 @@ class MapData(object):
             del newFile, itemCentroid
             csvFile.close()
             del csvFile
+            
+            
         else:
             print('There is not Zone Centroids data to create Centroids CSV File.')
             
-    def create_trip_matrix_csv_file(self, filePath):
-        if self.trip_matrices is not None:
-            if len(self.trip_matrices) > 0:
-                csvFile = open(filePath + "\\trips_map.csv", "wb")
-                newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                newFile.writerow(['OrZoneId_DestZoneId', 'Geom', 'Trip'])
-                for tripMatrix in self.trip_matrices:
-                    if tripMatrix.size > 0:
-                        originZoneCentroid = None
-                        destinationZoneCentroid = None
-                        for trip in np.nditer(tripMatrix):
-                            if originZoneCentroid is None:
-                                originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
-                            else:
-                                if originZoneCentroid != trip.item(0)[0]:
-                                    originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
-                                    
-                            if destinationZoneCentroid is None:
-                                destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
-                            else:
-                                if destinationZoneCentroid != trip.item(0)[2]:
-                                    destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
-                            if originZoneCentroid is not None and destinationZoneCentroid is not None:
-                                newFile.writerow([str(trip.item(0)[0]) + "_" + str(trip.item(0)[2]),  
-                                        "LINESTRING("
-                                        + str(originZoneCentroid.longitude) + " " + str(originZoneCentroid.latitude)
-                                        + ","
-                                        + str(destinationZoneCentroid.longitude) + " " + str(destinationZoneCentroid.latitude)
-                                        + ")", str(trip.item(0)[6])])
-                            
-                        #del trip
-                del newFile, tripMatrix
-                csvFile.close
-                del csvFile
+    def create_trip_matrix_csv_file(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath):
+        
+        rowCounter = 0
+        if len(matrixExpression) > 1:
+            matrixResult = None
+        else:
+            matrixResult = self.evaluate_matrix_scenarios_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
+        
+        if matrixResult is None:
+            QMessageBox.warning(None, "Matrix data", "There is not data to evaluate.")
+            print ("There is not data to evaluate.")
+            return False
+                           
+        csvFile = open(projectPath + "\\trips_map.csv", "wb")
+        newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        newFile.writerow(['OrZoneId_DestZoneId', 'Geom', 'Trip'])
+        
+        originZoneCentroid = None
+        destinationZoneCentroid = None
+        for trip in np.nditer(matrixResult):
+            if originZoneCentroid is None:
+                originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+            else:
+                if originZoneCentroid != trip.item(0)[0]:
+                    originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+                    
+            if destinationZoneCentroid is None:
+                destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+            else:
+                if destinationZoneCentroid != trip.item(0)[2]:
+                    destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+            if originZoneCentroid is not None and destinationZoneCentroid is not None:
+                newFile.writerow([str(trip.item(0)[0]) + "_" + str(trip.item(0)[2]),  
+                        "LINESTRING("
+                        + str(originZoneCentroid.longitude) + " " + str(originZoneCentroid.latitude)
+                        + ","
+                        + str(destinationZoneCentroid.longitude) + " " + str(destinationZoneCentroid.latitude)
+                        + ")", str(trip.item(0)[6]) if len(matrixResult.dtype.names)> 5 else str(trip.item(0)[4])])
+                    
+                #del trip
+        del newFile #, tripMatrixItem
+        csvFile.close
+        del csvFile
+        
+        return True
