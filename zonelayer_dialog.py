@@ -22,7 +22,6 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
-        self.validInfo = True
 
         # Linking objects with controls
         self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
@@ -122,11 +121,11 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         validationResult, scenariosExpression, sectorsExpression = self.__validate_data() 
         if validationResult:
-            self.project.addLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
+            self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
             self.accept()
         else:
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")
-            print("New layer was not created.")
+            print("New zones layer was not created.")
             
     def __load_scenarios_combobox(self):
         """
@@ -180,13 +179,11 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpression = []
         # Base validations
         if self.layerName.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
             print ("Please write an expression to be evaluated.")
             return False, None, None

@@ -19,6 +19,7 @@ from classes.Indicator import Indicator
 from classes.MapData import MapData
 from classes.Stack import Stack
 from classes.ZoneCentroid import ZoneCentroid
+from classes.TripMatrix import TripMatrix
 
 import os
 import re
@@ -47,7 +48,7 @@ class QTranusProject(object):
         self.load_tranus_folder()
         self.load_shapes()
 
-    def addLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression):
+    def addZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression):
         """
             @summary: Adds new zone layer to project
             @param layerName: Layer Name
@@ -148,6 +149,49 @@ class QTranusProject(object):
 
         return True
 
+    def addMatrixLayer(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression):
+
+        if scenariosExpression is None:
+            QMessageBox.warning(None, "Matrix expression", "There is not scenarios information.")
+            print  ("There is not scenarios information.")
+            return False
+        
+        if originZones is None:
+            QMessageBox.warning(None, "Matrix expression", "There is not origin zones information.")
+            print  ("There is not origin zones information.")
+            return False
+        
+        if destinationZones is None:
+            QMessageBox.warning(None, "Matrix expression", "There is not destination zones information.")
+            print  ("There is not destination zones information.")
+            return False
+
+        # Looks for scenarios information
+        #if not slef.map_data.trip_matrices is None:
+        
+        # Creates centroids layer
+        if not self.centroids_file_path is None:
+            self.load_zones_centroids_data()
+        else:
+            self.load_zones_centroids()
+        
+        # Gets shape's file folder
+        projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
+        #filePath = self.centroids_file_path[0:max(self.centroids_file_path.rfind('\\'), self.centroids_file_path.rfind('/'))]
+        
+        result = self.map_data.create_trip_matrix_csv_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
+        if result:
+            layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas_Centroids')[0]
+            epsg = layer.crs().postgisSrid()
+            group = self.get_layers_group()
+            tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (projectPath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
+            tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layerName + '_trips_map', 'delimitedtext')
+            QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer, False )
+            group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)
+        
+        return True
+
+
     def load_tranus_folder(self, folder=None):
         """
             @summary: Loads tranus project folder
@@ -183,29 +227,46 @@ class QTranusProject(object):
                 indicators.load_indicator_file(path+"/"+fn)
         return indicators
     
-    def load_map_trip_structure(self, path):
+    def load_map_trip_structure(self, path, scenario):
         """
             @summary: Loads trips structure
             @param path: Path
             @type path: String
         """
-        files = [f for f in listdir(path) if isfile(join(path, f))]
-        prog = re.compile('trip_matrices_(.*)\..*')
+        
+        fileName = None
         tripMatrix = None
-        loadCatalogs = False
+        files = [f for f in listdir(path) if isfile(join(path, f))]
+        
+        if scenario is None:
+            fileName = re.compile('trip_matrices_(.*)\..*')
+        else:
+            selectedScenario = next((sc for sc in self.map_data.trip_matrices if sc.Id == scenario), None)
+            if selectedScenario is not None:
+                return True
+            else:
+                fileName = re.compile('trip_matrices_' + scenario + '\..*')
+
         for fn in files:
-            isValidFile = prog.match(fn)
+            isValidFile = fileName.match(fn)
             if isValidFile != None:
+                tripMatrixItem = TripMatrix()
                 tripMatrix = np.genfromtxt(path + "/" + fn, delimiter = ',', skip_header = 0
                                 , dtype = None
                                 #, names = [str('OrZonId'), str('OrZonName'), str('DeZonId'), str('DeZonName'), str('CatId'), str('CatName'), str('Trips')]
                                 , names = True
                                 )
-                self.map_data.trip_matrices.append(tripMatrix)
+                tripMatrixItem.Id = fn[14:17] if scenario is None else scenario 
+                tripMatrixItem.Name = tripMatrixItem.Id
+                tripMatrixItem.tripMatrix = tripMatrix
+                self.map_data.trip_matrices.append(tripMatrixItem)
                 
-                if tripMatrix is not None and loadCatalogs == False:
+                if tripMatrix is not None and scenario == None:
                     self.map_data.load_matrix_zones()
-                    loadCatalogs = True
+                
+                return True
+            
+        return False
     
     def load_zones_shape(self, shape):
         """
@@ -230,8 +291,8 @@ class QTranusProject(object):
         if self.map_data.indicators is not None:
             if len(self.map_data.indicators.scenarios) == 0:
                 self.map_data.indicators = self.load_map_indicators(project)
-                self.load_map_trip_structure(project)
-                self.map_data.load_dictionaries()
+                if self.load_map_trip_structure(project, None):
+                    self.map_data.load_dictionaries()
 
         if self['zones_shape_id']:
             existing_tree = self.proj.layerTreeRoot().findLayer(self['zones_shape_id'])
@@ -322,6 +383,7 @@ class QTranusProject(object):
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas_Centroids')[0]
         epsg = layer.crs().postgisSrid()
         prov =  layer.dataProvider()
+        group = self.get_layers_group()
         for f in layer.getFeatures():
                 feat = QgsFeature()
                 pt = f.geometry().centroid().asPoint()
@@ -339,12 +401,13 @@ class QTranusProject(object):
         self.map_data.create_trip_matrix_csv_file(filePath)
         tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
         tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
-        QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer )
+        QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer, False )
+        group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)
     
     def load_zones_centroids(self):
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas')[0]
         filePath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
-        
+        group = self.get_layers_group()
         print layer.name()
         
         if layer is not None:
@@ -367,14 +430,16 @@ class QTranusProject(object):
                 zoneCentroid.latitude = pt.y()
                 self.map_data.zoneCentroids.append(zoneCentroid)
             
-            QgsMapLayerRegistry.instance().addMapLayer(mem_layer)
+            QgsMapLayerRegistry.instance().addMapLayer(mem_layer, False)
+            group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, mem_layer)
             
             # Creates the Centroids CSV file
             self.map_data.create_zone_centroids_csv_file(filePath, layer.name())
-            self.map_data.create_trip_matrix_csv_file(filePath)
+            #self.map_data.create_trip_matrix_csv_file(filePath)
             
-            tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
-            tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
+            #tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
+            #tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
+            
             ###
             ### This section loads style file to the layer
             ###
@@ -409,4 +474,6 @@ class QTranusProject(object):
             #Replace the renderer of the current layer
             #renderer = QgsSingleSymbolRendererV2(symbol)
             #tripsMatrixLayer.setRendererV2(renderer)
-            QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer )
+            
+            #QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer, False )
+            #group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)

@@ -2,6 +2,8 @@ from Zone import Zone
 from Stack import Stack
 from PyQt4.Qt import QMessageBox
 
+import csv, numpy as np
+
 class ExpressionData(object):
     @staticmethod
     def is_operator(operator):
@@ -512,3 +514,36 @@ class ExpressionData(object):
             zoneList = None
         
         return zoneList
+    
+    @staticmethod
+    def execute_matrix_expression(operand1, operand2, operator, types):
+        
+        rowData = None
+        
+        if operand1 is not None:
+            operand = operand1
+        elif operand2 is not None:
+            operand = operand2
+        else:
+            return None
+        
+        if type(operand) is np.ndarray:    
+            rowData = operand.astype([(types.names[0], types[0]), 
+                                        (types.names[1], types[1]), 
+                                        (types.names[2], types[2]), 
+                                        (types.names[3], types[3]), 
+                                        (types.names[6], types[6])])
+            
+            trip1 = 0
+            trip2 = 0
+            if operand1 is not None:
+                if operand1.size > 0:
+                    trip1 = operand1[0][6] if len(operand1.dtype) == 7 else operand1[0][4] 
+            
+            if operand2 is not None:
+                if operand2.size > 0:
+                    trip2 = operand2[0][6] if len(operand2.dtype) == 7 else operand2[0][4]
+                
+            rowData[0][4] =  ExpressionData.perform_arithmetic(trip1, trip2, operator)
+            
+        return rowData
