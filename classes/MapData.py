@@ -411,7 +411,7 @@ class MapData(object):
                                     temp_cat = item.item(0)[4]
                                     self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
                                     
-    def get_matrix_row(self, scenarioData, originZone, destZone, category):
+    def get_matrix_row(self, scenarioData, originZone, destZone, category, types):
         rowData = None
         rowData = scenarioData.tripMatrix[
                                           (scenarioData.tripMatrix['OrZonName'] == originZone)
@@ -426,7 +426,20 @@ class MapData(object):
             if rowData.size == 0:
             #QMessageBox.warning(None, "Data selected", ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category))
             #print ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category)
-                rowData = None
+                for item in self.matrix_zones_dic:
+                    if self.matrix_zones_dic[item] == originZone:
+                        originZoneIndex = item
+                
+                for item in self.matrix_zones_dic:
+                    if self.matrix_zones_dic[item] == destZone:
+                        destZoneIndex = item
+                
+                for item in self.matrix_categories_dic:
+                    if self.matrix_categories_dic[item] == category:
+                        catIndex = item
+                        
+                rowData = np.array([(originZoneIndex, originZone, destZoneIndex, destZone, catIndex ,category, 0)], dtype = types)
+                #rowData = None
         
         return rowData
         
@@ -446,7 +459,13 @@ class MapData(object):
             
         operand1 = None
         operand2 = None
-        stackLen = len(matrixExpression[0].data)
+        matrixExpressionData = None
+        if type(matrixExpression) is list:
+            stackLen = len(matrixExpression[0].data)
+            matrixExpressionData = matrixExpression[0]
+        if type(matrixExpression) is Stack:
+            stackLen = len(matrixExpression.data)
+            matrixExpressionData = matrixExpression
         operands = Stack()
         matrixData = None
         try:
@@ -458,7 +477,7 @@ class MapData(object):
                     if origin != dest:
                         # Matrix Expression
                         expCounter = 0
-                        for item in matrixExpression[0].data:
+                        for item in matrixExpressionData.data:
                             expCounter +=1
                             if ExpressionData.is_operator(item) or ExpressionData.is_conditional(item):
                                 operand2 = operands.pop()
@@ -466,15 +485,15 @@ class MapData(object):
                                     if ExpressionData.is_number(operand2):
                                         operand2 = float(operand2)
                                     elif operand2.isalpha():
-                                        operand2 = self.get_matrix_row(scenarioData, origin, dest, operand2)
+                                        operand2 = self.get_matrix_row(scenarioData, origin, dest, operand2, scenarioData.tripMatrix.dtype)
                                     
                                 operand1 = operands.pop()
                                 if type(operand1) is not np.ndarray:
                                     if ExpressionData.is_number(operand1):
                                         operand1 = float(operand1)
                                     elif operand1.isalpha():
-                                        operand1 = self.get_matrix_row(scenarioData, origin, dest, operand1)
-    
+                                        operand1 = self.get_matrix_row(scenarioData, origin, dest, operand1, scenarioData.tripMatrix.dtype)
+
                                 rowData = ExpressionData.execute_matrix_expression(operand1, operand2, item, scenarioData.tripMatrix.dtype)
 
                                 if rowData is not None:
@@ -501,7 +520,7 @@ class MapData(object):
                                 
                                 if item.isalpha():
                                     if stackLen == 1:
-                                        rowData = self.get_matrix_row(scenarioData, origin, dest, item)
+                                        rowData = self.get_matrix_row(scenarioData, origin, dest, item, scenarioData.tripMatrix.dtype)
                                         if matrixData is None:
                                              matrixData = rowData
                                         else:
@@ -584,12 +603,86 @@ class MapData(object):
             
         else:
             print('There is not Zone Centroids data to create Centroids CSV File.')
+        
+    def evaluate_conditional_matrix_expression(self, scenariosExpression, generalMatrixExpression, originZones, destinationZones):
+        operand1 =  None
+        operand2 =  None
+        matrixData = None
+        
+        try:
+            stackLen = len(scenariosExpression.data)
+            generalOperands = Stack()
             
+            for scenario in scenariosExpression.data:
+                for matrixExpression in generalMatrixExpression:
+                    if type(matrixExpression) is Stack:
+                        generalOperands.push(matrixExpression)
+                    
+                    elif ExpressionData.is_conditional(matrixExpression):
+                        operand2 = self.evaluate_matrix_expression(scenario, originZones, destinationZones, generalOperands.pop(), True)
+                        operand1 = self.evaluate_matrix_expression(scenario, originZones, destinationZones, generalOperands.pop(), True)
+                        
+                        operandTypes = None
+                        if operand2 is not None:
+                            if type(operand2) is np.ndarray:
+                                operandTypes = operand2.dtype
+                            
+                        if operand1 is not None and operandTypes is None:
+                            if type(operand1) is np.ndarray:
+                                operandTypes = operand1.dtype
+                        
+                        if operandTypes is None:
+                            return None
+                        
+                        matrixData = ExpressionData.execute_matrix_expression(operand1, operand2, matrixExpression, operandTypes)
+                        
+                        if matrixData is None:
+                            QMessageBox.warning(None, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.")
+                            raise Exception("There is not data to evaluate for conditional expression.")
+                        else:
+                            if len(matrixData) > 0:                
+                                generalOperands.push(matrixData)
+                            else:
+                                QMessageBox.warning(None, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.")
+                                raise Exception("There is not data to evaluate conditional expression.")
+                            
+                        operand1 = None
+                        operand2 = None
+            
+        except Exception as inst:
+            print(inst)
+            matrixData = None
+        except:
+            QMessageBox.warning(None, "Scenarios matrix expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            print("Unexpected error:", sys.exc_info()[0])
+            matrixData = None
+        finally:
+            del operand1
+            del operand2
+            del generalOperands
+            
+        return matrixData
+                
+        
     def create_trip_matrix_csv_file(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath):
+        """
+            @summary: Method that creates a csv file to be used in the new matrix layer
+            @param layerName: Layer Name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression : Stack object
+            @param originZones: Origin zones list
+            @type originZones: List object
+            @param destinationZones: Destination zones list
+            @type destinationZones: List object
+            @param matrixExpression: Matrix expression to be evaluated in reverse polish notation
+            @type matrixExpression: Stack object
+            @param projectPath: Main project path
+        """
         
         rowCounter = 0
         if len(matrixExpression) > 1:
-            matrixResult = None
+            matrixResult = self.evaluate_conditional_matrix_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
         else:
             matrixResult = self.evaluate_matrix_scenarios_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
         

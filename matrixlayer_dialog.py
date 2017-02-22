@@ -169,7 +169,9 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.project.load_zones_centroids()
     
     def create_layer(self):
-        
+        """
+            @summary: Creates matrix layer
+        """
         validationResult, scenariosExpression, matrixExpression = self.__validate_data() 
         if validationResult:
             originZones = []
@@ -220,6 +222,10 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
             self.expression.setText(self.expression.text() + " + " + textToAdd)
         
     def __validate_data(self):
+        """
+            @summary: Fields validation
+            @return: Validation result, matrixExpressionResult and sectorsExpression
+        """
         scenariosExpression = []
         
         if self.layerName.text().strip() == '':

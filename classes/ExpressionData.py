@@ -483,7 +483,7 @@ class ExpressionData(object):
                 newZone.id = itemOp1.id
                 newZone.name = itemOp1.name
     
-                ExpressionData.fill_zone_data(newZone, itemOp1, itemOp2, operator, fieldName)
+                ExpressionData.fill_zone_data(newZone, itemOpgd1, itemOp2, operator, fieldName)
                 
                 zoneList.append(newZone)
                 del newZone
@@ -519,6 +519,7 @@ class ExpressionData(object):
     def execute_matrix_expression(operand1, operand2, operator, types):
         
         rowData = None
+        matrixData = None
         
         if operand1 is not None:
             operand = operand1
@@ -527,23 +528,64 @@ class ExpressionData(object):
         else:
             return None
         
-        if type(operand) is np.ndarray:    
-            rowData = operand.astype([(types.names[0], types[0]), 
-                                        (types.names[1], types[1]), 
-                                        (types.names[2], types[2]), 
-                                        (types.names[3], types[3]), 
-                                        (types.names[6], types[6])])
-            
-            trip1 = 0
-            trip2 = 0
-            if operand1 is not None:
-                if operand1.size > 0:
-                    trip1 = operand1[0][6] if len(operand1.dtype) == 7 else operand1[0][4] 
-            
-            if operand2 is not None:
-                if operand2.size > 0:
-                    trip2 = operand2[0][6] if len(operand2.dtype) == 7 else operand2[0][4]
+        trip1 = 0
+        trip2 = 0
+        result = 0
+        
+        if type(operand1) is np.ndarray and type(operand2) is np.ndarray:
+            if operand1.size > 0 and operand2.size > 0:
+                matrixData = [] 
+                for itemOp1, itemOp2 in np.nditer([operand1, operand2]):
+                    trip1 = itemOp1['Trips']
+                    trip2 = itemOp2['Trips']
+                    result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                    
+                    rowData = itemOp1.astype([(itemOp1.dtype.names[0], itemOp1.dtype[0]), 
+                                    (itemOp1.dtype.names[1], itemOp1.dtype[1]), 
+                                    (itemOp1.dtype.names[2], itemOp1.dtype[2]), 
+                                    (itemOp1.dtype.names[3], itemOp1.dtype[3]), 
+                                    (itemOp1.dtype.names[6], itemOp1.dtype[6]) if len(itemOp1.dtype) == 7 else (itemOp1.dtype.names[4], itemOp1.dtype[4])])
+                    
+                    rowData['Trips'] = result
+                    matrixData.append(rowData)
                 
-            rowData[0][4] =  ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                matrixData = np.array(matrixData, rowData.dtype)         
+        
+        if type(operand1) is np.ndarray and type(operand2) is not np.ndarray:
+            matrixData = []
+            for itemOp in np.nditer(operand1):
+                trip1 = itemOp['Trips']
+                trip2 = operand2
+                result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                
+                rowData = itemOp.astype([(itemOp.dtype.names[0], itemOp.dtype[0]), 
+                                (itemOp.dtype.names[1], itemOp.dtype[1]), 
+                                (itemOp.dtype.names[2], itemOp.dtype[2]), 
+                                (itemOp.dtype.names[3], itemOp.dtype[3]), 
+                                (itemOp.dtype.names[6], itemOp.dtype[6]) if len(itemOp.dtype) == 7 else (itemOp.dtype.names[4], itemOp.dtype[4])])
+                
+                rowData['Trips'] = result
+                
+                matrixData.append(rowData)
+
+            matrixData = np.array(matrixData, rowData.dtype)
+                
+        if type(operand1) is not np.ndarray and type(operand2) is np.ndarray:
+            matrixData = []
+            for itemOp in np.nditer(operand2):
+                trip1 = operand1
+                trip2 = itemOp['Trips']
+                result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                
+                rowData = itemOp.astype([(itemOp.dtype.names[0], itemOp.dtype[0]), 
+                                (itemOp.dtype.names[1], itemOp.dtype[1]), 
+                                (itemOp.dtype.names[2], itemOp.dtype[2]), 
+                                (itemOp.dtype.names[3], itemOp.dtype[3]), 
+                                (itemOp.dtype.names[6], itemOp.dtype[6]) if len(itemOp.dtype) == 7 else (itemOp.dtype.names[4], itemOp.dtype[4])])
+                
+                rowData['Trips'] = result
+                matrixData.append(rowData)
+
+            matrixData =  matrixData = np.array(matrixData, rowData.dtype)
             
-        return rowData
+        return matrixData

@@ -174,7 +174,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
     def __validate_data(self):
         """
             @summary: Fields validation
-            @return: Validation result, scenariosExpression adn sectorsExpression 
+            @return: Validation result, scenariosExpression and sectorsExpression 
         """
         scenariosExpression = []
         # Base validations
