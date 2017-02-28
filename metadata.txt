@@ -10,7 +10,7 @@
 name=qtranus
 qgisMinimumVersion=2.0
 description=qtranus
-version=1.1.1
+version=1.2.0
 author=qtranus
 email=omar.valladolidg@gmail.com
 
