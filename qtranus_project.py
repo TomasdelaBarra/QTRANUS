@@ -344,7 +344,8 @@ class QTranusProject(object):
         """
             @summary: Loads centroid shape
             @param file_path: File path
-            @type file_path: String            
+            @type file_path: String
+            @return: Boolean value of the load
         """
         self.centroids_file_path = file_path
         registry = QgsMapLayerRegistry.instance()
@@ -353,31 +354,18 @@ class QTranusProject(object):
         if not layer.isValid():
             self['centroid_shape_file_path'] = ''
             self['centroid_shape_id'] = ''
-            return False#, None
-        
-        centroid_shape_fields = [field.name() for field in layer.pendingFields()]
-        
-        #project = shape[0:max(shape.rfind('\\'), shape.rfind('/'))]     
-            
-#         if self.map_data.zoneCentroids is not None:
-#             if len(self.map_data.zoneCentroids) == 0:
-#                 self.map_data.zoneCentroids = self.load_map_indicators(project)
-#                 self.load_map_trip_structure(project)
-#                 self.map_data.load_dictionaries()
-# 
-#         if self['centroid_shape_id']:
-#             existing_tree = self.proj.layerTreeRoot().findLayer(self['centroid_shape_id'])
-#             if existing_tree:
-#                 existing = existing_tree.layer()
-#                 registry.removeMapLayer(existing.id())
+            return False
 
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['centroid_shape_file_path'] = layer.source()
         self['centroid_shape_id'] = layer.id()
-        return True#, centroid_shape_fields 
+        return True 
     
     def load_zones_centroids_data(self):
+        """
+            @summary: Loads centroids information from file
+        """
         
         filePath = self.centroids_file_path[0:max(self.centroids_file_path.rfind('\\'), self.centroids_file_path.rfind('/'))]
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas_Centroids')[0]
@@ -385,26 +373,25 @@ class QTranusProject(object):
         prov =  layer.dataProvider()
         group = self.get_layers_group()
         for f in layer.getFeatures():
-                feat = QgsFeature()
-                pt = f.geometry().centroid().asPoint()
-                feat.setAttributes([f.attributes()[0], f.attributes()[1], pt.x(), pt.y()])
-                feat.setGeometry(QgsGeometry.fromPoint(pt))
-                prov.addFeatures([feat])
-                
-                zoneCentroid = ZoneCentroid()
-                zoneCentroid.id = f.attributes()[0]
-                zoneCentroid.name = f.attributes()[1]
-                zoneCentroid.longitude = pt.x()
-                zoneCentroid.latitude = pt.y()
-                self.map_data.zoneCentroids.append(zoneCentroid)
+            pt = f.geometry().centroid().asPoint()
+            zoneCentroid = ZoneCentroid()
+            zoneCentroid.id = f.attributes()[0]
+            zoneCentroid.name = f.attributes()[1]
+            zoneCentroid.longitude = pt.x()
+            zoneCentroid.latitude = pt.y()
+            self.map_data.zoneCentroids.append(zoneCentroid)
         
-        self.map_data.create_trip_matrix_csv_file(filePath)
-        tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
-        tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
-        QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer, False )
-        group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)
+        #self.map_data.create_trip_matrix_csv_file(filePath)
+#         tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
+#         tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
+#         QgsMapLayerRegistry.instance().addMapLayer( tripsMatrixLayer, False )
+#         group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)
     
     def load_zones_centroids(self):
+        """
+            @summary: Loads centroids file information from centroid layer and creates a csv file
+        """
+        
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas')[0]
         filePath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         group = self.get_layers_group()

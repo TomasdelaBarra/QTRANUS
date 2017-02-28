@@ -459,9 +459,9 @@ class ExpressionData(object):
         """
             @summary: Method that executes the arithmetic operations between two operands
             @param operand1: First Operand 
-            @type operand1: List of Zone objects or numeric
+            @type operand1: List of Zone objects or scalar value
             @param operand2: Second Operand
-            @type operand2: List of Zone objects or numeric
+            @type operand2: List of Zone objects or scalar value
             @param operator: Operator to perform arithmetic
             @type operator: String
             @param fieldName: Field in object list which we get the value
@@ -483,7 +483,7 @@ class ExpressionData(object):
                 newZone.id = itemOp1.id
                 newZone.name = itemOp1.name
     
-                ExpressionData.fill_zone_data(newZone, itemOpgd1, itemOp2, operator, fieldName)
+                ExpressionData.fill_zone_data(newZone, itemOp1, itemOp2, operator, fieldName)
                 
                 zoneList.append(newZone)
                 del newZone
@@ -517,15 +517,30 @@ class ExpressionData(object):
     
     @staticmethod
     def execute_matrix_expression(operand1, operand2, operator, types):
+        """
+            @summary: Method that executes the arithmetoc operation between two operands
+            @param operand1: First operand
+            @type operand1: Numpy ndarray or scalar value
+            @param operand2: Secod operand
+            @type operand1: Numpy ndarray or scalar value
+            @param operator: Operator to perform arithmetic
+            @type operator: String
+            @param types: Ndarray types 
+            @type types: Ndarray dtypes object
+            @return: Ndarray with trips matrix result            
+        """
         
         rowData = None
         matrixData = None
         
-        if operand1 is not None:
-            operand = operand1
-        elif operand2 is not None:
-            operand = operand2
-        else:
+        if operand1 is None:
+            print ("There is no data for operand1.")
+            return None
+        if operand2 is None:
+            print ("There is no data for operand2.")
+            return None
+        if operator is None:
+            print ("There is no operator to perform the operation.")
             return None
         
         trip1 = 0

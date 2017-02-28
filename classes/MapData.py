@@ -41,10 +41,11 @@ class MapData(object):
         """
         if self.indicators is not None:
             if self.indicators.scenarios is not None:
-                scenario = self.indicators.scenarios[0]
-                if scenario.sectors is not None:
-                    for sector in scenario.sectors:
-                        self.sectors_dic[int(sector.id)] = sector.name
+                if self.indicators.scenarios.count > 0:
+                    scenario = self.indicators.scenarios[0]
+                    if scenario.sectors is not None:
+                        for sector in scenario.sectors:
+                            self.sectors_dic[int(sector.id)] = sector.name
 
     def __set_data_fields(self):
         """
@@ -118,13 +119,15 @@ class MapData(object):
     
     def evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression, conditionalFlag):
         """
-            @summary: Method that evaluate sectors expression
+            @summary: Method that evaluates sectors expression
             @param scenario: Scenario where the expression will be evaluated
             @type scenario: String
             @param fieldName: Field to be evaluated
             @type fieldName: String
             @param sectorsExpression: Sectors expression to be evaluated for each scenario
             @type sectorsExpression: Stack object
+            @param condtionalFlag: Flag to determine when a conditional will be evaluated
+            @type conditionalFlag: Boolean
             @return: Zones list object  
         """
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
@@ -199,7 +202,7 @@ class MapData(object):
     
     def evaluate_scenarios_expression(self, scenariosExpression, sectorsExpression, fieldName):
         """
-            @summary: Method that evaluate scenarios expression
+            @summary: Method that evaluates scenarios expression
             @param scenariosExpression: Scenarios expression
             @type scenariosExpression: Stack object
             @param sectorsExpression: Sectors expression to be evaluated for each scenario
@@ -260,7 +263,7 @@ class MapData(object):
 
     def evaluate_conditional_expression(self, scenariosExpression, generalSectorsExpression, fieldName):
         """
-            @summary: Method that evaluate conditional expression
+            @summary: Method that evaluates conditional expression
             @param scenariosExpression: Scenarios expression
             @type scenariosExpression: Stack object
             @param generalSectorsExpression: A list of sectors expression to be evaluated for each scenario
@@ -412,6 +415,21 @@ class MapData(object):
                                     self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
                                     
     def get_matrix_row(self, scenarioData, originZone, destZone, category, types):
+        """
+            @summary: Gets specific matrix row based on parameters
+            @param scenarioData: Scenario name
+            @type scenarioData: String
+            @param originZone: Origin zone
+            @type originZone: String
+            @param destZone: Destination zone
+            @type destZone: String
+            @param category: Trip category
+            @type category: String
+            @param types: Ndarray types
+            @type types: Ndarray dtypes object
+            @return: Trip row 
+        """
+        
         rowData = None
         rowData = scenarioData.tripMatrix[
                                           (scenarioData.tripMatrix['OrZonName'] == originZone)
@@ -421,11 +439,8 @@ class MapData(object):
                                           (scenarioData.tripMatrix['CatName'] == category)
                                          ]
         
-        
         if rowData is not None:
             if rowData.size == 0:
-            #QMessageBox.warning(None, "Data selected", ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category))
-            #print ("There is not data for the combination Scenario {0}, Origin Zone {1}, Destination Zone {2}, Category {3} .").format(scenarioData.Id, originZone, destZone, category)
                 for item in self.matrix_zones_dic:
                     if self.matrix_zones_dic[item] == originZone:
                         originZoneIndex = item
@@ -439,12 +454,23 @@ class MapData(object):
                         catIndex = item
                         
                 rowData = np.array([(originZoneIndex, originZone, destZoneIndex, destZone, catIndex ,category, 0)], dtype = types)
-                #rowData = None
         
         return rowData
         
         
     def evaluate_matrix_expression(self, scenario, originList, destinationList, matrixExpression, conditionalFlag):
+        """
+            @summary: Method that evaluates matrix expression
+            @param scenario: Scenario where the expression will be evaluated
+            @type scenario: String
+            @param originList: List of origin zones
+            @type originList: List object
+            @param destinationList: List of destination zones
+            @type destinationList: List object
+            @param condtionalFlag: Flag to determine when a conditional will be evaluated
+            @type conditionalFlag: Boolean
+            @return: Matrix of trips
+        """
         
         scenarioData = next((sc for sc in self.trip_matrices if sc.Id == scenario), None)
         if scenarioData is None:
@@ -547,11 +573,23 @@ class MapData(object):
         except:
             QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
             matrixData = None
-            
         
         return None
                     
     def evaluate_matrix_scenarios_expression(self, scenariosExpression, matrixExpression, originList, destinationList):
+        """
+            @summary: Method that evaluates matrix scenarios expression
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param matrixExpression: Matrix expression
+            @type matrixExpression: Stack object
+            @param originList: List of origin zones
+            @type originList: List object
+            @param destinationList: List of destination zones
+            @type destinationList: List object
+            @return: Matrix of trips
+        """
+        
         operand1 = None
         operand2 = None
         matrixData = None
@@ -565,17 +603,36 @@ class MapData(object):
                             
                     for item in scenariosExpression.data:
                         if ExpressionData.is_operator(item):
-                            #Not ready this section
                             operand2 = generalOperands.pop()
-                            operand2 = 1 # Gets value from 
+                            operand2 = self.evaluate_matrix_expression(operand2, originList, destinationList, matrixExpression, False)
+                            
+                            operand1 = generalOperands.pop()
+                            operand1 = self.evaluate_matrix_expression(operand1, originList, destinationList, matrixExpression, False)
+                            
+                            matrixData = ExpressionData.execute_matrix_expression(operand1, operand2, item, operand1.dtype)
+                            
+                            if matrixData is None:
+                                QMessageBox.warning(None, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.")
+                                raise Exception("There is not data to evaluate for matrix expression.")
+                            else:
+                                if len(matrixData) > 0:
+                                    generalOperands.push(matrixData)
+                                else:
+                                    QMessageBox.warning(None, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.")
+                                    raise Exception("There is not data to evaluate for matrix expression.")
+                            
+                            operand1 = None
+                            operand2 = None
+                            
                         else:
                             if stackLen == 1:
                                 matrixData = self.evaluate_matrix_expression(item, originList, destinationList, matrixExpression, False)
-
+                            else:
+                                generalOperands.push(item)
 
         except Exception as inst:
             print(inst)
-            #QMessageBox.warning(None, "Error", "Item: {0}, matrixExpression: {1}".format(item, matrixExpression))
+            matrixData = None
             QMessageBox.warning(None, "Error", "Unexpected error: {0}".format(inst))
         except:
             QMessageBox.warning(None, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
@@ -589,6 +646,13 @@ class MapData(object):
         return matrixData
     
     def create_zone_centroids_csv_file(self, filePath, layerName):
+        """
+            @summary: Method that creates the centroids csv file
+            @param filePath: Path of the file
+            @type filePath: String
+            @param layerName: Name of the new centroids layer
+            @type layerName: String 
+        """
         if self.zoneCentroids is not None:
             csvFile = open(filePath + "\\" + layerName + "_Centroids.csv", "wb")
             newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
@@ -600,11 +664,23 @@ class MapData(object):
             csvFile.close()
             del csvFile
             
-            
         else:
             print('There is not Zone Centroids data to create Centroids CSV File.')
         
     def evaluate_conditional_matrix_expression(self, scenariosExpression, generalMatrixExpression, originZones, destinationZones):
+        """
+            @summary: Method that evaluates conditional expressions
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param generalMatrixExpression: Matrix expression to be evaluated
+            @type generalMatrixExpression: Stack object
+            @param originZones: List of origin zones
+            @type originZones: List object
+            @param destinationZones: List of destinations zones
+            @type destinationZones: List object
+            @return: Matrix of trips   
+        """
+        
         operand1 =  None
         operand2 =  None
         matrixData = None
@@ -678,6 +754,8 @@ class MapData(object):
             @param matrixExpression: Matrix expression to be evaluated in reverse polish notation
             @type matrixExpression: Stack object
             @param projectPath: Main project path
+            @type projectPath: String
+            @return: The boolean result of file creation
         """
         
         rowCounter = 0
@@ -717,8 +795,7 @@ class MapData(object):
                         + str(destinationZoneCentroid.longitude) + " " + str(destinationZoneCentroid.latitude)
                         + ")", str(trip.item(0)[6]) if len(matrixResult.dtype.names)> 5 else str(trip.item(0)[4])])
                     
-                #del trip
-        del newFile #, tripMatrixItem
+        del newFile
         csvFile.close
         del csvFile
         
