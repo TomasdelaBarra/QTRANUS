@@ -1,5 +1,5 @@
 
-import os, re
+import os, re, webbrowser
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import *
@@ -24,6 +24,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.tempLayerName = ''
 
         # Linking objects with controls
+        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
         self.base_scenario = self.findChild(QtGui.QComboBox, 'base_scenario')
         self.sectors = self.findChild(QtGui.QListWidget, 'sectors')
@@ -36,6 +37,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')        
 
         # Control Actions
+        self.help.clicked.connect(self.open_help)
         self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.ready)
         self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
@@ -48,7 +50,14 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.__load_fields_combobox()
         self.__load_operators()
         self.reload_scenarios()
-                
+    
+    def open_help(self):
+        """
+            @summary: Opens QTranus users help
+        """
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'zones.html')
+        webbrowser.open_new_tab(filename)
+    
     def keyPressEvent(self, event):
         """
             @summary: Detects when a key is pressed

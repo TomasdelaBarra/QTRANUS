@@ -8,7 +8,7 @@
 
 [general]
 name=qtranus
-qgisMinimumVersion=2.0
+qgisMinimumVersion=2.1
 description=qtranus
 version=1.2.0
 author=qtranus

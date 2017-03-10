@@ -1,4 +1,4 @@
-import os, re, csv
+import os, re, csv, webbrowser
 from PyQt4 import QtGui, uic
 from PyQt4.Qt import QMessageBox
 from PyQt4.QtCore import *
@@ -20,6 +20,7 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.tempLayerName = ''
         
         # Linking objects with controls
+        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
         self.expression = self.findChild(QtGui.QLineEdit, 'expression')
         self.baseScenario = self.findChild(QtGui.QComboBox, 'base_scenario')
@@ -30,12 +31,12 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.destinationList = self.findChild(QtGui.QListWidget, name='lw_destination')
         self.destinationList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         self.filter = self.findChildren(QtGui.QLineEdit, name='filter')
-        self.scale = self.findChildren(QtGui.QLineEdit, name='scale')
         self.categories = self.findChild(QtGui.QListWidget, 'categories')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
         self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')
         
         # Control Actions
+        self.help.clicked.connect(self.open_help)
         self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.create_layer)
         self.operators.currentIndexChanged[int].connect(self.operator_changed)
@@ -52,6 +53,13 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.__load_categories()
         #self.__load_centroids()
         self.__reload_scenarios()
+        
+    def open_help(self):
+        """
+            @summary: Opens QTranus users help
+        """
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'matrix.html')
+        webbrowser.open_new_tab(filename)
         
     def keyPressEvent(self, event):
         """
@@ -221,6 +229,26 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         else:
             self.expression.setText(self.expression.text() + " + " + textToAdd)
         
+    def __validate_matrix_scenario(self, scenario):
+        """
+            @summary: Validates the format of the file
+            @param scenario: Scenario Id
+            @type scenario: String
+        """
+        if len(self.project.map_data.trip_matrices) > 0:
+            for trip in self.project.map_data.trip_matrices:
+                if trip.Id == scenario:
+                    if len(trip.tripMatrix.dtype) != 7:
+                        QMessageBox.warning(None, "Matrix Scenario", "Scenario " + scenario + ", has an incorrect format.")
+                        print ("Scenario {0}, has an incorrect format.").format(scenario)
+                        return False
+                    else:
+                        return True
+        else:
+            QMessageBox.warning(None, "Matrix Scenario", "There are not scenarios information.")
+            print ("Matrix Scenario", "There are not scenarios information.")
+            return False 
+        
     def __validate_data(self):
         """
             @summary: Fields validation
@@ -248,6 +276,8 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
             return False, None, None
         else:
             if self.project.load_map_trip_structure(projectPath, self.baseScenario.currentText()):
+                if self.__validate_matrix_scenario(self.baseScenario.currentText()) == False:
+                    return False, None, None
                 scenariosExpression.append(str(self.baseScenario.currentText()))
             else:
                 QMessageBox.warning(None, "Base Scenario", "Selected Base Scenario has no information.")
@@ -263,6 +293,8 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
                 return False, None, None
             else:
                 if self.project.load_map_trip_structure(projectPath, self.alternateScenario.currentText()):
+                    if self.__validate_matrix_scenario(self.alternateScenario.currentText()) == False:
+                        return False, None, None
                     scenariosExpression.append(str(self.alternateScenario.currentText()))
                 else:
                     QMessageBox.warning(None, "Alternate Scenario", "Selected Alternate Scenario has no information.")

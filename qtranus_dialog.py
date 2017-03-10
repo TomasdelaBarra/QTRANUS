@@ -171,9 +171,13 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Opens matrix layer window 
         """
-        dialog = MatrixLayerDialog(parent = self)
-        dialog.show()
-        result = dialog.exec_()
+        if self.project.map_data.get_sorted_fields() is None:
+            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
+            print ("There are no fields to load, please reload SHP file.")
+        else:
+            dialog = MatrixLayerDialog(parent = self)
+            dialog.show()
+            result = dialog.exec_()
 
     def show(self):
         """
@@ -226,7 +230,6 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         else:
             print(fields)
             self.zones_shape_fields.setEnabled(True)
-            #items = sorted(fields.values())
             self.zones_shape_fields.addItems(fields)
             
     def zones_shape_fields_changed(self):

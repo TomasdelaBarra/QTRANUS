@@ -328,11 +328,13 @@
  </widget>
  <tabstops>
   <tabstop>scenarios</tabstop>
+  <tabstop>btn_help</tabstop>
   <tabstop>layers_group_name</tabstop>
   <tabstop>tranus_folder</tabstop>
   <tabstop>tranus_folder_btn</tabstop>
   <tabstop>zone_shape</tabstop>
   <tabstop>zones_shape_btn</tabstop>
+  <tabstop>cb_zones_shape_fields</tabstop>
   <tabstop>net_shape</tabstop>
   <tabstop>net_shape_btn</tabstop>
   <tabstop>centroid_shape</tabstop>
