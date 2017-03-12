@@ -20,23 +20,26 @@
             <article class="article">
                 <h1>Results</h1>
                 <p>This part of the program is used to produce maps with the results of a TRANUS model. In this manual we are using the model of Swindon as an example. This model and all related data may be downloaded from:</p>
-                <a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
-                <p>To begin the process, a window is presented with boxes to fill:</p>
+				<a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
+				<p>To begin the process, a window is presented with boxes to fill:</p>
                 <figure>
                     <img src="img/results1.jpg">
                     <figcaption>Fig. 1: QTranus main window.</figcaption>
                 </figure>
                 <h3>Layers group name</h3>
-                <p>Give a name to put all the layers that you will produce into a group - Obligatory field</p>
-                <h3>TRANUS workspace</h3>
+				<p>Give a name to put all the layers that you will produce into a group - Obligatory field</p>
+				<h3>TRANUS workspace</h3>
                 <p>A TRANUS project resides in a unique folder in your computer. As soon as you specify a valid TRANUS workspace, you will notice that the Scenario Tree appears with valid information in the left panel. This is because QTRANUS looks in the folder you specified for a file called TRANUS.CTL. This is the file where the scenario tree is specified, a fundamental structure in TRANUS modeling. You may click on the little + to expand the scenario tree.</p>
-                <h3>Zones shapefile</h3>
-                <p>Specify the shape file where the polygons of the zones are contained. You may use the button provided to explore your pc.  As soon as you put a valid shape file name, a map with the polygons should appear as a background. The shapefile must contain one polygon for each zone in the model. Make sure that this is so.</p>
-                <p>Next, Select zones shape Id with a pull-down list of all the fields in the zones shapefile that you specified. Select the one that contains the Zone Id numbers. This must be integer values exactly matching the Zone Id identifiers in the model.</p>
-                <p>If no Zone shapefile is specified, the program will not be able to produce maps based on zonal information.</p>
-                <p>The other two boxes, Network Shapefile and Centroid Shapefile correspond to parts of the program that are still under development.</p>
-                <p>At the bottom there are three buttons called ‘Zones’, ‘Network’ and ‘Matrix’. They are all inactive. As soon as a valid Zones Shapefile is specified, the Zones and the Matrix buttons become active. The Network option is not available in this version. Press the Zones button, and another window appears to generate QGIS layers with thematic zone-based results, as described below. Press the Matrix button and another window will appear to generate flow-maps from trip matrices.</p>
-                <p>Once one or more map or matrix layers have been defined, you may save the QGIS project in the usual way, doing File-Save or File-Save As and giving it a name. This means that the next time you open the QGIS project, all your maps will be there exactly as you left them. You may then add more layers to the project using the QTRANUS plugin again and again.</p>
+				<h3>Zones shapefile</h3>
+				<p>Specify the shape file where the polygons of the zones are contained. You may use the button provided to explore your pc.  As soon as you put a valid shape file name, a map with the polygons should appear as a background. The shapefile must contain one polygon for each zone in the model. Make sure that this is so.</p>
+				<p> Next, Select zones shape Id with a pull-down list of all the fields in the zones shapefile that you specified. Select the one that contains the Zone Id numbers. This must be integer values exactly matching the Zone Id identifiers in the model.</p>
+				<p>If no Zone shapefile is specified, the program will not be able to produce maps based on zonal information.</p>
+				<h3>Network Shapefile</h3>
+				<p>This is under development.</p>
+				<h3>Centroid Shapefile</h3>
+				<p>Optional. If you specify a shapefile with zone centroids, then in the Matrix option it will be used to generate the flow maps (see the corresponding section). If you do not specify a centroids shapefile, then in the Matrix option the centroid locations will be calculated automatically from the polygon shapefile. Why do we have this option? Because sometimes the geographical centroids do not represent reality adequate.</p>
+				<p>At the bottom there are three buttons called ‘Zones’, ‘Network’ and ‘Matrix’. They are all inactive. As soon as a valid Zones Shapefile is specified, the Zones and the Matrix buttons become active. The Network option is not available in this version. Press the Zones button, and another window appears to generate QGIS layers with thematic zone-based results, as described below. Press the Matrix button and another window will appear to generate flow-maps from trip matrices.</p>
+				<p>Once one or more map or matrix layers have been defined, you may save the QGIS project in the usual way, doing File-Save or File-Save As and giving it a name. This means that the next time you open the QGIS project, all your maps will be there exactly as you left them. You may then add more layers to the project using the QTRANUS plugin again and again.</p>
                 <hr>
                 <a href=zones.html>Zone-based maps</a>
             </article>
