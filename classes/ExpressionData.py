@@ -2,6 +2,8 @@ from Zone import Zone
 from Stack import Stack
 from PyQt4.Qt import QMessageBox
 
+import csv, numpy as np
+
 class ExpressionData(object):
     @staticmethod
     def is_operator(operator):
@@ -457,9 +459,9 @@ class ExpressionData(object):
         """
             @summary: Method that executes the arithmetic operations between two operands
             @param operand1: First Operand 
-            @type operand1: List of Zone objects or numeric
+            @type operand1: List of Zone objects or scalar value
             @param operand2: Second Operand
-            @type operand2: List of Zone objects or numeric
+            @type operand2: List of Zone objects or scalar value
             @param operator: Operator to perform arithmetic
             @type operator: String
             @param fieldName: Field in object list which we get the value
@@ -512,3 +514,93 @@ class ExpressionData(object):
             zoneList = None
         
         return zoneList
+    
+    @staticmethod
+    def execute_matrix_expression(operand1, operand2, operator, types):
+        """
+            @summary: Method that executes the arithmetoc operation between two operands
+            @param operand1: First operand
+            @type operand1: Numpy ndarray or scalar value
+            @param operand2: Secod operand
+            @type operand1: Numpy ndarray or scalar value
+            @param operator: Operator to perform arithmetic
+            @type operator: String
+            @param types: Ndarray types 
+            @type types: Ndarray dtypes object
+            @return: Ndarray with trips matrix result            
+        """
+        
+        rowData = None
+        matrixData = None
+        
+        if operand1 is None:
+            print ("There is no data for operand1.")
+            return None
+        if operand2 is None:
+            print ("There is no data for operand2.")
+            return None
+        if operator is None:
+            print ("There is no operator to perform the operation.")
+            return None
+        
+        trip1 = 0
+        trip2 = 0
+        result = 0
+        
+        if type(operand1) is np.ndarray and type(operand2) is np.ndarray:
+            if operand1.size > 0 and operand2.size > 0:
+                matrixData = [] 
+                for itemOp1, itemOp2 in np.nditer([operand1, operand2]):
+                    trip1 = itemOp1['Trips']
+                    trip2 = itemOp2['Trips']
+                    result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                    
+                    rowData = itemOp1.astype([(itemOp1.dtype.names[0], itemOp1.dtype[0]), 
+                                    (itemOp1.dtype.names[1], itemOp1.dtype[1]), 
+                                    (itemOp1.dtype.names[2], itemOp1.dtype[2]), 
+                                    (itemOp1.dtype.names[3], itemOp1.dtype[3]), 
+                                    (itemOp1.dtype.names[6], itemOp1.dtype[6]) if len(itemOp1.dtype) == 7 else (itemOp1.dtype.names[4], itemOp1.dtype[4])])
+                    
+                    rowData['Trips'] = result
+                    matrixData.append(rowData)
+                
+                matrixData = np.array(matrixData, rowData.dtype)         
+        
+        if type(operand1) is np.ndarray and type(operand2) is not np.ndarray:
+            matrixData = []
+            for itemOp in np.nditer(operand1):
+                trip1 = itemOp['Trips']
+                trip2 = operand2
+                result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                
+                rowData = itemOp.astype([(itemOp.dtype.names[0], itemOp.dtype[0]), 
+                                (itemOp.dtype.names[1], itemOp.dtype[1]), 
+                                (itemOp.dtype.names[2], itemOp.dtype[2]), 
+                                (itemOp.dtype.names[3], itemOp.dtype[3]), 
+                                (itemOp.dtype.names[6], itemOp.dtype[6]) if len(itemOp.dtype) == 7 else (itemOp.dtype.names[4], itemOp.dtype[4])])
+                
+                rowData['Trips'] = result
+                
+                matrixData.append(rowData)
+
+            matrixData = np.array(matrixData, rowData.dtype)
+                
+        if type(operand1) is not np.ndarray and type(operand2) is np.ndarray:
+            matrixData = []
+            for itemOp in np.nditer(operand2):
+                trip1 = operand1
+                trip2 = itemOp['Trips']
+                result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
+                
+                rowData = itemOp.astype([(itemOp.dtype.names[0], itemOp.dtype[0]), 
+                                (itemOp.dtype.names[1], itemOp.dtype[1]), 
+                                (itemOp.dtype.names[2], itemOp.dtype[2]), 
+                                (itemOp.dtype.names[3], itemOp.dtype[3]), 
+                                (itemOp.dtype.names[6], itemOp.dtype[6]) if len(itemOp.dtype) == 7 else (itemOp.dtype.names[4], itemOp.dtype[4])])
+                
+                rowData['Trips'] = result
+                matrixData.append(rowData)
+
+            matrixData =  matrixData = np.array(matrixData, rowData.dtype)
+            
+        return matrixData

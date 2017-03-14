@@ -128,14 +128,14 @@
            </item>
           </layout>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>Network shape file:</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="4" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
             <widget class="QLineEdit" name="net_shape"/>
@@ -149,26 +149,43 @@
            </item>
           </layout>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
             <string>Centroid shape file:</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_4">
            <item>
             <widget class="QLineEdit" name="centroid_shape"/>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButton_4">
+            <widget class="QToolButton" name="centroid_shape_btn">
              <property name="text">
               <string>...</string>
              </property>
             </widget>
            </item>
           </layout>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="lbl_shape_fields">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>Select zones shape Id:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="cb_zones_shape_fields">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -301,7 +318,7 @@
      <item>
       <widget class="QPushButton" name="btn_help">
        <property name="text">
-        <string>Help</string>
+        <string notr="true">Help</string>
        </property>
       </widget>
      </item>
@@ -311,15 +328,17 @@
  </widget>
  <tabstops>
   <tabstop>scenarios</tabstop>
+  <tabstop>btn_help</tabstop>
   <tabstop>layers_group_name</tabstop>
   <tabstop>tranus_folder</tabstop>
   <tabstop>tranus_folder_btn</tabstop>
   <tabstop>zone_shape</tabstop>
   <tabstop>zones_shape_btn</tabstop>
+  <tabstop>cb_zones_shape_fields</tabstop>
   <tabstop>net_shape</tabstop>
   <tabstop>net_shape_btn</tabstop>
   <tabstop>centroid_shape</tabstop>
-  <tabstop>toolButton_4</tabstop>
+  <tabstop>centroid_shape_btn</tabstop>
   <tabstop>zones</tabstop>
   <tabstop>network</tabstop>
   <tabstop>matrix</tabstop>

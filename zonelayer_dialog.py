@@ -1,5 +1,5 @@
 
-import os, re
+import os, re, webbrowser
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import *
@@ -22,9 +22,9 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
-        self.validInfo = True
 
         # Linking objects with controls
+        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
         self.base_scenario = self.findChild(QtGui.QComboBox, 'base_scenario')
         self.sectors = self.findChild(QtGui.QListWidget, 'sectors')
@@ -37,7 +37,8 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')        
 
         # Control Actions
-        self.layerName.keyPressEvent = self.keyPressEvent 
+        self.help.clicked.connect(self.open_help)
+        self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.ready)
         self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
         self.operators.connect(self.operators, SIGNAL("currentIndexChanged(int)"), self.operator_changed)
@@ -49,7 +50,14 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.__load_fields_combobox()
         self.__load_operators()
         self.reload_scenarios()
-                
+    
+    def open_help(self):
+        """
+            @summary: Opens QTranus users help
+        """
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'zones.html')
+        webbrowser.open_new_tab(filename)
+    
     def keyPressEvent(self, event):
         """
             @summary: Detects when a key is pressed
@@ -122,11 +130,11 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         validationResult, scenariosExpression, sectorsExpression = self.__validate_data() 
         if validationResult:
-            self.project.addLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
+            self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
             self.accept()
         else:
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")
-            print("New layer was not created.")
+            print("New zones layer was not created.")
             
     def __load_scenarios_combobox(self):
         """
@@ -175,18 +183,16 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
     def __validate_data(self):
         """
             @summary: Fields validation
-            @return: Validation result, scenariosExpression adn sectorsExpression 
+            @return: Validation result, scenariosExpression and sectorsExpression 
         """
         scenariosExpression = []
         # Base validations
         if self.layerName.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
             print ("Please write an expression to be evaluated.")
             return False, None, None
