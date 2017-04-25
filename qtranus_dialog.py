@@ -33,6 +33,8 @@ from PyQt4.Qt import QMessageBox
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 from .matrixlayer_dialog import MatrixLayerDialog
+from .networklayer_dialog import NetworkLayerDialog
+from distutils.msvc9compiler import NET_BASE
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -55,14 +57,17 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
         self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtGui.QLineEdit, 'zone_shape')
-        self.net_shape = self.findChild(QtGui.QLineEdit, 'net_shape')
+        self.network_links_shape = self.findChild(QtGui.QLineEdit, 'network_links_shape')
+        self.network_nodes_shape = self.findChild(QtGui.QLineEdit, 'network_nodes_shape')
         self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
         self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
         self.matrix_btn = self.findChild(QtGui.QCommandLinkButton, 'matrix')
+        self.network_btn = self.findChild(QtGui.QCommandLinkButton, 'network')
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
-        self.net_shape_btn = self.findChild(QtGui.QToolButton, 'net_shape_btn')
+        self.network_links_shape_btn = self.findChild(QtGui.QToolButton, 'network_links_shape_btn')
+        self.network_nodes_shape_btn = self.findChild(QtGui.QToolButton, 'network_nodes_shape_btn')
         self.centroid_shape_btn = self.findChild(QtGui.QToolButton, 'centroid_shape_btn')
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtGui.QComboBox, 'cb_zones_shape_fields')
@@ -73,10 +78,13 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
+        self.network_btn.clicked.connect(self.network_layer_dialog)
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
         self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
+        self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
+        self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
         
         # Loads
         self.reload_scenarios()
@@ -120,6 +128,23 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             self.centroid_shape.setText(file_name)
         else:
             self.centroid_shape.setText('')
+            
+    def select_network_links_shape(self, file_name):
+        result = self.project.load_network_links_shape_file(file_name)
+        if result:
+            self.network_links_shape.setText(file_name)
+            self.network_btn.setEnabled(self.project.is_valid_network())
+        else:
+            self.network_links_shape.setText('')
+        self.check_configure()
+            
+    def select_network_nodes_shape(self, file_name):
+        result = self.project.load_network_nodes_shape_file(file_name)
+        if result:
+            self.network_nodes_shape.setText(file_name)
+            self.network_btn.setEnabled(self.project.is_valid_network())
+        else:
+            self.network_nodes_shape.setText('')
 
     def select_tranus_folder(self):
         """
@@ -138,7 +163,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected zone shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select file", filter="*.*, *.shp")
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", filter="*.*, *.shp")
             if file_name:
                 callback(file_name)
 
@@ -149,7 +174,23 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected centroid shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select file', directory='', filter='*.*, *.shp')
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory='', filter='*.*, *.shp')
+            if file_name:
+                callback(file_name)
+        
+        return select_file
+
+    def select_network_links_shape_file(self, callback):
+        def select_file():
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network links shape file', directory='', filter='*.*, *.shp')
+            if file_name:
+                callback(file_name)
+        
+        return select_file
+    
+    def select_network_nodes_shape_file(self, callback):
+        def select_file():
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network nodes shape file', directory='', filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -179,6 +220,11 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             dialog.show()
             result = dialog.exec_()
 
+    def network_layer_dialog(self):
+        dialog = NetworkLayerDialog(parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
     def show(self):
         """
             @summary: Opens dialog window
@@ -189,10 +235,19 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         else:
             self.layers_group_name.setText('QTranus Project')
             self.layers_group_name.selectAll()
+        
         if self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
+        
+        if self.project['network_links_shape_file_path']:
+            self.network_links_shape.setText(self.project['network_links_shape_file_path'])
+        
+        if self.project['network_nodes_shape_file_path']:
+            self.network_nodes_shape.setText(self.project['network_nodes_shape_file_path'])
+        
         if self.project.tranus_project:
             self.tranus_folder.setText(self.project.tranus_project.path)
+            
         self.check_configure()
         super(QTranusDialog, self).show()
 
@@ -216,6 +271,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
         self.zones_btn.setEnabled(self.project.is_valid())
         self.matrix_btn.setEnabled(self.project.is_valid())
+        self.network_btn.setEnabled(self.project.is_valid_network())
 
     def load_zone_shape_fields(self, fields):
         """

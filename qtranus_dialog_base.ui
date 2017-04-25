@@ -128,41 +128,24 @@
            </item>
           </layout>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Network shape file:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QLineEdit" name="net_shape"/>
-           </item>
-           <item>
-            <widget class="QToolButton" name="net_shape_btn">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Centroid shape file:</string>
+            <string>Network links shape file:</string>
            </property>
           </widget>
          </item>
          <item row="5" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <widget class="QLineEdit" name="centroid_shape"/>
+            <widget class="QLineEdit" name="network_links_shape">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="centroid_shape_btn">
+            <widget class="QToolButton" name="network_links_shape_btn">
              <property name="text">
               <string>...</string>
              </property>
@@ -186,6 +169,56 @@
             <bool>false</bool>
            </property>
           </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Centroid shape file:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLineEdit" name="centroid_shape">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="centroid_shape_btn">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Network nodes shape file:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QLineEdit" name="network_nodes_shape">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="network_nodes_shape_btn">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -335,9 +368,8 @@
   <tabstop>zone_shape</tabstop>
   <tabstop>zones_shape_btn</tabstop>
   <tabstop>cb_zones_shape_fields</tabstop>
-  <tabstop>net_shape</tabstop>
-  <tabstop>net_shape_btn</tabstop>
-  <tabstop>centroid_shape</tabstop>
+  <tabstop>network_links_shape</tabstop>
+  <tabstop>network_links_shape_btn</tabstop>
   <tabstop>centroid_shape_btn</tabstop>
   <tabstop>zones</tabstop>
   <tabstop>network</tabstop>

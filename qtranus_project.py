@@ -20,6 +20,7 @@ from classes.MapData import MapData
 from classes.Stack import Stack
 from classes.ZoneCentroid import ZoneCentroid
 from classes.TripMatrix import TripMatrix
+from classes.network.Network import Network
 
 import os
 import re
@@ -39,6 +40,7 @@ class QTranusProject(object):
         self.load()
         self.map_data = MapData()
         self.zonesIdFieldName = None
+        self.network_model = Network() 
 
     def load(self):
         """
@@ -191,7 +193,6 @@ class QTranusProject(object):
         
         return True
 
-
     def load_tranus_folder(self, folder=None):
         """
             @summary: Loads tranus project folder
@@ -304,7 +305,7 @@ class QTranusProject(object):
         group.insertLayer(0, layer)
         self['zones_shape'] = layer.source()
         self['zones_shape_id'] = layer.id()
-        return True, zones_shape_fields 
+        return True, zones_shape_fields
 
     def __getitem__(self, key):
         value, _ = self.proj.readEntry('qtranus', key)
@@ -318,6 +319,9 @@ class QTranusProject(object):
 
     def is_valid(self):
         return not not (self['zones_shape'] and self['project_name'] and self['tranus_folder'])
+    
+    def is_valid_network(self):
+        return not not (self['network_links_shape_file_path'] and self['project_name'] and self['tranus_folder'])
 
     def get_layers_group(self):
         """
@@ -339,6 +343,38 @@ class QTranusProject(object):
         for layer in layers_group.findLayers():
             if layer.layer().source() == zones_shape:
                 self['zones_shape_id'] = layer.layer().id()
+    
+    def load_network_links_shape_file(self, file_path):
+        self.network_file_path = file_path
+        registry = QgsMapLayerRegistry.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(file_path, 'Network Links', 'ogr')
+        if not layer.isValid():
+            self['network_links_shape_file_path'] = ''
+            self['network_links_shape_id'] = ''
+            return False
+            
+        registry.addMapLayer(layer, False)
+        group.insertLayer(0, layer)
+        self['network_links_shape_file_path'] = layer.source()
+        self['network_links_shape_id'] = layer.id()
+        return True
+        
+    def load_network_nodes_shape_file(self, file_path):
+        self.network_file_path = file_path
+        registry = QgsMapLayerRegistry.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(file_path, 'Network Nodes', 'ogr')
+        if not layer.isValid():
+            self['network_nodes_shape_file_path'] = ''
+            self['network_nodes_shape_id'] = ''
+            return False
+            
+        registry.addMapLayer(layer, False)
+        group.insertLayer(0, layer)
+        self['network_nodes_shape_file_path'] = layer.source()
+        self['network_nodes_shape_id'] = layer.id()
+        return True
     
     def load_centroid_file(self, file_path):
         """

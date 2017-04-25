@@ -456,8 +456,7 @@ class MapData(object):
                 rowData = np.array([(originZoneIndex, originZone, destZoneIndex, destZone, catIndex ,category, 0)], dtype = types)
         
         return rowData
-        
-        
+
     def evaluate_matrix_expression(self, scenario, originList, destinationList, matrixExpression, conditionalFlag):
         """
             @summary: Method that evaluates matrix expression
@@ -738,8 +737,7 @@ class MapData(object):
             del generalOperands
             
         return matrixData
-                
-        
+
     def create_trip_matrix_csv_file(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath):
         """
             @summary: Method that creates a csv file to be used in the new matrix layer

@@ -28,7 +28,7 @@
       <item>
        <widget class="QLabel" name="label_title">
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Project Configuration: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;QTRANUS&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;New Matrix Layer&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Project Configuration: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;QTRANUS&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;New Network Layer&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -133,33 +133,52 @@
              </widget>
             </item>
             <item row="5" column="0">
-             <widget class="QLabel" name="label_origin">
+             <widget class="QLabel" name="label_destination">
               <property name="text">
-               <string>Origin:</string>
+               <string>Variables</string>
               </property>
              </widget>
             </item>
             <item row="5" column="1">
-             <widget class="QListWidget" name="lw_origin"/>
-            </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_destination">
-              <property name="text">
-               <string>Destination:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1">
-             <widget class="QListWidget" name="lw_destination"/>
+             <widget class="QComboBox" name="cb_variables"/>
             </item>
            </layout>
           </item>
           <item>
-           <widget class="QListWidget" name="categories">
-            <property name="selectionMode">
-             <enum>QAbstractItemView::SingleSelection</enum>
-            </property>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QRadioButton" name="rbtn_total">
+                <property name="text">
+                 <string>Total</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rbtn_operators">
+                <property name="text">
+                 <string>Operators</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rbtn_routes">
+                <property name="text">
+                 <string>Routes</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QListWidget" name="list">
+              <property name="selectionMode">
+               <enum>QAbstractItemView::SingleSelection</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
@@ -188,9 +207,6 @@
   <tabstop>base_scenario</tabstop>
   <tabstop>cb_operator</tabstop>
   <tabstop>cb_alternate_scenario</tabstop>
-  <tabstop>lw_origin</tabstop>
-  <tabstop>lw_destination</tabstop>
-  <tabstop>categories</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
