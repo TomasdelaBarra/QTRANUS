@@ -1,5 +1,7 @@
 from ..general.FileManagement import FileManagement
 from ..GeneralObject import GeneralObject
+from NetworkDataAccess import NetworkDataAccess
+from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsVectorJoinInfo
 import numpy as np
 
 class Network(object):
@@ -9,6 +11,9 @@ class Network(object):
         self.operators_dic = {}
         self.routes_dic = {}
         self.networ_matrices = []
+        self.network_data_access = NetworkDataAccess()
+        self.network_link_shape_location = None
+        self.network_node_shape_location = None
         
     def __del__(self):
         """
@@ -20,8 +25,7 @@ class Network(object):
         """
             @summary: Sets fields dictionary
         """
-        self.variables_dic = {0:"StVeh/Cap", 1:"StVeh", 2:"TotVeh", 3:"ServLev", 4:"Demand", 5:"Dem/Cap", 6:"FinSpeed", 7:"FinWait", 8:"Energy" }
-        #self.data_fields_dic = {0:"Dem/Cap", 1:"StVeh", 2:"TotVeh", 3:"ServLev", 4:"Capac", 5:"Demand", 6:"Vehics", 7:"Dem/Cap", 8:"StVeh", 9:"IniSpeed", 10:"FinSpeed", 11:"IniWait", 12:"FinWait", 13:"Energy" }
+        self.variables_dic = self.network_data_access.get_variables_dic()
 
     def get_sorted_variables(self):
         """
@@ -61,31 +65,53 @@ class Network(object):
             @param shape: Path
             @type shape: String
         """
-
-        self.scenarios = FileManagement.get_scenarios_from_filename(projectPath, 'Assignment_SWN(.*)', '\..*')
+        self.scenarios = self.network_data_access.get_valid_network_scenarios(projectPath)
                 
     def get_sorted_scenarios(self):
         if self.scenarios is not None:
             return sorted(self.scenarios)
         
     def load_operators(self, projectPath, scenario):
-        operatorsMatrix = None
-        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*') 
-        if networkMatrix is not None:
-            if networkMatrix.data_matrix.size > 0:
-                operatorsMatrix = np.unique(networkMatrix.data_matrix[['OperId', 'OperName']])
-                operatorsMatrix.sort(order='OperId')
-                
-                for item in np.nditer(operatorsMatrix):
-                    self.operators_dic[item.item(0)[0]] = item.item(0)[1]
+        
+        self.operators_dic = self.network_data_access.get_scenario_operators(projectPath, scenario)
                     
     def load_routes(self, projectPath, scenario):
-        routesMatrix = None
-        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*') 
-        if networkMatrix is not None:
-            if networkMatrix.data_matrix.size > 0:
-                routesMatrix = np.unique(networkMatrix.data_matrix[['RouteId', 'RouteName']])
-                routesMatrix.sort(order='RouteId')
-                
-                for item in np.nditer(routesMatrix):
-                    self.routes_dic[item.item(0)[0]] = item.item(0)[1]
+        
+        self.routes_dic = self.network_data_access.get_scenario_routes(projectPath, scenario)
+
+    def addNetworkLayer(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath):
+        if scenariosExpression is None:
+            QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
+            print  ("There is not scenarios information.")
+            return False
+        
+        result = self.network_data_access.create_network_csv_file(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+        if result:
+            registry = QgsMapLayerRegistry.instance()
+            layersCount = len(registry.mapLayers())
+
+            # Source shape, name of the new shape, providerLib
+            layer = QgsVectorLayer(networkLinkShapePath, layerName, 'ogr')
+            
+            
+            registry.addMapLayer(layer, False)
+            if not layer.isValid():
+                self['network_links_shape_file_path'] = ''
+                self['network_links_shape_id'] = ''
+                return False
+            csvFile_uri = ("file:///" + projectPath + "/network_data.csv?delimiter=,").encode('utf-8')
+            print(csvFile_uri)
+            csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
+            registry.addMapLayer(csvFile, False)
+            shpField = 'LinkId'
+            csvField = 'Id'
+            joinObject = QgsVectorJoinInfo()
+            joinObject.joinLayerId = csvFile.id()
+            joinObject.joinFieldName = csvField
+            joinObject.targetFieldName = shpField
+            joinObject.memoryCache = True
+            layer.addJoin(joinObject)
+
+            group.insertLayer((layersCount+1), layer)
+
+        return True

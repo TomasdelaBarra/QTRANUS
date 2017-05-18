@@ -40,7 +40,9 @@ class QTranusProject(object):
         self.load()
         self.map_data = MapData()
         self.zonesIdFieldName = None
-        self.network_model = Network() 
+        self.network_model = Network()
+        self.network_link_shape_path = None
+        self.network_nodes_shape_path = None
 
     def load(self):
         """
@@ -345,10 +347,10 @@ class QTranusProject(object):
                 self['zones_shape_id'] = layer.layer().id()
     
     def load_network_links_shape_file(self, file_path):
-        self.network_file_path = file_path
+        self.network_link_shape_path = file_path
         registry = QgsMapLayerRegistry.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path, 'Network Links', 'ogr')
+        layer = QgsVectorLayer(file_path, 'Network_Links', 'ogr')
         if not layer.isValid():
             self['network_links_shape_file_path'] = ''
             self['network_links_shape_id'] = ''
@@ -361,10 +363,10 @@ class QTranusProject(object):
         return True
         
     def load_network_nodes_shape_file(self, file_path):
-        self.network_file_path = file_path
+        self.network_nodes_shape_path = file_path
         registry = QgsMapLayerRegistry.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path, 'Network Nodes', 'ogr')
+        layer = QgsVectorLayer(file_path, 'Network_Nodes', 'ogr')
         if not layer.isValid():
             self['network_nodes_shape_file_path'] = ''
             self['network_nodes_shape_id'] = ''

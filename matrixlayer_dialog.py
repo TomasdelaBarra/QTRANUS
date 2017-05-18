@@ -257,13 +257,11 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpression = []
         
         if self.layerName.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '':
-            self.validInfo = False
             QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
             print ("Please write an expression to be evaluated.")
             return False, None, None

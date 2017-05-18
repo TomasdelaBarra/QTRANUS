@@ -1,8 +1,11 @@
 import os, re, webbrowser
 from PyQt4 import QtGui, uic
+from PyQt4.Qt import QMessageBox
+from string import *
 from .scenarios_model import ScenariosModel
 from classes.ExpressionData import ExpressionData
 from classes.network.Network import Network
+from classes.network.Level import Level
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
@@ -14,6 +17,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
         self.project = parent.project
         self.network = Network()
+        self.level = None
         
         # Linking objects with controls
         self.help = self.findChild(QtGui.QPushButton, 'btn_help')
@@ -153,6 +157,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.list.clear()
         self.expression.clear()
         self.expression.setEnabled(False)
+        self.level = Level.Total
     
     def operator_checked(self):
         if self.operators.isChecked():
@@ -160,6 +165,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             self.expression.clear()
             self.expression.setEnabled(True)
             self.network.load_operators(self.project['tranus_folder'], self.baseScenario.currentText())
+            self.level = Level.Operators
             operators = self.network.get_operators_dictionary()
             if operators is not None:
                 self.list.addItem("All")
@@ -172,6 +178,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             self.expression.clear()
             self.expression.setEnabled(True)
             self.network.load_routes(self.project['tranus_folder'], self.baseScenario.currentText())
+            self.level = Level.Routes
             routes = self.network.get_routes_dictionary()
             if routes is not None:
                 self.list.addItem("All")
@@ -182,10 +189,10 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
     def list_item_selected(self, item):
         textToAdd = ''
         if item.text() == 'All':
-            if self.operators.isChecked():
+            if self.level == Level.Operators:# self.operators.isChecked():
                 itemsDic = self.network.get_operators_dictionary()
             
-            if self.routes.isChecked():
+            if self.level == Level.Routes:#self.routes.isChecked():
                 itemsDic = self.network.get_routes_dictionary()
             
             if itemsDic is not None:
@@ -199,6 +206,76 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             self.expression.setText(self.expression.text() + textToAdd)
         else:
             self.expression.setText(self.expression.text() + " + " + textToAdd)
+    
+    def __validate_data(self):
+        """
+            @summary: Fields validation
+            @return: Validation result, matrixExpressionResult and sectorsExpression
+        """
+        scenariosExpression = []
+        
+        if self.layerName.text().strip() == '':
+            QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
+            print ("Please write Layer Name.")
+            return False, None, None
+        
+        if self.expression.text().strip() == '' and (self.level is not Level.Total):#self.operators.isChecked() or self.routes.isChecked()):
+            QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
+            print ("Please write an expression to be evaluated.")
+            return False, None, None
+        
+        #projectPath = self.project['tranus_folder'][0:max(self.project['tranus_folder'].rfind('\\'), self.project['tranus_folder'].rfind('/'))]
+        
+        # Base scenario
+        if len(self.base_scenario) == 0:
+            QMessageBox.warning(None, "Base Scenario", "There are no Base Scenarios loaded.")
+            print ("There are no Base Scenarios loaded.")
+            return False, None, None
+        else:
+            if self.baseScenario.currentText().strip() != '':
+                scenariosExpression.append(str(self.baseScenario.currentText()))
+            else:
+                QMessageBox.warning(None, "Base Scenario", "Please select a Base Scenario.")
+                print("Please select a Base Scenario.")
+                return False, None, None
+            
+        # Validations for alternate scenario
+        if self.scenarioOperator.currentText() != '':
+            scenariosExpression.append(str(self.scenarioOperator.currentText()))
+            if self.alternateScenario.currentText() == '':
+                QMessageBox.warning(None, "Alternate Scenario", "Please select an Alternate Scenario.")
+                print("Please select an Alternate Scenario.")
+                return False, None, None
+        
+        
+        if self.variablesList.currentText() == '':
+            QMessageBox.warning(None, "Variable", "Please select a variable.")
+            print ("Please write an expression to be evaluated.")
+            return False, None, None
+        
+        scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
+        
+        if scenariosExpressionResult:
+            if self.level == Level.Total:#self.total.isChecked():
+                networkExpressionResult = True
+                networkExpressionList = None
+            else:
+                networkExpressionResult, networkExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
+        
+        if self.level is not Level.Total:# not self.total.isChecked():
+            if scenariosExpressionStack.tp > 1 and len(networkExpressionList) > 1:
+                QMessageBox.warning(None, "Expression", "Expression with conditionals only applies for one scenario.")
+                print("Expression with conditionals only applies for one scenario.")
+                return False, None, None
+        
+        return scenariosExpressionResult and networkExpressionResult, scenariosExpressionStack, networkExpressionList
         
     def create_layer(self):
+        validationResult, scenariosExpression, networkExpression = self.__validate_data()
+        if validationResult:
+            self.network.addNetworkLayer(self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path)
+            self.accept()
+        else:
+            print("New network layer was not created.")
+        
         return True
