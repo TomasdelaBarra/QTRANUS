@@ -1,5 +1,6 @@
 from ..general.FileManagement import FileManagement
-from Level import Level
+from ..Stack import Stack
+from Level import *
 import csv, numpy as np
 from PyQt4.Qt import QMessageBox
 
@@ -63,32 +64,54 @@ class NetworkDataAccess(object):
         
         return None
     
-    def __getrows(self, origin, destination, networkMatrix):
+    def __get_network_rows(self, origin, destination, networkMatrix):
         rowsData = None
-        rowsData = networkMatrix.data_matrix[
-                                          (networkMatrix.data_matrix['Orig'] == origin)
-                                          &
-                                          (networkMatrix.data_matrix['Dest'] == destination)
-                                         ]
+        rowsData = networkMatrix[
+                                  (networkMatrix['Orig'] == origin)
+                                  &
+                                  (networkMatrix['Dest'] == destination)
+                                 ]
         if rowsData is not None:
             if rowsData.size > 0:
-                return rowsData 
-    
-    
-    def __evaluate_network_expression(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath):
-    
+                return rowsData
+            
+    def __get_network_rows_by_operator(self, origin, destination, operator, networkMatrix):
+        rowsData = None
+        rowsData = networkMatrix[
+                                  (networkMatrix['Orig'] == origin)
+                                  &
+                                  (networkMatrix['Dest'] == destination)
+                                  &
+                                  (networkMatrix['OperName'] == operator)
+                                 ]
+        if rowsData is not None:
+            if rowsData.size > 0:
+                return rowsData
+            
+        def __get_network_rows_by_route(self, origin, destination, route, networkMatrix):
+            rowsData = None
+            rowsData = networkMatrix[
+                                      (networkMatrix['Orig'] == origin)
+                                      &
+                                      (networkMatrix['Dest'] == destination)
+                                      &
+                                      (networkMatrix['RouteName'] == route)
+                                     ]
+            if rowsData is not None:
+                if rowsData.size > 0:
+                    return rowsData
+            
+    def __evaluate_total(self, networkMatrixData, oriDestPairMatrix, variable):
+        
         rowData = None
         rowsData = None
         matrixData = None
-        try:
-            if level == Level.Total:
-                networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenariosExpression.pop(), '\..*')
-                oriDestPairs = self.__get_network_ids(networkMatrix)
-                types = oriDestPairs.dtype
-                
-                if oriDestPairs is not None:
-                    for pair in np.nditer(oriDestPairs):
-                        rowsData = self.__getrows(pair['Orig'], pair['Dest'], networkMatrix)
+        
+        if networkMatrixData is not None:
+            if networkMatrixData.size > 0:
+                if oriDestPairMatrix is not None:
+                    for pair in np.nditer(oriDestPairMatrix):
+                        rowsData = self.__get_network_rows(pair['Orig'], pair['Dest'], networkMatrixData)
                         result = None
                         resultType = None
                         if rowsData is not None:
@@ -154,8 +177,86 @@ class NetworkDataAccess(object):
                                 matrixData = rowData
                             else:
                                 matrixData = np.concatenate((matrixData, rowData))
+        
+        return matrixData
+    
+    def __evaluate_operators_and_routes(self, networkMatrixData, oriDestPairMatrix, variable, expression):
+        if networkMatrixData is not None:
+            if networkMatrixData.size > 0:
+                if oriDestPairMatrix is not None:
+                    for pair in np.nditer(oriDestPairMatrix):
+                        rowsData = self.__get_network_rows_by_operator(pair['Orig'], pair['Dest'], '', networkMatrixData) 
+                    
+                
+    
+    def __evaluate_network_expression(self, origin, destination, item, variable, level, networkMatrixData):
+        
+        rowData = None
+        if level == Level.Operators:
+            rowData = self.__get_network_rows_by_operator(origin, destination, operator, networkMatrix)
+            rowData = networkMatrixData[(networkMatrixData['OperName'] == item)]
+        
+        if level == Level.Routes:
+            rowData = networkMatrixData[(networkMatrixData['RouteName'] == item)]
+            
+        return rowData
+        
+    
+    def __evaluate_network_scenarios_expression(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath):
+    
+        rowData = None
+        rowsData = None
+        matrixData = None
+        try:
+            
+            networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenariosExpression.pop(), '\..*')
+            oriDestPairs = self.__get_network_ids(networkMatrix)
+            types = oriDestPairs.dtype
+            if oriDestPairs is not None:
+                if level == Level.Total:
+                        matrixData = self.__evaluate_total(networkMatrix.data_matrix, oriDestPairs, variable)
 
-            #else:
+                else:
+                    #networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenariosExpression.pop(), '\..*')
+                    if networkMatrix is not None:
+                        if networkMatrix.data_matrix.size > 0:
+                            if type(networkExpression) is list:
+                                stackLen = len(networkExpression[0].data)
+                                networkExpressionData = networkExpression[0]
+                            if type(networkExpression) is Stack:
+                                stackLen = len(networkExpression.data)
+                                networkExpressionData = networkExpression
+                                
+                            generalOperands = Stack()
+                                    
+                            for item in networkExpressionData.data:
+    #                             if ExpressionData.is_operator(item):
+    #                                 operand2 = generalOperands.pop()
+    #                                 operand2 = self.__evaluate_network_expression()(operand2, originList, destinationList, matrixExpression, False)
+    #                                 
+    #                                 operand1 = generalOperands.pop()
+    #                                 operand1 = self.__evaluate_network_expression(operand1, originList, destinationList, matrixExpression, False)
+    #                                 
+    #                                 matrixData = ExpressionData.execute_matrix_expression(operand1, operand2, item, operand1.dtype)
+    #                                 
+    #                                 if matrixData is None:
+    #                                     QMessageBox.warning(None, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.")
+    #                                     raise Exception("There is not data to evaluate for matrix expression.")
+    #                                 else:
+    #                                     if len(matrixData) > 0:
+    #                                         generalOperands.push(matrixData)
+    #                                     else:
+    #                                         QMessageBox.warning(None, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.")
+    #                                         raise Exception("There is not data to evaluate for matrix expression.")
+    #                                 
+    #                                 operand1 = None
+    #                                 operand2 = None
+    #                                 
+    #                             else:
+                                    if stackLen == 1:
+                                        matrixData = self.__evaluate_network_expression(networkMatrix.data_matrix, item, variable, level)
+                                    else:
+                                        generalOperands.push(item)
                 
 
         except Exception as inst:
@@ -179,7 +280,7 @@ class NetworkDataAccess(object):
         if scenariosExpression.tp > 1:
             return True
         else:
-            networkMatrixResult = self.__evaluate_network_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+            networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
             QMessageBox.warning(None, "Network matrix data", "There is not data to evaluate.")

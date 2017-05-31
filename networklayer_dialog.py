@@ -5,7 +5,7 @@ from string import *
 from .scenarios_model import ScenariosModel
 from classes.ExpressionData import ExpressionData
 from classes.network.Network import Network
-from classes.network.Level import Level
+from classes.network.Level import *
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
