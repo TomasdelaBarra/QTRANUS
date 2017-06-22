@@ -6,6 +6,7 @@ from .scenarios_model import ScenariosModel
 from classes.ExpressionData import ExpressionData
 from classes.network.Network import Network
 from classes.network.Level import *
+from pip._vendor.html5lib import _inputstream
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
@@ -13,6 +14,11 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
     
     def __init__(self, parent = None):
+        """
+            @summary: Class constructor
+            @param parent: Class that contains proyect information
+            @type parent: QTranusProject class 
+        """
         super(NetworkLayerDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
@@ -54,7 +60,6 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.__load_variable_combobox()
         self.__reload_scenarios()
 
-
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -87,7 +92,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             return True
         else:
             return False
-    
+
     def __load_scenarios_combobox(self):
         """
             @summary: Loads scenarios combo-box
@@ -108,6 +113,9 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
                 self.alternateScenario.addItem(item)
     
     def __load_variable_combobox(self):
+        """
+            @summary: Loads data to variable combo-box control
+        """
         self.project.network_model.load_dictionaries()
         items = self.project.network_model.get_sorted_variables()
         if items is None:
@@ -154,12 +162,18 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
     
     def total_checked(self):
+        """
+            @summary: Functionality when user click total radio button
+        """
         self.list.clear()
         self.expression.clear()
         self.expression.setEnabled(False)
         self.level = Level.Total
     
     def operator_checked(self):
+        """
+            @summary: Functionality when user click operator radio button
+        """
         if self.operators.isChecked():
             self.list.clear()
             self.expression.clear()
@@ -173,6 +187,9 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
                     self.list.addItem(str(key) + ' - ' + value)
             
     def routes_checked(self):
+        """
+            @summary: Functionality when user click routes radio button
+        """
         if self.routes.isChecked():
             self.list.clear()
             self.expression.clear()
@@ -187,12 +204,17 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
                     self.list.addItem(str(key) + ' - ' + value)
         
     def list_item_selected(self, item):
+        """
+            @summary: Selects item clicked from the list.
+            @param item:  Item selected
+            @type item: String
+        """
         textToAdd = ''
         if item.text() == 'All':
-            if self.level == Level.Operators:# self.operators.isChecked():
+            if self.level == Level.Operators:
                 itemsDic = self.network.get_operators_dictionary()
             
-            if self.level == Level.Routes:#self.routes.isChecked():
+            if self.level == Level.Routes:
                 itemsDic = self.network.get_routes_dictionary()
             
             if itemsDic is not None:
@@ -224,8 +246,6 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             print ("Please write an expression to be evaluated.")
             return False, None, None
         
-        #projectPath = self.project['tranus_folder'][0:max(self.project['tranus_folder'].rfind('\\'), self.project['tranus_folder'].rfind('/'))]
-        
         # Base scenario
         if len(self.base_scenario) == 0:
             QMessageBox.warning(None, "Base Scenario", "There are no Base Scenarios loaded.")
@@ -256,13 +276,13 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
         
         if scenariosExpressionResult:
-            if self.level == Level.Total:#self.total.isChecked():
+            if self.level == Level.Total:
                 networkExpressionResult = True
                 networkExpressionList = None
             else:
                 networkExpressionResult, networkExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
         
-        if self.level is not Level.Total:# not self.total.isChecked():
+        if self.level is not Level.Total:
             if scenariosExpressionStack.tp > 1 and len(networkExpressionList) > 1:
                 QMessageBox.warning(None, "Expression", "Expression with conditionals only applies for one scenario.")
                 print("Expression with conditionals only applies for one scenario.")
@@ -271,6 +291,9 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         return scenariosExpressionResult and networkExpressionResult, scenariosExpressionStack, networkExpressionList
         
     def create_layer(self):
+        """
+            @summary: Method that creates new network layer.
+        """
         validationResult, scenariosExpression, networkExpression = self.__validate_data()
         if validationResult:
             self.network.addNetworkLayer(self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path)

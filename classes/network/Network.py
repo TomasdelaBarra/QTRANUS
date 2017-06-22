@@ -99,7 +99,8 @@ class Network(object):
                 self['network_links_shape_file_path'] = ''
                 self['network_links_shape_id'] = ''
                 return False
-            csvFile_uri = ("file:///" + projectPath + "/network_data.csv?delimiter=,").encode('utf-8')
+
+            csvFile_uri = ("file:///" + projectPath + "/"+ layerName + ".csv?delimiter=,").encode('utf-8')
             print(csvFile_uri)
             csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
             registry.addMapLayer(csvFile, False)
