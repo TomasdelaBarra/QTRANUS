@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Zone import Zone
 from Stack import Stack
 from PyQt4.Qt import QMessageBox

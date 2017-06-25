@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from ..general.FileManagement import FileManagement
 from ..Stack import Stack
 from ..ExpressionData import ExpressionData

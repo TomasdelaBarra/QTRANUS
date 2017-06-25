@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os, re, csv, webbrowser
 from PyQt4 import QtGui, uic
 from PyQt4.Qt import QMessageBox

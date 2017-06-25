@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from GeneralObject import GeneralObject
 
 """ Zone Centroid """
