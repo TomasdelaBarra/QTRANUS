@@ -38,26 +38,41 @@ class Network(object):
         return None
     
     def get_operators(self):
+        """
+            @summary: Gets operators
+        """
         if self.operators_dic is not None:
             return self.operators_dic.values()
         return None
     
     def get_operators_dictionary(self):
+        """
+            @summary: Gets operators dictionary
+        """
         if self.operators_dic is not None:
             return self.operators_dic
         return None
     
     def get_routes(self):
+        """
+            @summary: Gets routes
+        """
         if self.routes_dic is not None:
             return self.routes_dic.values()
         return None
     
     def get_routes_dictionary(self):
+        """
+            @summary: Gets routes dictionary
+        """
         if self.routes_dic is not None:
             return self.routes_dic
         return None
     
     def load_dictionaries(self):
+        """
+            @summary: Loads dictionaries
+        """
         self.__set_variables_dic()
         
     def load_network_scenarios(self, projectPath):
@@ -69,18 +84,53 @@ class Network(object):
         self.scenarios = self.network_data_access.get_valid_network_scenarios(projectPath)
                 
     def get_sorted_scenarios(self):
+        """
+            @summary: Gets sorted scenarios
+        """
         if self.scenarios is not None:
             return sorted(self.scenarios)
         
     def load_operators(self, projectPath, scenario):
-        
+        """
+            @summary: Loads operators
+            @param projectPath: Project path
+            @type projectPath: String
+            @param scenario: Scenario
+            @type scenario: String 
+        """
         self.operators_dic = self.network_data_access.get_scenario_operators(projectPath, scenario)
                     
     def load_routes(self, projectPath, scenario):
-        
+        """
+            @summary: Loads routes
+            @param projectPath: Project path
+            @type projectPath: String
+            @param scenario: Scenario
+            @type scenario: String
+        """
         self.routes_dic = self.network_data_access.get_scenario_routes(projectPath, scenario)
 
     def addNetworkLayer(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath):
+        """
+            @summary: Get operators dictionary
+            @param layerName: Layer name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param networkExpression: Network expression
+            @type networkExpression: Stack object
+            @param variable: Variable to evaluate
+            @type variable: String
+            @param level: Level to evaluate (Total, Routes, Operators)
+            @type level: Level object
+            @param projectPath: Project path
+            @type projectPath: String
+            @param group: Project group
+            @type group: Layer group
+            @param networkLinkShapePath: Network link shape path
+            @type networkLinkShapePath: String
+            @return: Result of the layer creation
+        """
         if scenariosExpression is None:
             QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
@@ -93,8 +143,7 @@ class Network(object):
 
             # Source shape, name of the new shape, providerLib
             layer = QgsVectorLayer(networkLinkShapePath, layerName, 'ogr')
-            
-            
+
             registry.addMapLayer(layer, False)
             if not layer.isValid():
                 self['network_links_shape_file_path'] = ''

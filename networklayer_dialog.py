@@ -7,7 +7,6 @@ from .scenarios_model import ScenariosModel
 from classes.ExpressionData import ExpressionData
 from classes.network.Network import Network
 from classes.network.Level import *
-from pip._vendor.html5lib import _inputstream
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
@@ -25,6 +24,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.project = parent.project
         self.network = Network()
         self.level = None
+        self.tempLayerName = ''
+        self.tempExpression = ''
         
         # Linking objects with controls
         self.help = self.findChild(QtGui.QPushButton, 'btn_help')
@@ -44,6 +45,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layerName.keyPressEvent = self.keyPressEvent
+        self.expression.keyPressEvent = self.expression_key_press_event
         self.buttonBox.accepted.connect(self.create_layer)
         self.scenarioOperator.currentIndexChanged[int].connect(self.scenario_operator_changed)
         self.baseScenario.currentIndexChanged[int].connect(self.scenario_changed)
@@ -82,11 +84,26 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         else:
             self.tempLayerName = self.layerName.text()
             
+    def expression_key_press_event(self, event):
+        """
+            @summary: Detects when a key is pressed
+            @param event: Key press event
+            @type event: Event object
+        """
+        QtGui.QLineEdit.keyPressEvent(self.expression, event)
+        if not self.invalid_expression_characters(event.text()):
+            QMessageBox.warning(None, "Network Expression", "Invalid character: " + event.text() + ".")
+            if self.expression.isUndoAvailable():
+                self.expression.setText(self.tempExpression)
+        else:
+            self.tempExpression = self.expression.text()
+    
     def validate_string(self, input):
         """
             @summary: Validates invalid characters
             @param input: Input string
             @type input: String object
+            @return: Result of the evaluation
         """
         pattern = re.compile('[\\\/\:\*\?\"\<\>\|]')
         if re.match(pattern, input) is None:
@@ -94,6 +111,19 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         else:
             return False
 
+    def invalid_expression_characters(self, input):
+        """
+            @summary: Validates invalid characters
+            @param input: Input string
+            @type input: String object
+            @return: Result of the evaluation
+        """
+        pattern = re.compile('[\\\/\:\*\-\<\>\|\=]')
+        if re.match(pattern, input) is None:
+            return True
+        else:
+            return False
+    
     def __load_scenarios_combobox(self):
         """
             @summary: Loads scenarios combo-box
@@ -229,6 +259,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             self.expression.setText(self.expression.text() + textToAdd)
         else:
             self.expression.setText(self.expression.text() + " + " + textToAdd)
+            
+        self.tempExpression = self.expression.text()
     
     def __validate_data(self):
         """
@@ -267,6 +299,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
                 QMessageBox.warning(None, "Alternate Scenario", "Please select an Alternate Scenario.")
                 print("Please select an Alternate Scenario.")
                 return False, None, None
+            else:
+                scenariosExpression.append(str(self.alternateScenario.currentText()))
         
         
         if self.variablesList.currentText() == '':
@@ -294,6 +328,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
     def create_layer(self):
         """
             @summary: Method that creates new network layer.
+            @return: Result of the process
         """
         validationResult, scenariosExpression, networkExpression = self.__validate_data()
         if validationResult:
