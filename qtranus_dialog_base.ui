@@ -16,6 +16,10 @@
   <property name="windowTitle">
    <string>QTranus</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/plugins/QTranus/icon.png</normaloff>:/plugins/QTranus/icon.png</iconset>
+  </property>
   <property name="modal">
    <bool>true</bool>
   </property>
@@ -238,12 +242,12 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item alignment="Qt::AlignVCenter">
-          <widget class="QCommandLinkButton" name="zones">
+          <widget class="QCommandLinkButton" name="data">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Zones</string>
+            <string>Data</string>
            </property>
           </widget>
          </item>
@@ -261,12 +265,12 @@
           </spacer>
          </item>
          <item alignment="Qt::AlignVCenter">
-          <widget class="QCommandLinkButton" name="network">
+          <widget class="QCommandLinkButton" name="run">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Network</string>
+            <string>Run</string>
            </property>
           </widget>
          </item>
@@ -284,12 +288,12 @@
           </spacer>
          </item>
          <item alignment="Qt::AlignVCenter">
-          <widget class="QCommandLinkButton" name="matrix">
+          <widget class="QCommandLinkButton" name="results">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Matrix</string>
+            <string>Results</string>
            </property>
           </widget>
          </item>
@@ -371,9 +375,9 @@
   <tabstop>network_links_shape</tabstop>
   <tabstop>network_links_shape_btn</tabstop>
   <tabstop>centroid_shape_btn</tabstop>
-  <tabstop>zones</tabstop>
-  <tabstop>network</tabstop>
-  <tabstop>matrix</tabstop>
+  <tabstop>data</tabstop>
+  <tabstop>run</tabstop>
+  <tabstop>results</tabstop>
   <tabstop>button_box</tabstop>
  </tabstops>
  <resources/>

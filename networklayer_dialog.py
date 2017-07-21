@@ -332,7 +332,14 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         validationResult, scenariosExpression, networkExpression = self.__validate_data()
         if validationResult:
-            self.network.addNetworkLayer(self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path)
+            result = self.network.addNetworkLayer(self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path)
+            
+            if not result:
+                QMessageBox.warning(None, "Network", "Could not create network layer.")
+                print("Could not create network layer.")
+                self.project['network_links_shape_file_path'] = ''
+                self.project['network_links_shape_id'] = ''
+
             self.accept()
         else:
             print("New network layer was not created.")

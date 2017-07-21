@@ -29,12 +29,10 @@ import os, webbrowser
 from PyQt4 import QtGui, uic
 from PyQt4.Qt import QMessageBox
 
-#from .settings_dialog import SettingsDialog
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
-from .matrixlayer_dialog import MatrixLayerDialog
 from .networklayer_dialog import NetworkLayerDialog
-from distutils.msvc9compiler import NET_BASE
+from .results_dialog import ResultsDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -61,9 +59,9 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.network_nodes_shape = self.findChild(QtGui.QLineEdit, 'network_nodes_shape')
         self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
-        self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
-        self.matrix_btn = self.findChild(QtGui.QCommandLinkButton, 'matrix')
-        self.network_btn = self.findChild(QtGui.QCommandLinkButton, 'network')
+        self.data_btn = self.findChild(QtGui.QCommandLinkButton, 'data')
+        self.results_btn = self.findChild(QtGui.QCommandLinkButton, 'results')
+        self.run_btn = self.findChild(QtGui.QCommandLinkButton, 'run')
         self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
         self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
         self.network_links_shape_btn = self.findChild(QtGui.QToolButton, 'network_links_shape_btn')
@@ -76,9 +74,9 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
-        self.zones_btn.clicked.connect(self.zone_layer_dialog)
-        self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
-        self.network_btn.clicked.connect(self.network_layer_dialog)
+        self.data_btn.clicked.connect(self.data_dialog)
+        self.results_btn.clicked.connect(self.results_dialog)
+        self.run_btn.clicked.connect(self.run_dialog)
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
@@ -133,7 +131,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         result = self.project.load_network_links_shape_file(file_name)
         if result:
             self.network_links_shape.setText(file_name)
-            self.network_btn.setEnabled(self.project.is_valid_network())
+            self.results_btn.setEnabled(self.project.is_valid_network())
         else:
             self.network_links_shape.setText('')
         self.check_configure()
@@ -142,7 +140,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         result = self.project.load_network_nodes_shape_file(file_name)
         if result:
             self.network_nodes_shape.setText(file_name)
-            self.network_btn.setEnabled(self.project.is_valid_network())
+            self.results_btn.setEnabled(self.project.is_valid_network())
         else:
             self.network_nodes_shape.setText('')
 
@@ -196,34 +194,29 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         
         return select_file
 
-    def zone_layer_dialog(self):
+    def data_dialog(self):
         """
-            @summary: Opens zone layer window
+            @summary: Opens data window
         """
-        if self.project.map_data.get_sorted_fields() is None:
-            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
-            print ("There are no fields to load, please reload SHP file.")
-        else:
-            dialog = ZoneLayerDialog(parent=self)
-            dialog.show()
-            result = dialog.exec_()
+        #To Do
+        #Call your window here
+        pass
 
-    def matrix_layer_dialog(self):
+    def results_dialog(self):
         """
-            @summary: Opens matrix layer window 
+            @summary: Opens results window 
         """
-        if self.project.map_data.get_sorted_fields() is None:
-            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
-            print ("There are no fields to load, please reload SHP file.")
-        else:
-            dialog = MatrixLayerDialog(parent = self)
-            dialog.show()
-            result = dialog.exec_()
-
-    def network_layer_dialog(self):
-        dialog = NetworkLayerDialog(parent = self)
+        dialog = ResultsDialog(parent = self)
         dialog.show()
         result = dialog.exec_()
+
+    def run_dialog(self):
+        """
+            @summary: Opens run window 
+        """
+        #To Do
+        #Call your window here
+        pass
 
     def show(self):
         """
@@ -269,9 +262,8 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Validates configuration
         """
-        self.zones_btn.setEnabled(self.project.is_valid())
-        self.matrix_btn.setEnabled(self.project.is_valid())
-        self.network_btn.setEnabled(self.project.is_valid_network())
+        if self.project.is_valid() or self.project.is_valid() or self.project.is_valid_network():
+            self.results_btn.setEnabled(True)
 
     def load_zone_shape_fields(self, fields):
         """

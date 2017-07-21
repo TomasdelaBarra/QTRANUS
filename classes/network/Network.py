@@ -146,8 +146,6 @@ class Network(object):
 
             registry.addMapLayer(layer, False)
             if not layer.isValid():
-                self['network_links_shape_file_path'] = ''
-                self['network_links_shape_id'] = ''
                 return False
 
             csvFile_uri = ("file:///" + projectPath + "/"+ layerName + ".csv?delimiter=,").encode('utf-8')
