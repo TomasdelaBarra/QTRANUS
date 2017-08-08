@@ -3,6 +3,7 @@
 # information about a plugin. The old method of 
 # embedding metadata in __init__.py will 
 # is no longer supported since version 2.0.
+# a new line
 
 # This file should be included when you package your plugin.# Mandatory items:
 
