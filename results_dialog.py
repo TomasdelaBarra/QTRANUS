@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os, webbrowser
 from PyQt4 import QtGui, uic
-from PyQt4.Qt import QMessageBox
 
+from classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model import ScenariosModel 
 from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
@@ -55,7 +55,8 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens zone layer window
         """
         if self.project.map_data.get_sorted_fields() is None:
-            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("There are no fields to load, please reload SHP file.")
         else:
             dialog = ZoneLayerDialog(parent=self)
@@ -67,7 +68,9 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens matrix layer window 
         """
         if self.project.map_data.get_sorted_fields() is None:
-            QMessageBox.warning(None, "Fields", "There are no fields to load, please reload SHP file.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
+            
             print ("There are no fields to load, please reload SHP file.")
         else:
             dialog = MatrixLayerDialog(parent = self)
@@ -79,8 +82,7 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens network layer window 
         """
         if self.project.network_link_shape_path is None or self.project.network_link_shape_path.strip() == '':
-            messagebox = QtGui.QMessageBox(QtGui.QMessageBox.Warning, "Network Shape File", "Please select a network link shape file", buttons = QtGui.QMessageBox.Ok, parent=self)
-            messagebox.setWindowIcon(QtGui.QIcon(":/plugins/QTranus/icon.png"))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network Shape File", "Please select a network link shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
 
             print ("Please select a network link shape file.")

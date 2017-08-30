@@ -13,7 +13,7 @@ from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
-from PyQt4.Qt import QMessageBox
+from classes.general.QTranusMessageBox import QTranusMessageBox
 from classes.GeneralObject import GeneralObject
 from classes.Indicator import Indicator
 from classes.MapData import MapData
@@ -67,12 +67,14 @@ class QTranusProject(object):
         """
         
         if scenariosExpression is None:
-            QMessageBox.warning(None, "Scenarios expression", "There is not scenarios information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not scenarios information.")
             return False
         
         if (self.zonesIdFieldName is None) or (self.zonesIdFieldName == ''):
-            QMessageBox(None, "Zone Id", "Zone Id Field Name was not specified.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Zone Id", "Zone Id Field Name was not specified.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Zone Id Field Name was not specified.")
             return False
         
@@ -156,17 +158,20 @@ class QTranusProject(object):
     def addMatrixLayer(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression):
 
         if scenariosExpression is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not scenarios information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not scenarios information.")
             return False
         
         if originZones is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not origin zones information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not origin zones information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not origin zones information.")
             return False
         
         if destinationZones is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not destination zones information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not destination zones information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not destination zones information.")
             return False
 

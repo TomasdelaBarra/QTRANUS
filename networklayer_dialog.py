@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser
 from PyQt4 import QtGui, uic
-from PyQt4.Qt import QMessageBox
+from classes.general.QTranusMessageBox import QTranusMessageBox
 from string import *
 from .scenarios_model import ScenariosModel
 from classes.ExpressionData import ExpressionData
@@ -67,7 +67,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Opens QTranus users help
         """
-        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'matrix.html')
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
         
     def keyPressEvent(self, event):
@@ -78,7 +78,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         QtGui.QLineEdit.keyPressEvent(self.layerName, event)
         if not self.validate_string(event.text()):
-            QMessageBox.warning(None, "Layer Name", "Invalid character: " + event.text() + ".")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             if self.layerName.isUndoAvailable():
                 self.layerName.setText(self.tempLayerName)
         else:
@@ -92,7 +93,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         QtGui.QLineEdit.keyPressEvent(self.expression, event)
         if not self.invalid_expression_characters(event.text()):
-            QMessageBox.warning(None, "Network Expression", "Invalid character: " + event.text() + ".")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network Expression", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             if self.expression.isUndoAvailable():
                 self.expression.setText(self.tempExpression)
         else:
@@ -150,7 +152,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.project.network_model.load_dictionaries()
         items = self.project.network_model.get_sorted_variables()
         if items is None:
-            QMessageBox.warning(None, "Variables", "There are no variables to load.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Variables", "There are no variables to load.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("There are no variables to load.")
         else:
             self.variablesList.addItems(items)
@@ -270,25 +273,29 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpression = []
         
         if self.layerName.text().strip() == '':
-            QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '' and (self.level is not Level.Total):#self.operators.isChecked() or self.routes.isChecked()):
-            QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please write an expression to be evaluated.")
             return False, None, None
         
         # Base scenario
         if len(self.base_scenario) == 0:
-            QMessageBox.warning(None, "Base Scenario", "There are no Base Scenarios loaded.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("There are no Base Scenarios loaded.")
             return False, None, None
         else:
             if self.baseScenario.currentText().strip() != '':
                 scenariosExpression.append(str(self.baseScenario.currentText()))
             else:
-                QMessageBox.warning(None, "Base Scenario", "Please select a Base Scenario.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Base Scenario", "Please select a Base Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Please select a Base Scenario.")
                 return False, None, None
             
@@ -296,7 +303,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         if self.scenarioOperator.currentText() != '':
             scenariosExpression.append(str(self.scenarioOperator.currentText()))
             if self.alternateScenario.currentText() == '':
-                QMessageBox.warning(None, "Alternate Scenario", "Please select an Alternate Scenario.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Please select an Alternate Scenario.")
                 return False, None, None
             else:
@@ -304,7 +312,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         
         
         if self.variablesList.currentText() == '':
-            QMessageBox.warning(None, "Variable", "Please select a variable.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Variable", "Please select a variable.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please write an expression to be evaluated.")
             return False, None, None
         
@@ -319,7 +328,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
         
         if self.level is not Level.Total:
             if scenariosExpressionStack.tp > 1 and len(networkExpressionList) > 1:
-                QMessageBox.warning(None, "Expression", "Expression with conditionals only applies for one scenario.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Expression with conditionals only applies for one scenario.")
                 return False, None, None
         
@@ -335,7 +345,8 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             result = self.network.addNetworkLayer(self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path)
             
             if not result:
-                QMessageBox.warning(None, "Network", "Could not create network layer.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network", "Could not create network layer.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Could not create network layer.")
                 self.project['network_links_shape_file_path'] = ''
                 self.project['network_links_shape_id'] = ''
@@ -345,3 +356,4 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
             print("New network layer was not created.")
         
         return True
+    

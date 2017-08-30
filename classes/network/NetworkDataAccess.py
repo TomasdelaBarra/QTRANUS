@@ -4,7 +4,7 @@ from ..Stack import Stack
 from ..ExpressionData import ExpressionData
 from Level import *
 import csv, numpy as np
-from PyQt4.Qt import QMessageBox
+from ..general.QTranusMessageBox import QTranusMessageBox
 
 class NetworkDataAccess(object):
     def __init__(self):
@@ -398,9 +398,11 @@ class NetworkDataAccess(object):
         except Exception as inst:
             print(inst)
             matrixData = None
-            QMessageBox.warning(None, "Error", "Unexpected error: {0}".format(inst))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
         except:
-            QMessageBox.warning(None, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             matrixData = None
         finally:
@@ -668,11 +670,13 @@ class NetworkDataAccess(object):
         except Exception as inst:
             matrixData = None
             print(inst)
-            QMessageBox.warning(None, "Error", "Unexpected error: {0}".format(inst))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
         except:
             matrixData = None
             print("Unexpected error:", sys.exc_info()[0])
-            QMessageBox.warning(None, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
 
         return matrixData  
     
@@ -700,7 +704,8 @@ class NetworkDataAccess(object):
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
-            QMessageBox.warning(None, "Network matrix data", "There is not data to evaluate.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("There is not data to evaluate.")
             return False
         
@@ -716,3 +721,5 @@ class NetworkDataAccess(object):
         del csvFile
         
         return True
+    
+    

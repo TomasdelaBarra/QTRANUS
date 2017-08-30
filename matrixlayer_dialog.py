@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, re, csv, webbrowser
 from PyQt4 import QtGui, uic
-from PyQt4.Qt import QMessageBox
+from classes.general.QTranusMessageBox import QTranusMessageBox
 from PyQt4.QtCore import *
 from .scenarios_model import ScenariosModel
 from qgis.core import QgsProject
@@ -70,7 +70,8 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         QtGui.QLineEdit.keyPressEvent(self.layerName, event)
         if not self.validate_string(event.text()):
-            QMessageBox.warning(None, "Layer Name", "Invalid character: " + event.text() + ".")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             if self.layerName.isUndoAvailable():
                 self.layerName.setText(self.tempLayerName)
         else:
@@ -240,13 +241,15 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
             for trip in self.project.map_data.trip_matrices:
                 if trip.Id == scenario:
                     if len(trip.tripMatrix.dtype) != 7:
-                        QMessageBox.warning(None, "Matrix Scenario", "Scenario " + scenario + ", has an incorrect format.")
+                        messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix Scenario", "Scenario " + scenario + ", has an incorrect format.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                        messagebox.exec_()
                         print ("Scenario {0}, has an incorrect format.").format(scenario)
                         return False
                     else:
                         return True
         else:
-            QMessageBox.warning(None, "Matrix Scenario", "There are not scenarios information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix Scenario", "There are not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Matrix Scenario", "There are not scenarios information.")
             return False 
         
@@ -258,19 +261,22 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpression = []
         
         if self.layerName.text().strip() == '':
-            QMessageBox.warning(None, "Layer Name", "Please write Layer Name.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '':
-            QMessageBox.warning(None, "Expression", "Please write an expression to be evaluated.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please write an expression to be evaluated.")
             return False, None, None
         
         projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
         
         if len(self.base_scenario) == 0:
-            QMessageBox.warning(None, "Base Scenario", "There are no Base Scenarios loaded.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("There are no Base Scenarios loaded.")
             return False, None, None
         else:
@@ -279,7 +285,8 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
                     return False, None, None
                 scenariosExpression.append(str(self.baseScenario.currentText()))
             else:
-                QMessageBox.warning(None, "Base Scenario", "Selected Base Scenario has no information.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Base Scenario", "Selected Base Scenario has no information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print ("Selected Base Scenario has no information.")
                 return False, None, None
             
@@ -287,7 +294,8 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         if self.operators.currentText() != '':
             scenariosExpression.append(str(self.operators.currentText()))
             if self.alternateScenario.currentText() == '':
-                QMessageBox.warning(None, "Alternate Scenario", "Please select an Alternate Scenario.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Please select an Alternate Scenario.")
                 return False, None, None
             else:
@@ -296,26 +304,30 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
                         return False, None, None
                     scenariosExpression.append(str(self.alternateScenario.currentText()))
                 else:
-                    QMessageBox.warning(None, "Alternate Scenario", "Selected Alternate Scenario has no information.")
+                    messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Alternate Scenario", "Selected Alternate Scenario has no information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                    messagebox.exec_()
                     print ("Selected Alternate Scenario has no information.")
                     return False, None, None
         
         originSelectedCounter = len(self.originList.selectedItems())
         destinationSelectedCounter = len(self.destinationList.selectedItems())
         if originSelectedCounter == 0:
-            QMessageBox.warning(None, "Origin Zones", "Please select at least one origin zone.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Origin Zones", "Please select at least one origin zone.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please select at least one origin zone.")
             return False, None, None
         
         if destinationSelectedCounter == 0:
-            QMessageBox.warning(None, "Destination Zones", "Please select at least one destination zone.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Destination Zones", "Please select at least one destination zone.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print ("Please select at least one destination zone.")
             return False, None, None
         
         if originSelectedCounter == 1 and destinationSelectedCounter == 1:
             if self.originList.selectedItems()[0].text() == self.destinationList.selectedItems()[0].text():
                 if self.originList.selectedItems()[0].text() != "All":
-                    QMessageBox.warning(None, "Zones", "You must select different origin and destination.")
+                    messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Zones", "You must select different origin and destination.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                    messagebox.exec_()
                     print ("You must select different origin and destination.")
                     return False, None, None
         
@@ -325,8 +337,10 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
             matrixExpressionResult, matrixExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
         
         if scenariosExpressionStack.tp > 1 and len(matrixExpressionList) > 1:
-            QMessageBox.warning(None, "Expression", "Expression with conditionals only applies for one scenario.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Expression with conditionals only applies for one scenario.")
             return False, None, None
         
         return scenariosExpressionResult and matrixExpressionResult, scenariosExpressionStack, matrixExpressionList
+    

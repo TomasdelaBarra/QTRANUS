@@ -11,10 +11,22 @@
             <nav class="nav">
                 <h2>Content</h2>
                 <ul>
-                    <li><a href='index.html'>Home</a></li>
-                    <li><a href='results.html'>Results</a></li>
-                    <li><a href='zones.html'>Zones</a></li>
-					<li><a href='matrix.html'>Matrix</a></li>
+                    <li>
+                    	<a href='index.html'>Home</a>
+                    	<ul class="listLevel">
+                    		<li><a href='project.html'>Project Configuration</a></li>
+                    		<li><a href="#">Data</a></li>
+                    		<li><a href="#">Run</a></li>
+                    		<li>
+                    			<a href='results.html'>Results</a>
+                    			<ul class="listLevel">
+                    				<li><a href='zones.html'>Zone-based Maps</a></li>
+									<li><a href='matrix.html'>Matrix</a></li>
+									<li><a href='network.html'>Network</a></li>
+                    			</ul>
+                			</li>
+                    	</ul>
+                    </li>
                 </ul>
             </nav>
             <article class="article">
@@ -25,7 +37,7 @@
 				<p>To begin the process, a window called New Matrix Layer is presented with boxes to fill:</p>
                 <figure>
                     <img src="img/matrix1.jpg">
-                    <figcaption>Fig. 3: Matrix layer window.</figcaption>
+                    <figcaption>Matrix layer window.</figcaption>
                 </figure>
 				<p>In (1) the list of all transport categories that were found in the data is displayd. In (2) and (3) the list of zones that was found in your data is listed.</p>
                 <h3>New layer name</h3>
@@ -52,7 +64,7 @@
                 <hr>
             </article>
             <footer>
-                QTranus 2016
+                QTranus 2017
             </footer>
         </div>
     </body>
