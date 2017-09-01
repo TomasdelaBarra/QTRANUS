@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ GeneralObject Class """
 class GeneralObject(object):
     def __init__(self):

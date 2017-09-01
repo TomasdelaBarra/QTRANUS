@@ -22,7 +22,9 @@ footer {background: #5F5F5F;color:white;}
 
 .nav ul {
     list-style-type: none;
-	padding: 0;
+    list-style-position:outside;
+    margin-left: 0;
+    padding-left: 0;
 }
 			
 .nav ul a {
@@ -33,4 +35,14 @@ footer {background: #5F5F5F;color:white;}
     .nav {text-align:left;-webkit-flex: 1 auto;flex:1 auto;-webkit-order:1;order:1;}
     .article {-webkit-flex:5 0px;flex:5 0px;-webkit-order:2;order:2;}
     footer {-webkit-order:3;order:3;}
+}
+
+.listLevel
+{
+	padding-left: 20px !important;
+}
+
+.linkSpace
+{
+	padding-left: 25px !important;
 }

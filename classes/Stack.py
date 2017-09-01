@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Stack Class """
 class Stack(object):
     def __init__(self):

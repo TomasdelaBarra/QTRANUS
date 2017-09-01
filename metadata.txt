@@ -3,6 +3,7 @@
 # information about a plugin. The old method of 
 # embedding metadata in __init__.py will 
 # is no longer supported since version 2.0.
+# a new line
 
 # This file should be included when you package your plugin.# Mandatory items:
 
@@ -10,7 +11,7 @@
 name=qtranus
 qgisMinimumVersion=2.1
 description=qtranus
-version=1.2.0
+version=1.3.0
 author=qtranus
 email=omar.valladolidg@gmail.com
 

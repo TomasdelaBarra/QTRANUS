@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 from Zone import Zone
 from Stack import Stack
-from PyQt4.Qt import QMessageBox
+from general.QTranusMessageBox import QTranusMessageBox
 
 import csv, numpy as np
 
@@ -128,7 +129,8 @@ class ExpressionData(object):
                     nOperands = nOperands + 1
                     
             if nOperators+1 != nOperands:
-                QMessageBox.warning(None, "Parsing", "Incorrect expression, please validate it.")
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Parsing", "Incorrect expression, please validate it.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
                 print("Incorrect expression, please validate it.")
                 result = False
                 output = None
@@ -136,7 +138,8 @@ class ExpressionData(object):
         except Exception as e:
             result = False
             output = None
-            QMessageBox.warning(None, "Parsing", ("There was an error parsing the expression:\nErr. Codes:{0}\nErr. Message:{1}").format(e.errcode, e.errmsg))
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Parsing", ("There was an error parsing the expression:\nErr. Codes:{0}\nErr. Message:{1}").format(e.errcode, e.errmsg), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There was an error parsing the expression:\nErr. Codes:{0}\nErr. Message:{1}").format(e.errcode, e.errmsg)
 
         finally:
@@ -154,25 +157,29 @@ class ExpressionData(object):
         outputExpressions = []
         
         if expression is None:
-            QMessageBox.warning(None, "Sectors expression", "There is not sectors expression to evaluate.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sectors expression", "There is not sectors expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There is not sectors expression to evaluate.")
             return False, None
         
         if len(expression.strip()) == 0:
-            QMessageBox.warning(None, "Sectors expression", "There is not sectors expression to evaluate.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sectors expression", "There is not sectors expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There is not sectors expression to evaluate.")
             return False, None        
         
         tokens = ExpressionData.tokenize(expression)
         if tokens is None:
-            QMessageBox.warning(None, "Sectors expression", "Incorrect expression, please validate it.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sectors expression", "Incorrect expression, please validate it.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Incorrect expression, please validate it.")
             return False, None
         else:
             tokensResult, tokensList, hasConditionals = ExpressionData.validate_conditionals(tokens)
         
         if not tokensResult:
-            QMessageBox.warning(None, "Sectors expression", "Incorrect expression, please validate it.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sectors expression", "Incorrect expression, please validate it.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Incorrect expression, please validate it.")
             return False, None
         else:
@@ -211,12 +218,14 @@ class ExpressionData(object):
         output = None
                 
         if expression is None:
-            QMessageBox.warning(None, "Scenarios validation", "There is not scenarios expression to evaluate.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios validation", "There is not scenarios expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There is not scenarios expression to evaluate.")
             result = False
             output = None
         if len(expression) == 0:
-            QMessageBox.warning(None, "Scenarios validation", "There is not scenarios expression to evaluate.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios validation", "There is not scenarios expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There is not scenarios expression to evaluate.")
             result = False
             output = None
@@ -255,13 +264,15 @@ class ExpressionData(object):
 
         # If there is one or more uncompleted conditionals the expression is incorrect
         if len(uncompletedConditionalsFound) > 0:
-            QMessageBox.warning(None, "Conditionals validation", "Uncompleted conditionals.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Conditionals validation", "Uncompleted conditionals.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Uncompleted conditionals.")
             return False, None, True
 
         # If there is more than one conditional the expression is incorrect
         if len(conditionalFound) > 1:
-            QMessageBox.warning(None, "Conditionals validation", "There is more than one conditional.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Conditionals validation", "There is more than one conditional.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("There is more than one conditional.")
             return False, None, True
         # If it has one conditional is valid
@@ -604,3 +615,5 @@ class ExpressionData(object):
             matrixData =  matrixData = np.array(matrixData, rowData.dtype)
             
         return matrixData
+    
+    

@@ -13,13 +13,14 @@ from PyQt4.QtCore import QVariant
 from PyQt4.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
-from PyQt4.Qt import QMessageBox
+from classes.general.QTranusMessageBox import QTranusMessageBox
 from classes.GeneralObject import GeneralObject
 from classes.Indicator import Indicator
 from classes.MapData import MapData
 from classes.Stack import Stack
 from classes.ZoneCentroid import ZoneCentroid
 from classes.TripMatrix import TripMatrix
+from classes.network.Network import Network
 
 import os
 import re
@@ -39,6 +40,9 @@ class QTranusProject(object):
         self.load()
         self.map_data = MapData()
         self.zonesIdFieldName = None
+        self.network_model = Network()
+        self.network_link_shape_path = None
+        self.network_nodes_shape_path = None
 
     def load(self):
         """
@@ -63,12 +67,14 @@ class QTranusProject(object):
         """
         
         if scenariosExpression is None:
-            QMessageBox.warning(None, "Scenarios expression", "There is not scenarios information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not scenarios information.")
             return False
         
         if (self.zonesIdFieldName is None) or (self.zonesIdFieldName == ''):
-            QMessageBox(None, "Zone Id", "Zone Id Field Name was not specified.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Zone Id", "Zone Id Field Name was not specified.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print("Zone Id Field Name was not specified.")
             return False
         
@@ -152,17 +158,20 @@ class QTranusProject(object):
     def addMatrixLayer(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression):
 
         if scenariosExpression is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not scenarios information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not scenarios information.")
             return False
         
         if originZones is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not origin zones information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not origin zones information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not origin zones information.")
             return False
         
         if destinationZones is None:
-            QMessageBox.warning(None, "Matrix expression", "There is not destination zones information.")
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not destination zones information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
             print  ("There is not destination zones information.")
             return False
 
@@ -190,7 +199,6 @@ class QTranusProject(object):
             group.insertLayer(len(QgsMapLayerRegistry.instance().mapLayers())+1, tripsMatrixLayer)
         
         return True
-
 
     def load_tranus_folder(self, folder=None):
         """
@@ -304,7 +312,7 @@ class QTranusProject(object):
         group.insertLayer(0, layer)
         self['zones_shape'] = layer.source()
         self['zones_shape_id'] = layer.id()
-        return True, zones_shape_fields 
+        return True, zones_shape_fields
 
     def __getitem__(self, key):
         value, _ = self.proj.readEntry('qtranus', key)
@@ -318,6 +326,9 @@ class QTranusProject(object):
 
     def is_valid(self):
         return not not (self['zones_shape'] and self['project_name'] and self['tranus_folder'])
+    
+    def is_valid_network(self):
+        return not not (self['network_links_shape_file_path'] and self['project_name'] and self['tranus_folder'])
 
     def get_layers_group(self):
         """
@@ -339,6 +350,38 @@ class QTranusProject(object):
         for layer in layers_group.findLayers():
             if layer.layer().source() == zones_shape:
                 self['zones_shape_id'] = layer.layer().id()
+    
+    def load_network_links_shape_file(self, file_path):
+        self.network_link_shape_path = file_path
+        registry = QgsMapLayerRegistry.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(file_path, 'Network_Links', 'ogr')
+        if not layer.isValid():
+            self['network_links_shape_file_path'] = ''
+            self['network_links_shape_id'] = ''
+            return False
+            
+        registry.addMapLayer(layer, False)
+        group.insertLayer(0, layer)
+        self['network_links_shape_file_path'] = layer.source()
+        self['network_links_shape_id'] = layer.id()
+        return True
+        
+    def load_network_nodes_shape_file(self, file_path):
+        self.network_nodes_shape_path = file_path
+        registry = QgsMapLayerRegistry.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(file_path, 'Network_Nodes', 'ogr')
+        if not layer.isValid():
+            self['network_nodes_shape_file_path'] = ''
+            self['network_nodes_shape_id'] = ''
+            return False
+            
+        registry.addMapLayer(layer, False)
+        group.insertLayer(0, layer)
+        self['network_nodes_shape_file_path'] = layer.source()
+        self['network_nodes_shape_id'] = layer.id()
+        return True
     
     def load_centroid_file(self, file_path):
         """
