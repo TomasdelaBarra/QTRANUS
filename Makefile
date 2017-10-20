@@ -1,14 +1,12 @@
 #/***************************************************************************
-# QTranus
+# OptionsTRANUS
 #
-# qtranus
+# This plugin automates the execution of TRANUS programs.
 #							 -------------------
-#		begin				: 2015-07-20
+#		begin				: 2017-02-23
 #		git sha				: $Format:%H$
-#		copyright			: (C) 2015 by qtranus
-#		Collaborators        : Tomas de la Barra    - delabarra@gmail.com
-#                              Omar Valladolid      - omar.valladolidg@gmail.com
-#                              Pedro Buron          - pedroburonv@gmail.com
+#		copyright			: (C) 2017 by STEEP Inria
+#		email				: emna.jribi@inria.fr
 # ***************************************************************************/
 #
 #/***************************************************************************
@@ -40,23 +38,23 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	qtranus.py \
-	qtranus_dialog.py
+	Options_TRANUS.py Options_TRANUS_dialog.py
 
-PLUGINNAME = QTranus
+PLUGINNAME = OptionsTRANUS
 
 PY_FILES = \
-	qtranus.py \
-	qtranus_dialog.py \
-	__init__.py
+	__init__.py \
+	Options_TRANUS.py Options_TRANUS_dialog.py
 
-UI_FILES = qtranus_dialog_base.ui
+UI_FILES = Options_TRANUS_dialog_base.ui
 
-EXTRAS = icon.png metadata.txt
+EXTRAS = metadata.txt icon.png
 
-COMPILED_RESOURCE_FILES = resources_rc.py
+EXTRA_DIRS =
 
-PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
+COMPILED_RESOURCE_FILES = resources.py
+
+PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 
 
 #################################################
@@ -75,8 +73,8 @@ default: compile
 
 compile: $(COMPILED_RESOURCE_FILES)
 
-%_rc.py : %.qrc $(RESOURCES_SRC)
-	pyrcc4 -o $*_rc.py  $<
+%.py : %.qrc $(RESOURCES_SRC)
+	pyrcc4 -o $*.py  $<
 
 %.qm : %.ts
 	$(LRELEASE) $<
@@ -114,6 +112,9 @@ deploy: compile doc transcompile
 	cp -vf $(EXTRAS) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vfr i18n $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vfr $(HELP) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help
+	# Copy extra directories if any
+  # (temporarily removed)
+
 
 # The dclean target removes compiled python files from plugin directory
 # also deletes any .git entry

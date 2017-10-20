@@ -1,0 +1,1037 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>tab</class>
+ <widget class="QDialog" name="tab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1558</width>
+    <height>774</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Options TRANUS</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout_4">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Run TRANUS to generate the basic files needed for the other operations TRANUS</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="run_tranus_btn">
+       <property name="text">
+        <string>Run TRANUS</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QSpinBox" name="spinBox"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="16" column="8">
+      <spacer name="horizontalSpacer_8">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="9" column="5">
+      <widget class="QCheckBox" name="imptra_10">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="8">
+      <widget class="QCheckBox" name="mats_2">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="7">
+      <widget class="QLabel" name="label_32">
+       <property name="text">
+        <string>Option 10 : Flows by transport category</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="12">
+      <widget class="QCheckBox" name="matesp_5">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="7">
+      <widget class="QLabel" name="label_34">
+       <property name="text">
+        <string>Option 12 : Costs by socio-economic sector</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="4">
+      <widget class="QLabel" name="label_51">
+       <property name="text">
+        <string>Select files extension :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="8">
+      <widget class="QCheckBox" name="mats_6">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="7">
+      <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Mats</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Imptra</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="7">
+      <widget class="QLabel" name="label_45">
+       <property name="text">
+        <string>Select files extension :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="10">
+      <widget class="QLabel" name="label_4">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Matesp</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="12">
+      <widget class="QCheckBox" name="matesp_8">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="8">
+      <widget class="QCheckBox" name="mats_13">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="5">
+      <widget class="QCheckBox" name="imptra_3">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="2">
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="16" column="12">
+      <spacer name="horizontalSpacer_10">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="14" column="8">
+      <widget class="QCheckBox" name="mats_14">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="4">
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="7" column="8">
+      <widget class="QCheckBox" name="mats_7">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="7">
+      <widget class="QLabel" name="label_30">
+       <property name="text">
+        <string>Option 8 : Frequency distribution of trips by mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="7">
+      <widget class="QLabel" name="label_35">
+       <property name="text">
+        <string>Option 13 : Exogenous trips by transport category     </string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="7">
+      <widget class="QLabel" name="label_23">
+       <property name="text">
+        <string>Option 1 : Disut. by transport category</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="7">
+      <widget class="QLabel" name="label_29">
+       <property name="text">
+        <string>Option 7 : Total trips (sum of categories)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="4">
+      <widget class="QLabel" name="label_21">
+       <property name="text">
+        <string>Option 11 : Indicators,comma delimited</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Option 5 : Consumption coefficients by sector</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="7">
+      <widget class="QLabel" name="label_25">
+       <property name="text">
+        <string>Option 3 : Disut. by socio-economic sector</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Option 7 : All information, comma delimited</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="8">
+      <widget class="QCheckBox" name="mats_11">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="5">
+      <widget class="QCheckBox" name="imptra_5">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="12">
+      <widget class="QCheckBox" name="matesp_3">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="imploc_2">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="7">
+      <widget class="QLabel" name="label_36">
+       <property name="text">
+        <string>Option 14 : Exogenous trips by category and mode     </string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="4">
+      <widget class="QLabel" name="label_20">
+       <property name="text">
+        <string>Option 10 : Route profile,comma delimited</string>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="1">
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="15" column="1">
+      <widget class="QLabel" name="label_49">
+       <property name="text">
+        <string>Select files extension :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QCheckBox" name="imploc_6">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="8">
+      <widget class="QCheckBox" name="mats_1">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="4">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>Option 5 : Table of indicators</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="8">
+      <widget class="QCheckBox" name="mats_5">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Option 1 : All information by sector and zone         </string>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="10">
+      <spacer name="horizontalSpacer_9">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="4" column="4">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Option 4 : Report specified links</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QCheckBox" name="imploc_7">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="4">
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>Option 1 : Report all links</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="7">
+      <widget class="QLabel" name="label_26">
+       <property name="text">
+        <string>Option 4 : Trips by mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="9">
+      <spacer name="verticalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="3" column="2">
+      <widget class="QCheckBox" name="imploc_3">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="8">
+      <widget class="QCheckBox" name="mats_9">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Option 4 : Internal information by sector and zone       </string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_2">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Imploc</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="8">
+      <widget class="QCheckBox" name="mats_12">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="12">
+      <widget class="QCheckBox" name="matesp_6">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="7">
+      <widget class="QLabel" name="label_33">
+       <property name="text">
+        <string>Option 11 : Costs by transport category</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="5">
+      <widget class="QCheckBox" name="imptra_11">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="8">
+      <widget class="QCheckBox" name="mats_3">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="5">
+      <widget class="QCheckBox" name="imptra_1">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="12">
+      <widget class="QCheckBox" name="matesp_4">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Option 2 : Total production by sector and zone       </string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="5">
+      <widget class="QCheckBox" name="imptra_7">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="7">
+      <spacer name="horizontalSpacer_7">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="4" column="5">
+      <widget class="QCheckBox" name="imptra_4">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QCheckBox" name="imploc_1">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="8">
+      <widget class="QCheckBox" name="mats_8">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="5">
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="4" column="2">
+      <widget class="QCheckBox" name="imploc_4">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="10">
+      <widget class="QLabel" name="label_47">
+       <property name="text">
+        <string>Select files extension : </string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="7">
+      <widget class="QLabel" name="label_31">
+       <property name="text">
+        <string>Option 9 : Flows by socio-economic sector</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="4">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>Option 2 : Report specified link types</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="10">
+      <widget class="QLabel" name="label_37">
+       <property name="text">
+        <string>Option 1 : Trips by operator</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="5">
+      <widget class="QCheckBox" name="imptra_9">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Option 6 : Total consumption by sector and zone      </string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="4">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string>Option 9 : Link-Route &amp; Category profile</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="7">
+      <widget class="QLabel" name="label_24">
+       <property name="text">
+        <string>Option 2 : Disut. by mode and transport category    </string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="12">
+      <widget class="QCheckBox" name="matesp_1">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="5">
+      <widget class="QCheckBox" name="imptra_2">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="6">
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="3" column="4">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Option 3 : Filter links by Demand/Capacity range      </string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="5">
+      <widget class="QCheckBox" name="imptra_6">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="7">
+      <widget class="QLabel" name="label_28">
+       <property name="text">
+        <string>Option 6 : Trips by mode and transport category</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QCheckBox" name="imploc_5">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="5" column="7">
+      <widget class="QLabel" name="label_27">
+       <property name="text">
+        <string>Option 5 : Trips by transport category </string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Option 3 : Total production by year and policy</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="4">
+      <widget class="QLabel" name="label_22">
+       <property name="text">
+        <string>Option 6 : Cordons (only with IMPTRA.DAT)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="8">
+      <widget class="QCheckBox" name="mats_4">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="8">
+      <widget class="QCheckBox" name="mats_10">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="4">
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>Option 7 : Transit Routes profiles</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="12">
+      <widget class="QCheckBox" name="matesp_7">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="10">
+      <widget class="QLabel" name="label_39">
+       <property name="text">
+        <string>Option 3 : Matrix of transfers (edit number of transfers)     </string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="11">
+      <widget class="QLineEdit" name="nb_transfers">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>30</width>
+         <height>15</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="10">
+      <widget class="QLabel" name="label_40">
+       <property name="text">
+        <string>Option 4 : Matrix of Distance</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="10">
+      <widget class="QLabel" name="label_41">
+       <property name="text">
+        <string>Option 5 : Matrix of Time</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="10">
+      <widget class="QLabel" name="label_42">
+       <property name="text">
+        <string>Option 6 : Matrix of Costs</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="10">
+      <widget class="QLabel" name="label_43">
+       <property name="text">
+        <string>Option 7 : Matrix of Transfers Between Operators</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="10">
+      <widget class="QLabel" name="label_44">
+       <property name="text">
+        <string>Option 8 : Summary by category and operator</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="QListWidget" name="imploc_extension">
+       <property name="maximumSize">
+        <size>
+         <width>70</width>
+         <height>70</height>
+        </size>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+       <item>
+        <property name="text">
+         <string>csv</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>xls</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>mtx</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>txt</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="15" column="5">
+      <widget class="QListWidget" name="imptra_extension">
+       <property name="maximumSize">
+        <size>
+         <width>70</width>
+         <height>70</height>
+        </size>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+       <item>
+        <property name="text">
+         <string>csv</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>xls</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>mtx</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>txt</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="15" column="8">
+      <widget class="QListWidget" name="mats_extension">
+       <property name="maximumSize">
+        <size>
+         <width>70</width>
+         <height>70</height>
+        </size>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+       <item>
+        <property name="text">
+         <string>csv</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>xls</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>mtx</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>txt</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="15" column="12">
+      <widget class="QListWidget" name="matesp_extension">
+       <property name="maximumSize">
+        <size>
+         <width>70</width>
+         <height>70</height>
+        </size>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+       <item>
+        <property name="text">
+         <string>csv</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>xls</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>mtx</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>txt</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="generate_btn">
+       <property name="text">
+        <string>Generate</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="check_all_btn">
+       <property name="text">
+        <string>Check all</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer_11">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="0" column="0">
+      <widget class="QPushButton" name="clear_console">
+       <property name="text">
+        <string>Clear history</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QTextBrowser" name="console"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QDialogButtonBox" name="close_btn">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Close</set>
+       </property>
+       <property name="centerButtons">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -3,18 +3,21 @@
 # information about a plugin. The old method of 
 # embedding metadata in __init__.py will 
 # is no longer supported since version 2.0.
-# a new line
 
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=qtranus
-qgisMinimumVersion=2.1
-description=qtranus
-version=1.3.0
-author=qtranus
-email=omar.valladolidg@gmail.com
+name=TRANUS Options
+qgisMinimumVersion=2.0
+description=This plugin automates the execution of TRANUS programs.
+version=0.1
+author=STEEP Inria
+email=emna.jribi@inria.fr
 
+about=This plugin allows the execution of TRANUS programs without the use of the console or the TUS(TRANUS User Shell). It allows the simultaneous execution of these programs with several options and for different scenarios of the same project. Four programs are implemented in this plugin : Imploc,Imptra,Mats and Matesp.
+
+tracker=unknown
+repository=https://gitlab.inria.fr/tranus/Tranus_QGIS_Plugins/tree/master/TRANUS_Options
 # End of mandatory metadata
 
 # Recommended items:
@@ -23,11 +26,9 @@ email=omar.valladolidg@gmail.com
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=
+tags=TRANUS, Options, Execution, Simultaneous
 
-homepage=
-tracker=
-repository=
+homepage=https://gitlab.inria.fr/tranus/
 category=Database
 icon=icon.png
 # experimental flag

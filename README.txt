@@ -1,10 +1,10 @@
 Plugin Builder Results
 
-Your plugin QTranus was created in:
-    /home/pedro/Desarrollo/QTranus
+Your plugin OptionsTRANUS was created in:
+    C:\Users\emna\.qgis2\python\plugins\OptionsTRANUS
 
 Your QGIS plugin directory is located at:
-    /home/pedro/.qgis2/python/plugins
+    C:/Users/emna/.qgis2/python/plugins
 
 What's Next:
 
@@ -17,11 +17,11 @@ What's Next:
 
   * Test the plugin by enabling it in the QGIS plugin manager
 
-  * Customize it by editing the implementation file: ``qtranus.py``
+  * Customize it by editing the implementation file: ``Options_TRANUS.py``
 
   * Create your own custom icon, replacing the default icon.png
 
-  * Modify your user interface by opening QTranus.ui in Qt Designer
+  * Modify your user interface by opening OptionsTRANUS.ui in Qt Designer
 
   * You can use the Makefile to compile your Ui and resource files when
     you make changes. This requires GNU make (gmake)

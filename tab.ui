@@ -1,0 +1,723 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+<class>tab</class>
+<widget class="QWidget" name="tab">
+<property name="geometry">
+<rect>
+<x>0</x>
+<y>0</y>
+<width>688</width>
+<height>1112</height>
+</rect>
+</property>
+<property name="windowTitle">
+<string>Options TRANUS</string>
+</property>
+<layout class="QVBoxLayout" name="verticalLayout">
+<item>
+<layout class="QGridLayout" name="gridLayout">
+<item row="0" column="3">
+<widget class="QSpinBox" name="spinBox"/>
+</item>
+<item row="0" column="2">
+<widget class="QPushButton" name="run_tranus_btn">
+<property name="text">
+<string>Run TRANUS</string>
+</property>
+</widget>
+</item>
+<item row="0" column="0">
+<widget class="QLabel" name="label">
+<property name="text">
+<string>Run TRANUS to generate the basic files needed for the other operations TRANUS</string>
+</property>
+</widget>
+</item>
+<item row="0" column="1">
+<spacer name="horizontalSpacer_3">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+</layout>
+</item>
+<item>
+<layout class="QGridLayout" name="gridLayout_3">
+<item row="1" column="0">
+<widget class="QLabel" name="label_27">
+<property name="text">
+<string>Run</string>
+</property>
+</widget>
+</item>
+<item row="1" column="1">
+<spacer name="horizontalSpacer_14">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="0" column="0">
+<widget class="QLabel" name="label_28">
+<property name="font">
+<font>
+<pointsize>10</pointsize>
+<weight>75</weight>
+<bold>true</bold>
+</font>
+</property>
+<property name="text">
+<string>Imploc</string>
+</property>
+</widget>
+</item>
+<item row="1" column="5">
+<widget class="QCheckBox" name="checkBox_22">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="7" column="0">
+<widget class="QLabel" name="label_29">
+<property name="text">
+<string>Consumption coefficients by sector</string>
+</property>
+</widget>
+</item>
+<item row="5" column="5">
+<widget class="QCheckBox" name="checkBox_29">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="1" column="6">
+<spacer name="horizontalSpacer_15">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="4" column="5">
+<widget class="QCheckBox" name="checkBox_25">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="8" column="0">
+<widget class="QLabel" name="label_31">
+<property name="text">
+<string>Total consumption by sector and zone</string>
+</property>
+</widget>
+</item>
+<item row="8" column="5">
+<widget class="QCheckBox" name="checkBox_20">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="5" column="0">
+<widget class="QLabel" name="label_26">
+<property name="text">
+<string>Total production by year/policy</string>
+</property>
+</widget>
+</item>
+<item row="2" column="5">
+<widget class="QCheckBox" name="checkBox_27">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="3" column="0">
+<widget class="QLabel" name="label_24">
+<property name="text">
+<string>All information, comma-delimited</string>
+</property>
+</widget>
+</item>
+<item row="7" column="5">
+<widget class="QCheckBox" name="checkBox_28">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="3" column="5">
+<widget class="QCheckBox" name="checkBox_23">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="6" column="0">
+<widget class="QLabel" name="label_34">
+<property name="text">
+<string>Internal information by sector and zone</string>
+</property>
+</widget>
+</item>
+<item row="4" column="0">
+<widget class="QLabel" name="label_25">
+<property name="text">
+<string>Total production by sector and zone</string>
+</property>
+</widget>
+</item>
+<item row="2" column="0">
+<widget class="QLabel" name="label_30">
+<property name="text">
+<string>All information by sector and zone</string>
+</property>
+</widget>
+</item>
+<item row="6" column="5">
+<widget class="QCheckBox" name="checkBox_30">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+</layout>
+</item>
+<item>
+<layout class="QGridLayout" name="gridLayout_8">
+<item row="8" column="0">
+<widget class="QLabel" name="label_69">
+<property name="text">
+<string>Link Route &amp; category profile</string>
+</property>
+</widget>
+</item>
+<item row="10" column="5">
+<widget class="QCheckBox" name="checkBox_62">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="3" column="0">
+<widget class="QLabel" name="label_70">
+<property name="text">
+<string>Cordons (only with IMPTRA.DAT)</string>
+</property>
+</widget>
+</item>
+<item row="4" column="0">
+<widget class="QLabel" name="label_71">
+<property name="text">
+<string>Filter links by Demand/Capacity range</string>
+</property>
+</widget>
+</item>
+<item row="5" column="0">
+<widget class="QLabel" name="label_72">
+<property name="text">
+<string>Table of indicators</string>
+</property>
+</widget>
+</item>
+<item row="1" column="1">
+<spacer name="horizontalSpacer_22">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="11" column="5">
+<widget class="QCheckBox" name="checkBox_63">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="1" column="5">
+<widget class="QCheckBox" name="checkBox_64">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="1" column="0">
+<widget class="QLabel" name="label_73">
+<property name="text">
+<string>Run</string>
+</property>
+</widget>
+</item>
+<item row="3" column="5">
+<widget class="QCheckBox" name="checkBox_65">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="7" column="5">
+<widget class="QCheckBox" name="checkBox_66">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="4" column="5">
+<widget class="QCheckBox" name="checkBox_67">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="9" column="0">
+<widget class="QLabel" name="label_75">
+<property name="text">
+<string>Transit Routes profiles</string>
+</property>
+</widget>
+</item>
+<item row="2" column="0">
+<widget class="QLabel" name="label_76">
+<property name="text">
+<string>Report all links</string>
+</property>
+</widget>
+</item>
+<item row="8" column="5">
+<widget class="QCheckBox" name="checkBox_68">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="2" column="5">
+<widget class="QCheckBox" name="checkBox_69">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="10" column="0">
+<widget class="QLabel" name="label_77">
+<property name="text">
+<string>Route profile in comma delimited format</string>
+</property>
+</widget>
+</item>
+<item row="9" column="5">
+<widget class="QCheckBox" name="checkBox_70">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="11" column="0">
+<widget class="QLabel" name="label_78">
+<property name="text">
+<string>Report specified link types</string>
+</property>
+</widget>
+</item>
+<item row="5" column="5">
+<widget class="QCheckBox" name="checkBox_71">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="7" column="0">
+<widget class="QLabel" name="label_79">
+<property name="text">
+<string>Report specified links</string>
+</property>
+</widget>
+</item>
+<item row="6" column="5">
+<widget class="QCheckBox" name="checkBox_72">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="6" column="0">
+<widget class="QLabel" name="label_80">
+<property name="text">
+<string>Indicators in comma delimited format </string>
+</property>
+</widget>
+</item>
+<item row="1" column="6">
+<spacer name="horizontalSpacer_23">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="0" column="0">
+<widget class="QLabel" name="label_74">
+<property name="font">
+<font>
+<pointsize>10</pointsize>
+<weight>75</weight>
+<bold>true</bold>
+</font>
+</property>
+<property name="text">
+<string>Imptra</string>
+</property>
+</widget>
+</item>
+</layout>
+</item>
+<item>
+<layout class="QGridLayout" name="gridLayout_5">
+<item row="14" column="0">
+<widget class="QLabel" name="label_6">
+<property name="text">
+<string>Exogenous trips by transport category</string>
+</property>
+</widget>
+</item>
+<item row="0" column="0">
+<widget class="QLabel" name="label_54">
+<property name="font">
+<font>
+<pointsize>10</pointsize>
+<weight>75</weight>
+<bold>true</bold>
+</font>
+</property>
+<property name="text">
+<string>Mats</string>
+</property>
+</widget>
+</item>
+<item row="8" column="0">
+<widget class="QLabel" name="label_46">
+<property name="text">
+<string>Total trips (sum of categories)</string>
+</property>
+</widget>
+</item>
+<item row="10" column="5">
+<widget class="QCheckBox" name="checkBox_41">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="3" column="0">
+<widget class="QLabel" name="label_47">
+<property name="text">
+<string>Disut. by mode and transport category</string>
+</property>
+</widget>
+</item>
+<item row="4" column="0">
+<widget class="QLabel" name="label_48">
+<property name="text">
+<string>Disut. by socio-economic sector</string>
+</property>
+</widget>
+</item>
+<item row="5" column="0">
+<widget class="QLabel" name="label_49">
+<property name="text">
+<string>Trips by mode</string>
+</property>
+</widget>
+</item>
+<item row="1" column="1">
+<spacer name="horizontalSpacer_18">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="1" column="5">
+<widget class="QCheckBox" name="checkBox_42">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="1" column="6">
+<spacer name="horizontalSpacer_19">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item row="2" column="5">
+<widget class="QCheckBox" name="checkBox_43">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="10" column="0">
+<widget class="QLabel" name="label_50">
+<property name="text">
+<string>Flows by socio-economic sector</string>
+</property>
+</widget>
+</item>
+<item row="9" column="5">
+<widget class="QCheckBox" name="checkBox_44">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="5" column="5">
+<widget class="QCheckBox" name="checkBox_45">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="7" column="0">
+<widget class="QLabel" name="label_51">
+<property name="text">
+<string>Trips by mode and transport category</string>
+</property>
+</widget>
+</item>
+<item row="6" column="5">
+<widget class="QCheckBox" name="checkBox_46">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="6" column="0">
+<widget class="QLabel" name="label_52">
+<property name="text">
+<string>Trips by transport category </string>
+</property>
+</widget>
+</item>
+<item row="1" column="0">
+<widget class="QLabel" name="label_53">
+<property name="text">
+<string>Run</string>
+</property>
+</widget>
+</item>
+<item row="3" column="5">
+<widget class="QCheckBox" name="checkBox_47">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="7" column="5">
+<widget class="QCheckBox" name="checkBox_48">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="4" column="5">
+<widget class="QCheckBox" name="checkBox_49">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="9" column="0">
+<widget class="QLabel" name="label_55">
+<property name="text">
+<string>Frequency distribution of trips by mode</string>
+</property>
+</widget>
+</item>
+<item row="2" column="0">
+<widget class="QLabel" name="label_56">
+<property name="text">
+<string>Disut. by transport category</string>
+</property>
+</widget>
+</item>
+<item row="8" column="5">
+<widget class="QCheckBox" name="checkBox_50">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="11" column="0">
+<widget class="QLabel" name="label_3">
+<property name="text">
+<string>Flow by transport category</string>
+</property>
+</widget>
+</item>
+<item row="14" column="5">
+<widget class="QCheckBox" name="checkBox_4">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="11" column="5">
+<widget class="QCheckBox" name="checkBox">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="13" column="0">
+<widget class="QLabel" name="label_5">
+<property name="text">
+<string>Costs by socio-economic sector</string>
+</property>
+</widget>
+</item>
+<item row="12" column="5">
+<widget class="QCheckBox" name="checkBox_2">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="12" column="0">
+<widget class="QLabel" name="label_4">
+<property name="text">
+<string>Costs by transport category</string>
+</property>
+</widget>
+</item>
+<item row="13" column="5">
+<widget class="QCheckBox" name="checkBox_3">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+<item row="15" column="0">
+<widget class="QLabel" name="label_7">
+<property name="text">
+<string>Exogenous trips by category and mode</string>
+</property>
+</widget>
+</item>
+<item row="15" column="5">
+<widget class="QCheckBox" name="checkBox_5">
+<property name="text">
+<string/>
+</property>
+</widget>
+</item>
+</layout>
+</item>
+<item>
+<layout class="QHBoxLayout" name="horizontalLayout">
+<item>
+<widget class="QPushButton" name="generate_btn">
+<property name="text">
+<string>Generate</string>
+</property>
+</widget>
+</item>
+<item>
+<spacer name="horizontalSpacer_4">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item>
+<spacer name="horizontalSpacer">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+<item>
+<widget class="QPushButton" name="check_all_btn">
+<property name="text">
+<string>Check all</string>
+</property>
+</widget>
+</item>
+<item>
+<spacer name="horizontalSpacer_2">
+<property name="orientation">
+<enum>Qt::Horizontal</enum>
+</property>
+<property name="sizeHint" stdset="0">
+<size>
+<width>40</width>
+<height>20</height>
+</size>
+</property>
+</spacer>
+</item>
+</layout>
+</item>
+<item>
+<widget class="QTextBrowser" name="console"/>
+</item>
+</layout>
+</widget>
+<resources/>
+<connections/>
+</ui> 
