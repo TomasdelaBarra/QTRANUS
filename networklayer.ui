@@ -200,13 +200,18 @@
   </widget>
  </widget>
  <tabstops>
-  <tabstop>scenarios</tabstop>
   <tabstop>btn_help</tabstop>
+  <tabstop>scenarios</tabstop>
   <tabstop>layerName</tabstop>
   <tabstop>expression</tabstop>
   <tabstop>base_scenario</tabstop>
   <tabstop>cb_operator</tabstop>
   <tabstop>cb_alternate_scenario</tabstop>
+  <tabstop>cb_variables</tabstop>
+  <tabstop>rbtn_total</tabstop>
+  <tabstop>rbtn_operators</tabstop>
+  <tabstop>rbtn_routes</tabstop>
+  <tabstop>list</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

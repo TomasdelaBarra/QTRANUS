@@ -12,7 +12,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
         if parent.project.tranus_project:
             self.scenarios = parent.project.tranus_project.scenarios
             root = self.scenarios.root
-            self.root_item = self.add_scenario(root)
+            self.root_item = self.add_scenario(root) 
             self.appendRow(self.root_item)
         else:
             self.root_item = QtGui.QStandardItem("There is no data to load")
@@ -24,7 +24,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
         pass
 
     def add_scenario(self, scenario):
-        item = QtGui.QStandardItem(scenario.name + " - " + scenario.code)
+        item = QtGui.QStandardItem(scenario.code + " - " + scenario.name)
         item.setEditable(False)
         for child in scenario.children:
             item.appendRow(self.add_scenario(child))

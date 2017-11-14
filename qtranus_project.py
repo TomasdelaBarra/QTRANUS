@@ -27,6 +27,7 @@ import re
 import random
 import string
 import numpy as np
+from pickle import NONE
 
 class QTranusProject(object):
     def __init__(self, proj):
@@ -43,6 +44,7 @@ class QTranusProject(object):
         self.network_model = Network()
         self.network_link_shape_path = None
         self.network_nodes_shape_path = None
+        self.db_path = None
 
     def load(self):
         """
@@ -404,6 +406,10 @@ class QTranusProject(object):
         self['centroid_shape_file_path'] = layer.source()
         self['centroid_shape_id'] = layer.id()
         return True 
+    
+    def load_db_file(self, file_path):
+        self.db_path = file_path
+        self['db_path'] = self.db_path  
     
     def load_zones_centroids_data(self):
         """

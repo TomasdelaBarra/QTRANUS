@@ -33,6 +33,10 @@ from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 from .networklayer_dialog import NetworkLayerDialog
 from .results_dialog import ResultsDialog
+from .data_dialog import DataDialog
+from classes.general.FileManagement import FileManagement
+from classes.data.DataBase import DataBase
+from classes.general.QTranusMessageBox import QTranusMessageBox
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -53,6 +57,8 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtGui.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
+        self.db_folder_btn = self.findChild(QtGui.QToolButton, 'db_folder_btn')
+        self.new_db_btn = self.findChild(QtGui.QPushButton, name='new_project_btn')
         self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtGui.QLineEdit, 'zone_shape')
         self.network_links_shape = self.findChild(QtGui.QLineEdit, 'network_links_shape')
@@ -70,10 +76,11 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtGui.QComboBox, 'cb_zones_shape_fields')
         
-        
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
+        self.db_folder_btn.clicked.connect(self.select_db_zip_file(self.select_db))
+        self.new_db_btn.clicked.connect(self.new_db)
         self.data_btn.clicked.connect(self.data_dialog)
         self.results_btn.clicked.connect(self.results_dialog)
         self.run_btn.clicked.connect(self.run_dialog)
@@ -100,6 +107,19 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
         self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
+        
+    def new_db(self):
+        if(self.project['tranus_folder'] is None or self.project['tranus_folder'].strip() == ''):
+            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox.exec_()
+            print("Please select workspace path.")
+        else:
+            newDB = DataBase()
+            if(newDB.create_new_data_base(self.project['tranus_folder'], self.layers_group_name.text().strip())):
+                self.project.load_db_file(self.project['tranus_folder'] + "\\" + self.layers_group_name.text().strip() + ".zip")
+                self.data_btn.setEnabled(True)
+                
+            print(self.project.db_path)
 
     def select_zones_shape(self, file_name):
         """
@@ -143,6 +163,11 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             self.results_btn.setEnabled(self.project.is_valid_network())
         else:
             self.network_nodes_shape.setText('')
+            
+    def select_db(self, file_name):
+        self.project.load_db_file(file_name)
+        self.layers_group_name.setText(file_name)
+        self.data_btn.setEnabled(True)
 
     def select_tranus_folder(self):
         """
@@ -193,14 +218,34 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
                 callback(file_name)
         
         return select_file
+    
+    def select_db_zip_file(self, callback):
+        def select_file():
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select DB zip file', directory='', filter='*.*, *.zip')
+            if file_name:
+                file_name = file_name.replace('/', '\\')
+                print(file_name)
+                callback(file_name)
+        
+        return select_file
 
     def data_dialog(self):
         """
             @summary: Opens data window
         """
-        #To Do
-        #Call your window here
-        pass
+        if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
+            dialog = DataDialog(parent = self)
+            dialog.show()
+            result = dialog.exec_()
+        else:
+            if(self.layers_group_name.text().strip() == ''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
+                print("Please select a DB ZIP file.")
+            if(self.tranus_folder.text().strip() ==''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox.exec_()
+                print("Please select workspace path.")
 
     def results_dialog(self):
         """

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
-#import csv
 import numpy as np
+import zipfile
+import shutil
 
 from os import listdir
 from os.path import isfile, join
@@ -52,3 +53,10 @@ class FileManagement(object):
         
         return matrix_result
         
+    @staticmethod
+    def create_zip_file(path, fileName):
+        z = zipfile.ZipFile(path + "\\" + fileName + ".zip", "w")
+    
+    @staticmethod
+    def copy_file(sourceFile, destinationFile):
+        shutil.copy(sourceFile,destinationFile)
