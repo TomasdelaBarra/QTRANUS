@@ -111,8 +111,8 @@ class ScenariosDialog(QtGui.QDialog, FORM_CLASS):
     def __load_previous_scenarios_combobox(self):
         if self.parent().scenariosMatrix is not None:
             if self.parent().scenariosMatrix.size > 0:
-                previousScenariosMatrix = np.unique(self.parent().scenariosMatrix[['PreviousScenarioCode']])
-                previousScenariosMatrix.sort(order='PreviousScenarioCode')
+                previousScenariosMatrix = np.unique(self.parent().scenariosMatrix[['ScenarioCode']])
+                previousScenariosMatrix.sort(order='ScenarioCode')
                 self.previousScenarios.clear()
                 for item in np.nditer(previousScenariosMatrix):
                     self.previousScenarios.addItem(item.item(0)[0])

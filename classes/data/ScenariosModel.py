@@ -8,8 +8,16 @@ class ScenariosModel(QtGui.QStandardItemModel):
     def __init__(self, parent):
         super(ScenariosModel, self).__init__(parent)
         self.setHorizontalHeaderLabels(['Scenarios'])
+        addElements = False
         if parent.scenarios is not None:
-            #self.scenarios = parent.scenarios
+            if parent.scenarios.root is not None:
+                addElements = True
+            else:
+                addElements = False
+        else:
+            addElements = False
+            
+        if(addElements):
             self.root_item = self.__add_root_scenario(parent.scenarios.root)
             self.appendRow(self.root_item)
         else:

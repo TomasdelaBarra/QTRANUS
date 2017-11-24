@@ -34,8 +34,8 @@ class DataBase(object):
     def create_backup_file(self, path, dbFile):
         return self.database_data_access.backup_file(path, dbFile)
         
-    def create_new_scenario_row(self, scenariosMatrix, code, name, description, previous):
-        return self.database_data_access.create_new_scenario_row(scenariosMatrix, code, name, description, previous)
+    def add_new_scenario(self, scenariosMatrix, code, name, description, previous):
+        return self.database_data_access.add_new_scenario(scenariosMatrix, code, name, description, previous)
         
     def save_new_scenario(self, path, code, name, description, previous):
         if(self.database_data_access.save_scenario(path, code, name, description, previous)):
@@ -43,8 +43,8 @@ class DataBase(object):
         else:
             return False
     
-    def get_scenarios_list(self, path):
-        return self.database_data_access.get_scenarios_list(path)
+    def get_scenarios_list(self, scenariosMatrix):
+        return self.database_data_access.get_scenarios_list(scenariosMatrix)
     
     def get_scenarios_array(self, path):
         return self.database_data_access.get_scenarios_array(path)

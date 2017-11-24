@@ -72,27 +72,22 @@ class AddScenarioDialog(QtGui.QDialog, FORM_CLASS):
                 previousCode = (self.previous.currentText().split('-'))[0].strip()               
         
         
-        newMatrix = self.dataBase.create_new_scenario_row(self.parent().parent().scenariosMatrix, self.code.text(), self.name.text(), self.description.text(), previousCode)
+        newMatrix = self.dataBase.add_new_scenario(self.parent().parent().scenariosMatrix, self.code.text(), self.name.text(), self.description.text(), previousCode)
         if newMatrix is not None:
             self.parent().parent().scenariosMatrix = newMatrix
             self.parent().load_scenarios()
             self.accept()
-
-        #if(self.dataBase.save_new_scenario(self.project['tranus_folder'], self.code.text(), self.name.text(), self.description.text(), previousCode)):
-#             rowData = np.array([(operand[0]['Id'], result)],
-#                                    dtype = [('Id', operand.dtype[0]), 
-#                                             ('Result', resultType)])
         else:
             return False
         
         return True
     
-    def __load_scenarios_combobox(self):
-        scenarios_dic = self.dataBase.get_scenarios_list(self.project['tranus_folder'])
+    def __load_scenarios_combobox(self):            
+        scenarios_dic = self.dataBase.get_scenarios_list(self.parent().parent().scenariosMatrix)
         if scenarios_dic is not None:
             if len(scenarios_dic) > 0:
                 for scenario in scenarios_dic:
-                    self.previous.addItem(scenario) 
-                #self.previous.addItems(scenarios_dic)
+                    self.previous.addItem(scenario[0])
+
             
             

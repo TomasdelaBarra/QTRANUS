@@ -58,7 +58,6 @@ class DataBaseDataAccess(object):
             print("output: " + outputPath)
             dbZipfile = zipfile.ZipFile(zipFilePath, 'r')
             dbZipfile.extract(fileName, outputPath)
-            #fileName = dbZipFile.read(fileName)
             fileExtracted = True
         except:
             messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Extract File", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", None, buttons = QtGui.QMessageBox.Ok)
@@ -149,14 +148,15 @@ class DataBaseDataAccess(object):
         
         return fileCreated
     
-    def get_scenarios_list(self, path):
+    def get_scenarios_list(self, scenariosMatrix):
         scenarios_list = []
-        npScenariosMatrix = None
-        npScenariosMatrix = self.__get_scenarios_from_file(path) 
-        if npScenariosMatrix is not None:
-            if npScenariosMatrix.size > 0:
-                for item in np.nditer(npScenariosMatrix):
-                    scenarios_list.append(item.item(0)[0] + ' - ' + item.item(0)[2])
+        if scenariosMatrix is not None:
+            if scenariosMatrix.size > 0:
+                for item in np.nditer(scenariosMatrix):
+                    scenario = []
+                    scenario.append(item.item(0)[0])
+                    scenario.append(item.item(0)[2])
+                    scenarios_list.append(scenario)
                             
         return scenarios_list
     
@@ -170,27 +170,41 @@ class DataBaseDataAccess(object):
         return None
     
     def __get_scenarios_from_file(self, path):
-        npScenariosMatrix = None
+        npScenariosMatrix = None 
         files = [f for f in listdir(path) if isfile(join(path, f))]
         fileName = re.compile(self.scenariosDBFileName)
     
         for fn in files:
             isValidFile = fileName.match(fn)
             if isValidFile != None:
-                npScenariosMatrix = np.genfromtxt(path + "/" + fn, delimiter = ',', skip_header = 0, dtype = None , names = True)
+                npScenariosMatrix = np.genfromtxt(path + "/" + fn, delimiter = ',', skip_header = 0,
+                                    dtype = [('ScenarioCode', 'S12'), ('PreviousScenarioCode', 'S12'), ('Name', 'S32'), ('Description', 'S100')], names = True)
                 npScenariosMatrix.sort(order='ScenarioCode')
 
                 break
                 
         return npScenariosMatrix
     
-    def create_new_scenario_row(self, scenariosMatrix, code, name, description, previous):
-        rowType = scenariosMatrix.dtype
-        rowData = np.array([(code, previous, name, description)],                           
-                                    dtype = rowType)
+    def add_new_scenario(self, scenariosMatrix, code, name, description, previous):
         
-        scenariosMatrix = np.concatenate((scenariosMatrix, rowData))
-        return scenariosMatrix
+        if scenariosMatrix is not None:
+            if scenariosMatrix.size > 0:
+                existingCode = scenariosMatrix[(scenariosMatrix['ScenarioCode'] == code)]
+                
+                if existingCode is not None:
+                    if existingCode.size > 0:
+                        messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Add scenario", "The scenario code already exists.", ":/plugins/QTranus/icon.png", None, buttons = QtGui.QMessageBox.Ok)
+                        messagebox.exec_()
+                        print("The scenario code already exists.")
+                        return None
+        
+        rowData = np.array([(code, previous, name, description)],                           
+                dtype = [('ScenarioCode', 'S12'), ('PreviousScenarioCode', 'S12'), ('Name', 'S32'), ('Description', 'S100')])
+        
+        if scenariosMatrix is None:
+            return rowData 
+        else:
+            return np.concatenate((scenariosMatrix, rowData))
     
     def save_scenario(self, path, code, name, description, previous):
         
@@ -231,29 +245,5 @@ class DataBaseDataAccess(object):
                     if existingCode.size > 0:
                         resultScenarios = scenariosMatrix[(scenariosMatrix['ScenarioCode'] != scenarioCode)]
                         return True, resultScenarios
-                
-#         files = [f for f in listdir(path) if isfile(join(path, f))]
-#         fileName = re.compile(self.scenariosDBFileName)
-#     
-#         for fn in files:
-#             isValidFile = fileName.match(fn)
-#             if isValidFile != None:
-#                 npScenariosMatrix = np.genfromtxt(path + "/" + fn, delimiter = ',', skip_header = 0, dtype = None , names = True)
-#                 if npScenariosMatrix.size > 0:
-#                     existingCode = npScenariosMatrix[(npScenariosMatrix['ScenarioCode'] == scenarioCode)]
-#                     
-#                     if existingCode is not None:
-#                         if existingCode.size > 0:
-#                             resultScenarios = npScenariosMatrix[(npScenariosMatrix['ScenarioCode'] != scenarioCode)]
-#                             if resultScenarios is not None:
-#                                 with open(path + "/" + fn, 'wb') as outFile:
-#                                     newFile = csv.writer(outFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#                                     newFile.writerow(['ScenarioCode', 'PreviousScenarioCode', 'Name', 'Description'])
-#                                 
-#                                     if resultScenarios.size > 0:
-#                                         for item in np.nditer(resultScenarios):
-#                                             newFile.writerow([item.item(0)[0], item.item(0)[1], item.item(0)[2], item.item(0)[3]])
-#                                     
-#                                     return True
 
         return False, None

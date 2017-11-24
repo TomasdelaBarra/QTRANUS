@@ -23,7 +23,7 @@
  ***************************************************************************/
 """
 
-import os, webbrowser
+import os, re, webbrowser
 
 
 from PyQt4 import QtGui, uic
@@ -107,19 +107,40 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
         self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
+    
+    def __validate_string(self, input):
+        """
+            @summary: Validates invalid characters
+            @param input: Input string
+            @type input: String object
+        """
+        pattern = re.compile('[\\+\/+\:+\*+\?+\"+\<+\>+\|+\.+]')
+        #[\\\/\:\*\?\"\<\>\|\.]
         
+        if re.match(pattern, input) is None:
+            print('None')
+            return True
+        else:
+            print('No None')
+            return False
+
     def new_db(self):
         if(self.project['tranus_folder'] is None or self.project['tranus_folder'].strip() == ''):
             messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("Please select workspace path.")
         else:
+#             if not self.__validate_string(self.layers_group_name.text().strip()):
+#                 messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please write only the name of the file without extensions or file path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+#                 messagebox.exec_()
+#                 print("Please write only the name of the file without extensions or file path.")
+#             else:
             newDB = DataBase()
             if(newDB.create_new_data_base(self.project['tranus_folder'], self.layers_group_name.text().strip())):
                 self.project.load_db_file(self.project['tranus_folder'] + "\\" + self.layers_group_name.text().strip() + ".zip")
                 self.data_btn.setEnabled(True)
-                
-            print(self.project.db_path)
+            
+                print(self.project.db_path)
 
     def select_zones_shape(self, file_name):
         """
