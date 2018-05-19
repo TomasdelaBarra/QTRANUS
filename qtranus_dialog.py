@@ -344,6 +344,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         else:
             print(fields)
             self.zones_shape_fields.setEnabled(True)
+            self.zones_shape_fields.clear()
             self.zones_shape_fields.addItems(fields)
             
     def zones_shape_fields_changed(self):
