@@ -85,8 +85,13 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
         
         # Loads
+        self.initial_config()
         self.reload_scenarios()
 	
+    def initial_config(self):
+        self.data_btn.hide()
+        self.run_btn.hide()
+    
     def open_help(self):
         """
             @summary: Opens QTranus users help
