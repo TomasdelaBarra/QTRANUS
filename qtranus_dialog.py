@@ -53,6 +53,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         self.project = project
+        self.folder_ws = ''
 
         # Linking objects with controls
         self.help = self.findChild(QtGui.QPushButton, 'btn_help')
@@ -194,10 +195,10 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Sets selected Tranus workspace
         """
-        folder = QtGui.QFileDialog.getExistingDirectory(self, "Select directory")
-        if folder:
-            self.tranus_folder.setText(folder)
-            if not self.project.load_tranus_folder(folder):
+        self.folder_ws = QtGui.QFileDialog.getExistingDirectory(self, "Select directory")
+        if self.folder_ws:
+            self.tranus_folder.setText(self.folder_ws)
+            if not self.project.load_tranus_folder(self.folder_ws):
                 self.tranus_folder.setText('')
             self.reload_scenarios()
         self.check_configure()
@@ -207,7 +208,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected zone shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", filter="*.*, *.shp")
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", directory=str(self.folder_ws), filter="*.*, *.shp")
             if file_name:
                 callback(file_name)
 
@@ -218,7 +219,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected centroid shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory='', filter='*.*, *.shp')
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -226,7 +227,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
     def select_network_links_shape_file(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network links shape file', directory='', filter='*.*, *.shp')
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network links shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -234,7 +235,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
     
     def select_network_nodes_shape_file(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network nodes shape file', directory='', filter='*.*, *.shp')
+            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network nodes shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
