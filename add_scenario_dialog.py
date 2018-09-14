@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser
-from PyQt4 import QtGui, uic
-from classes.general.QTranusMessageBox import QTranusMessageBox
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 from string import *
-from classes.data.DataBase import DataBase
-from PyQt4.Qt import QDialogButtonBox
+from .classes.data.DataBase import DataBase
+from PyQt5.Qt import QDialogButtonBox
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_scenario.ui'))
 
-class AddScenarioDialog(QtGui.QDialog, FORM_CLASS):
+class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __init__(self, parent = None):
         """
@@ -23,14 +24,14 @@ class AddScenarioDialog(QtGui.QDialog, FORM_CLASS):
         self.dataBase = DataBase()
         
         # Linking objects with controls
-        self.code = self.findChild(QtGui.QLineEdit, 'code')
-        self.name = self.findChild(QtGui.QLineEdit, 'name')
-        self.description = self.findChild(QtGui.QLineEdit, 'description')
-        self.previous = self.findChild(QtGui.QComboBox, 'cb_previous')
-        self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')
+        self.code = self.findChild(QtWidgets.QLineEdit, 'code')
+        self.name = self.findChild(QtWidgets.QLineEdit, 'name')
+        self.description = self.findChild(QtWidgets.QLineEdit, 'description')
+        self.previous = self.findChild(QtWidgets.QComboBox, 'cb_previous')
+        self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
         # Control Actions
-        self.buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
         
         #Loads
         self.__load_scenarios_combobox()
@@ -44,19 +45,19 @@ class AddScenarioDialog(QtGui.QDialog, FORM_CLASS):
 
     def save_new_scenario(self):
         if(self.code is None or self.code.text().strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Add new scenario", "Please write the scenario's code.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please write the scenario's code.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("Please write the scenario's code.")
             return False
         
         if self.name is None or self.name.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Add new scenario", "Please write the scenario's name.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please write the scenario's name.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("Please write the scenario's name.")
             return False
             
         if self.description is None or self.description.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Add new scenario", "Please write the scenario's description.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please write the scenario's description.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("Please write the scenario's description.")
             return False
@@ -64,7 +65,7 @@ class AddScenarioDialog(QtGui.QDialog, FORM_CLASS):
         previousCode = ''
         if len(self.previous) > 0:
             if self.previous.currentText() == '':
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Add new scenario", "Please select a previous scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please select a previous scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select a previous scenario code.")    
                 return False

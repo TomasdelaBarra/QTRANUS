@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser, numpy as np
-from PyQt4 import QtGui, uic
-from classes.data.DataBase import DataBase
-from classes.data.Scenarios import Scenarios
-from classes.data.ScenariosModel import ScenariosModel
-from classes.general.QTranusMessageBox import QTranusMessageBox
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets
+from .classes.data.DataBase import DataBase
+from .classes.data.Scenarios import Scenarios
+from .classes.data.ScenariosModel import ScenariosModel
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 from string import *
 from .add_scenario_dialog import AddScenarioDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'scenarios.ui'))
 
-class ScenariosDialog(QtGui.QDialog, FORM_CLASS):
+class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __init__(self, parent = None):
         """
@@ -26,22 +27,22 @@ class ScenariosDialog(QtGui.QDialog, FORM_CLASS):
         #self.scenariosMatrix = None
         
         # Linking objects with controls
-        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
-        self.scenario_tree = self.findChild(QtGui.QTreeView, 'scenarios_tree')
-        self.scenarioCode = self.findChild(QtGui.QLineEdit, 'code')
-        self.scenarioName = self.findChild(QtGui.QLineEdit, 'name')
-        self.scenarioDescription = self.findChild(QtGui.QLineEdit, 'description')
-        self.previousScenarios = self.findChild(QtGui.QComboBox, 'cb_previous')
-        self.remove_btn = self.findChild(QtGui.QPushButton, 'remove')
-        self.add_btn = self.findChild(QtGui.QPushButton, 'add')
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+        self.scenarioCode = self.findChild(QtWidgets.QLineEdit, 'code')
+        self.scenarioName = self.findChild(QtWidgets.QLineEdit, 'name')
+        self.scenarioDescription = self.findChild(QtWidgets.QLineEdit, 'description')
+        self.previousScenarios = self.findChild(QtWidgets.QComboBox, 'cb_previous')
+        self.remove_btn = self.findChild(QtWidgets.QPushButton, 'remove')
+        self.add_btn = self.findChild(QtWidgets.QPushButton, 'add')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.remove_btn.clicked.connect(self.remove_scenario)
         self.add_btn.clicked.connect(self.open_add_scenario_window)
         self.scenario_tree.clicked.connect(self.__tree_element_selected)
-        self.buttonBox.button(QtGui.QDialogButtonBox.Ok).clicked.connect(self.ok_button)
-        self.buttonBox.button(QtGui.QDialogButtonBox.Cancel).clicked.connect(self.cancel_button)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(self.ok_button)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.cancel_button)
         
         #Loads
         self.__load_scenarios_from_db_file()
@@ -63,13 +64,13 @@ class ScenariosDialog(QtGui.QDialog, FORM_CLASS):
         
     def remove_scenario(self):
         if self.scenarioCode.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios", "Please select a scenario to remove.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Please select a scenario to remove.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("Please select a scenario to remove.")
         else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Question, "Remove scenario", "Are you sure you want to remove scenario " + self.scenarioCode.text().strip(), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Question, "Remove scenario", "Are you sure you want to remove scenario " + self.scenarioCode.text().strip(), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             result = messagebox.exec_()
-            if result == QtGui.QMessageBox.Yes:
+            if result == QtWidgets.QMessageBox.Yes:
                 removeResult, matrixResult = self.dataBase.remove_scenario_from_file(self.parent().scenariosMatrix, self.scenarioCode.text().strip())
                 if(removeResult):
                     self.parent().scenariosMatrix = matrixResult 
@@ -81,14 +82,14 @@ class ScenariosDialog(QtGui.QDialog, FORM_CLASS):
         
     def __load_scenarios_from_db_file(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             print("DB File was not found.")
         else:
             if(self.dataBase.extract_scenarios_file_from_zip(self.project.db_path, self.project['tranus_folder'])):
                 self.__get_scenarios_data()
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Scenarios file could not be extracted.")
                 

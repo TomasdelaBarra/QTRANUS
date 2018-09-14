@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- OptionsTRANUS
+ QTranus
                                  A QGIS plugin
- This plugin automates the execution of TRANUS programs.
+ qtranus
                              -------------------
-        begin                : 2017-02-23
-        copyright            : (C) 2017 by STEEP Inria
-        email                : emna.jribi@inria.fr
+        begin                : 2015-07-20
+        copyright            : (C) 2016 by qtranus
+        Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Omar Valladolid      - omar.valladolidg@gmail.com
+                               Pedro Buron          - pedroburonv@gmail.com
+        
         git sha              : $Format:%H$
  ***************************************************************************/
 
@@ -25,11 +28,11 @@
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
-    """Load OptionsTRANUS class from file OptionsTRANUS.
+    """Load QTranus class from file QTranus.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
     #
-    from .Options_TRANUS import OptionsTRANUS
-    return OptionsTRANUS(iface)
+    from .qtranus import QTranus
+    return QTranus(iface)

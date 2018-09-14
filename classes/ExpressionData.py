@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from Zone import Zone
-from Stack import Stack
-from general.QTranusMessageBox import QTranusMessageBox
+from .Zone import Zone
+from .Stack import Stack
+from .general.QTranusMessageBox import QTranusMessageBox
 
 import csv, numpy as np
 

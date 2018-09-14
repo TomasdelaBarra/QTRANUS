@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..general.FileManagement import FileManagement
-from ..GeneralObject import GeneralObject
-from NetworkDataAccess import NetworkDataAccess
+from .GeneralObject import GeneralObject
+from .NetworkDataAccess import NetworkDataAccess
 import numpy as np
 
 class Scenario(object):

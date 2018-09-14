@@ -2,7 +2,7 @@
 from ..general.FileManagement import FileManagement
 from ..Stack import Stack
 from ..ExpressionData import ExpressionData
-from Level import *
+from .Level import *
 import csv, numpy as np
 from ..general.QTranusMessageBox import QTranusMessageBox
 

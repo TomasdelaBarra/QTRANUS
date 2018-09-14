@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from Scenario import Scenario
-from Sector import Sector
-from Zone import Zone
+from .Scenario import Scenario
+from .Sector import Sector
+from .Zone import Zone
 
 """ Indicator Class """
 class Indicator:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtGui
+from PyQt5 import QtGui
 from ..general.QTranusMessageBox import QTranusMessageBox
-from DataBaseDataAccess import DataBaseDataAccess
+from .DataBaseDataAccess import DataBaseDataAccess
 import sys, os
 
 class DataBase(object):

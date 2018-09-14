@@ -26,22 +26,23 @@
 import os, re, webbrowser
 
 
-from PyQt4 import QtGui, uic
-from PyQt4.Qt import QMessageBox
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets
+from PyQt5.Qt import QMessageBox
 
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 from .networklayer_dialog import NetworkLayerDialog
 from .results_dialog import ResultsDialog
 from .data_dialog import DataDialog
-from classes.general.FileManagement import FileManagement
-from classes.data.DataBase import DataBase
-from classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.FileManagement import FileManagement
+from .classes.data.DataBase import DataBase
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
 
-class QTranusDialog(QtGui.QDialog, FORM_CLASS):
+class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, project, parent=None):
         """Constructor."""
         super(QTranusDialog, self).__init__(parent)
@@ -56,26 +57,26 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         self.folder_ws = ''
 
         # Linking objects with controls
-        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
-        self.layers_group_name = self.findChild(QtGui.QLineEdit, 'layers_group_name')
-        self.db_folder_btn = self.findChild(QtGui.QToolButton, 'db_folder_btn')
-        self.new_db_btn = self.findChild(QtGui.QPushButton, name='new_project_btn')
-        self.tranus_folder = self.findChild(QtGui.QLineEdit, 'tranus_folder')
-        self.zone_shape = self.findChild(QtGui.QLineEdit, 'zone_shape')
-        self.network_links_shape = self.findChild(QtGui.QLineEdit, 'network_links_shape')
-        self.network_nodes_shape = self.findChild(QtGui.QLineEdit, 'network_nodes_shape')
-        self.centroid_shape = self.findChild(QtGui.QLineEdit, 'centroid_shape')
-        self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
-        self.data_btn = self.findChild(QtGui.QCommandLinkButton, 'data')
-        self.results_btn = self.findChild(QtGui.QCommandLinkButton, 'results')
-        self.run_btn = self.findChild(QtGui.QCommandLinkButton, 'run')
-        self.tranus_folder_btn = self.findChild(QtGui.QToolButton, 'tranus_folder_btn')
-        self.zones_shape_btn = self.findChild(QtGui.QToolButton, 'zones_shape_btn')
-        self.network_links_shape_btn = self.findChild(QtGui.QToolButton, 'network_links_shape_btn')
-        self.network_nodes_shape_btn = self.findChild(QtGui.QToolButton, 'network_nodes_shape_btn')
-        self.centroid_shape_btn = self.findChild(QtGui.QToolButton, 'centroid_shape_btn')
-        self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
-        self.zones_shape_fields = self.findChild(QtGui.QComboBox, 'cb_zones_shape_fields')
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.layers_group_name = self.findChild(QtWidgets.QLineEdit, 'layers_group_name')
+        self.db_folder_btn = self.findChild(QtWidgets.QToolButton, 'db_folder_btn')
+        self.new_db_btn = self.findChild(QtWidgets.QPushButton, name='new_project_btn')
+        self.tranus_folder = self.findChild(QtWidgets.QLineEdit, 'tranus_folder')
+        self.zone_shape = self.findChild(QtWidgets.QLineEdit, 'zone_shape')
+        self.network_links_shape = self.findChild(QtWidgets.QLineEdit, 'network_links_shape')
+        self.network_nodes_shape = self.findChild(QtWidgets.QLineEdit, 'network_nodes_shape')
+        self.centroid_shape = self.findChild(QtWidgets.QLineEdit, 'centroid_shape')
+        self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
+        self.data_btn = self.findChild(QtWidgets.QCommandLinkButton, 'data')
+        self.results_btn = self.findChild(QtWidgets.QCommandLinkButton, 'results')
+        self.run_btn = self.findChild(QtWidgets.QCommandLinkButton, 'run')
+        self.tranus_folder_btn = self.findChild(QtWidgets.QToolButton, 'tranus_folder_btn')
+        self.zones_shape_btn = self.findChild(QtWidgets.QToolButton, 'zones_shape_btn')
+        self.network_links_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_links_shape_btn')
+        self.network_nodes_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_nodes_shape_btn')
+        self.centroid_shape_btn = self.findChild(QtWidgets.QToolButton, 'centroid_shape_btn')
+        self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
+        self.zones_shape_fields = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_fields')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -127,7 +128,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
     def new_db(self):
         if(self.project['tranus_folder'] is None or self.project['tranus_folder'].strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Please select workspace path.")
         else:
@@ -149,9 +150,13 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @param file_name: Path and name of the shape file
             @type file_name: String
         """
-        result, zoneShapeFieldNames = self.project.load_zones_shape(file_name) 
+        #print(str(file_name[0]))
+        result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
+        print("************************************************"+str(file_name[0]))
+        print("******************** Select Zones Shape result "+str(result))
+        print("******************** Select Zones Shape Names "+str(zoneShapeFieldNames))
         if result:
-            self.zone_shape.setText(file_name)
+            self.zone_shape.setText(file_name[0])
             self.load_zone_shape_fields(zoneShapeFieldNames)
         else:
             self.zone_shape.setText('')
@@ -164,15 +169,16 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @type file_name: String
         """
         result = self.project.load_centroid_file(file_name)
+        
         if result:
-            self.centroid_shape.setText(file_name)
+            self.centroid_shape.setText(file_name[0])
         else:
             self.centroid_shape.setText('')
             
     def select_network_links_shape(self, file_name):
         result = self.project.load_network_links_shape_file(file_name)
         if result:
-            self.network_links_shape.setText(file_name)
+            self.network_links_shape.setText(file_name[0])
             self.results_btn.setEnabled(self.project.is_valid_network())
         else:
             self.network_links_shape.setText('')
@@ -181,7 +187,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
     def select_network_nodes_shape(self, file_name):
         result = self.project.load_network_nodes_shape_file(file_name)
         if result:
-            self.network_nodes_shape.setText(file_name)
+            self.network_nodes_shape.setText(file_name[0])
             self.results_btn.setEnabled(self.project.is_valid_network())
         else:
             self.network_nodes_shape.setText('')
@@ -195,11 +201,14 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Sets selected Tranus workspace
         """
-        self.folder_ws = QtGui.QFileDialog.getExistingDirectory(self, "Select directory")
+        
+        self.folder_ws = QtWidgets.QFileDialog.getExistingDirectory(self, "Select directory")
         if self.folder_ws:
             self.tranus_folder.setText(self.folder_ws)
-            if not self.project.load_tranus_folder(self.folder_ws):
-                self.tranus_folder.setText('')
+            self.project.load_tranus_folder(self.folder_ws)
+            #if not self.project.load_tranus_folder(self.folder_ws):
+            #    print("DENTRO IF not folder_ws ******************************************************")
+            #    self.tranus_folder.setText('')
             self.reload_scenarios()
         self.check_configure()
 
@@ -208,7 +217,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected zone shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", directory=str(self.folder_ws), filter="*.*, *.shp")
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", directory=str(self.folder_ws), filter="*.*, *.shp")
             if file_name:
                 callback(file_name)
 
@@ -219,7 +228,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens selected centroid shape file
         """
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -227,7 +236,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
 
     def select_network_links_shape_file(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network links shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select network links shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -235,7 +244,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
     
     def select_network_nodes_shape_file(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select network nodes shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select network nodes shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
             if file_name:
                 callback(file_name)
         
@@ -243,7 +252,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
     
     def select_db_zip_file(self, callback):
         def select_file():
-            file_name = QtGui.QFileDialog.getOpenFileName(parent=self, caption='Select DB zip file', directory='', filter='*.*, *.zip')
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select DB zip file', directory='', filter='*.*, *.zip')
             if file_name:
                 file_name = file_name.replace('/', '\\')
                 print(file_name)
@@ -261,11 +270,11 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
             result = dialog.exec_()
         else:
             if(self.layers_group_name.text().strip() == ''):
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select a DB ZIP file.")
             if(self.tranus_folder.text().strip() ==''):
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select workspace path.")
 
@@ -329,7 +338,7 @@ class QTranusDialog(QtGui.QDialog, FORM_CLASS):
         """
             @summary: Validates configuration
         """
-        if self.project.is_valid() or self.project.is_valid() or self.project.is_valid_network():
+        if self.project.is_valid() or self.project.is_valid_network():
             self.results_btn.setEnabled(True)
 
     def load_zone_shape_fields(self, fields):

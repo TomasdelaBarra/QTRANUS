@@ -6,7 +6,7 @@ import shutil
 
 from os import listdir
 from os.path import isfile, join
-from DataMatrix import DataMatrix
+from .DataMatrix import DataMatrix
 
 """ FileManagement Class """
 class FileManagement(object):

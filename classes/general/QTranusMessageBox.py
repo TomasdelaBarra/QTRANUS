@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtGui
-from PyQt4.Qt import QMessageBox
+from PyQt5 import QtWidgets, QtGui
+from PyQt5.Qt import QMessageBox
 
+__ALL__ = ['QTranusMessageBox']
 """ QTranusMessageBox Class """
 class QTranusMessageBox(object):
 
@@ -10,7 +11,7 @@ class QTranusMessageBox(object):
         """
             @summary: Constructor
         """
-        messagebox = QtGui.QMessageBox(messageIcon, windowTitle, message, buttons, parent = qparent)
+        messagebox = QtWidgets.QMessageBox(messageIcon, windowTitle, message, buttons, parent = qparent)
         messagebox.setWindowIcon(QtGui.QIcon(windowIcon))
         
         return messagebox

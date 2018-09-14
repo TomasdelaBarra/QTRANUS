@@ -22,23 +22,24 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon, QLineEdit
+import os,sys
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from PyQt5.QtGui import  QIcon
+from PyQt5.QtWidgets import QAction, QLineEdit
+
 # Initialize Qt resources from file resources.py
-import resources_rc
+from . import resources_rc 
 # Import the code for the dialog
 
 from qgis.core import QgsProject, QgsMessageLog
 
 from .qtranus_project import QTranusProject
 from .qtranus_dialog import QTranusDialog
-from .newproject_dialog import QTranusNewProjectDialog
+#from newproject_dialog import QTranusNewProjectDialog
 import os.path
-
 
 class QTranus:
     """QGIS Plugin Implementation."""
-
     def __init__(self, iface):
         """Constructor.
 
@@ -190,7 +191,7 @@ class QTranus:
 
     def run(self):
         """Run method that performs all the real work"""
-        QgsMessageLog.logMessage("Abriendo", 'QTranus', QgsMessageLog.INFO)
+        QgsMessageLog.logMessage("Abriendo", 'QTranus')
 
         self.dlg.show()
 

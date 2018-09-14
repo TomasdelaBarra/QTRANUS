@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os, webbrowser
-from PyQt4 import QtGui, uic
+from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets
 
-from classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model import ScenariosModel 
 from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
@@ -11,7 +12,7 @@ from .networklayer_dialog import NetworkLayerDialog
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'results.ui'))
 
-class ResultsDialog(QtGui.QDialog, FORM_CLASS):
+class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __init__(self, parent = None):
         super(ResultsDialog, self).__init__(parent)
@@ -19,18 +20,18 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
         self.project = parent.project
         
         # Linking objects with controls
-        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
-        self.button_box = self.findChild(QtGui.QDialogButtonBox, 'button_box')
-        self.zones_btn = self.findChild(QtGui.QCommandLinkButton, 'zones')
-        self.matrix_btn = self.findChild(QtGui.QCommandLinkButton, 'matrix')
-        self.network_btn = self.findChild(QtGui.QCommandLinkButton, 'network')
-        self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
+        self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
+        #self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
+        #self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
+        self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
-        self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
-        self.network_btn.clicked.connect(self.network_layer_dialog)
+        #self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
+        #self.network_btn.clicked.connect(self.network_layer_dialog)
         
         # Loads
         self.__reload_scenarios()
@@ -55,7 +56,7 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens zone layer window
         """
         if self.project.map_data.get_sorted_fields() is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There are no fields to load, please reload SHP file.")
         else:
@@ -68,7 +69,7 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens matrix layer window 
         """
         if self.project.map_data.get_sorted_fields() is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             
             print ("There are no fields to load, please reload SHP file.")
@@ -82,7 +83,7 @@ class ResultsDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Opens network layer window 
         """
         if self.project.network_link_shape_path is None or self.project.network_link_shape_path.strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network Shape File", "Please select a network link shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network Shape File", "Please select a network link shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
 
             print ("Please select a network link shape file.")

@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+from PyQt5 import QtGui
+from PyQt5.Qt import QMessageBox
 
 import os
 import re
@@ -64,7 +68,7 @@ class Scenarios(object):
     def parse_lines(lines):
         nodes = {}
         for line in lines[1:]:
-            values = map(lambda v: v.strip(), extract_values(line))
+            values = list(map(lambda v: v.strip(), extract_values(line)))
             nodes[values[0]] = {
                 'name': values[1],
                 'prev': values[2] if values[2] else None
@@ -171,15 +175,15 @@ class TranusProject(object):
             for line in project_file.readlines():
                 section = TranusProject.get_section(line)
                 if section in (SECTION_IDENTIFICATION, SECTION_SCENARIOS, SECTION_MODEL):
-                    if section_lines is not None:
-                        project.add_lines_to_section(section_lines, current_section)
+                    #if section_lines is not None:
+                    project.add_lines_to_section(section_lines, current_section)
                     current_section = section
                     section_lines = []
+                
                 elif section == SECTION and section_lines is not None:
                     section_lines.append(line)
             project.add_lines_to_section(section_lines, current_section)
-        project.validate()
-        project.scenarios.load_results(os.path.dirname(file_path))
+        project.validate()        
         project.path = file_path
         return project
 

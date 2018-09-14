@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from ..general.FileManagement import FileManagement
 from ..GeneralObject import GeneralObject
-from NetworkDataAccess import NetworkDataAccess
-from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsVectorJoinInfo
+from .NetworkDataAccess import NetworkDataAccess
+from qgis.core import QgsVectorLayer,  QgsProject, QgsVectorLayerJoinInfo
 import numpy as np
 
 class Network(object):

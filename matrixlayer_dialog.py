@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import os, re, csv, webbrowser
-from PyQt4 import QtGui, uic
-from classes.general.QTranusMessageBox import QTranusMessageBox
-from PyQt4.QtCore import *
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets
+from .classes.general.QTranusMessageBox import QTranusMessageBox
+from PyQt5.QtCore import *
 from .scenarios_model import ScenariosModel
 from qgis.core import QgsProject
-from classes.ExpressionData import ExpressionData 
+from .classes.ExpressionData import ExpressionData 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'matrixlayer.ui'))
 
-class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
+class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __init__(self, parent = None):
         super(MatrixLayerDialog, self).__init__(parent)
@@ -21,20 +22,20 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.tempLayerName = ''
         
         # Linking objects with controls
-        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
-        self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
-        self.expression = self.findChild(QtGui.QLineEdit, 'expression')
-        self.baseScenario = self.findChild(QtGui.QComboBox, 'base_scenario')
-        self.operators = self.findChild(QtGui.QComboBox, name='cb_operator')
-        self.alternateScenario = self.findChild(QtGui.QComboBox, name='cb_alternate_scenario')
-        self.originList = self.findChild(QtGui.QListWidget, name='lw_origin')
-        self.originList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        self.destinationList = self.findChild(QtGui.QListWidget, name='lw_destination')
-        self.destinationList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        self.filter = self.findChildren(QtGui.QLineEdit, name='filter')
-        self.categories = self.findChild(QtGui.QListWidget, 'categories')
-        self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
-        self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.layerName = self.findChild(QtWidgets.QLineEdit, 'layerName')
+        self.expression = self.findChild(QtWidgets.QLineEdit, 'expression')
+        self.baseScenario = self.findChild(QtWidgets.QComboBox, 'base_scenario')
+        self.operators = self.findChild(QtWidgets.QComboBox, name='cb_operator')
+        self.alternateScenario = self.findChild(QtWidgets.QComboBox, name='cb_alternate_scenario')
+        self.originList = self.findChild(QtWidgets.QListWidget, name='lw_origin')
+        self.originList.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.destinationList = self.findChild(QtWidgets.QListWidget, name='lw_destination')
+        self.destinationList.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.filter = self.findChildren(QtWidgets.QLineEdit, name='filter')
+        self.categories = self.findChild(QtWidgets.QListWidget, 'categories')
+        self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
+        self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -68,9 +69,9 @@ class MatrixLayerDialog(QtGui.QDialog, FORM_CLASS):
             @param event: Key press event
             @type event: Event object
         """
-        QtGui.QLineEdit.keyPressEvent(self.layerName, event)
+        QtWidgets.QLineEdit.keyPressEvent(self.layerName, event)
         if not self.validate_string(event.text()):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
             if self.layerName.isUndoAvailable():
                 self.layerName.setText(self.tempLayerName)

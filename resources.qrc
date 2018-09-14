@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/OptionsTRANUS" >
+    <qresource prefix="/plugins/QTranus" >
         <file>icon.png</file>
     </qresource>
 </RCC>

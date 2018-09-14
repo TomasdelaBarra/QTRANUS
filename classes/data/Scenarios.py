@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from Scenario import Scenario
+from .Scenario import Scenario
 import numpy as np
 
 class Scenarios(object):

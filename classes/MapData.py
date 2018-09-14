@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from Indicator import Indicator
-from ExpressionData import ExpressionData
-from Stack import Stack
-from general.QTranusMessageBox import QTranusMessageBox
+from .Indicator import Indicator
+from .ExpressionData import ExpressionData
+from .Stack import Stack
+from .general.QTranusMessageBox import QTranusMessageBox
+from PyQt5 import QtWidgets
 
 import csv, numpy as np, sys
 
@@ -41,7 +42,7 @@ class MapData(object):
         """
         if self.indicators is not None:
             if self.indicators.scenarios is not None:
-                if self.indicators.scenarios.count > 0:
+                if len(self.indicators.scenarios) > 0:
                     scenario = self.indicators.scenarios[0]
                     if scenario.sectors is not None:
                         for sector in scenario.sectors:
@@ -100,7 +101,7 @@ class MapData(object):
         zoneList = None
         selectedSector = next((se for se in scenario.sectors if se.name == sectorName), None)
         if selectedSector is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector selected", ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector selected", ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("The sector {0} doesn't exist in the scenario {1}.").format(sectorName, scenario.name)
         else:
@@ -131,16 +132,17 @@ class MapData(object):
             @type conditionalFlag: Boolean
             @return: Zones list object  
         """
+        
         selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
         if selectedScenario is None:
             QMessageBox.warning(None, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario))
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector selected", "The scenario {0} doesn't exist.".format(scenario), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector selected", "The scenario {0} doesn't exist.".format(scenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("The scenario {0} doesn't exist.".format(scenario))
             return None
 
         if sectorsExpression is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector expression", "There is no expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector expression", "There is no expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is no expression to evaluate.")
             return None
@@ -177,7 +179,7 @@ class MapData(object):
                         if conditionalFlag:
                             return item
                         else:
-                            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                             messagebox.exec_()
                             print ("There is not data to evaluate.")
                             return None
@@ -191,13 +193,13 @@ class MapData(object):
                         operands.push(item)
 
                 else:
-                    messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector expression", "Item {0}, is not recognized.".format(item), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector expression", "Item {0}, is not recognized.".format(item), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                     messagebox.exec_()
                     print ("Item {0}, is not recognized.").format(item)
                     return None
                 
         if zoneList is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Sector expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Sector expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is not data to evaluate.")
             return None
@@ -237,14 +239,14 @@ class MapData(object):
                     zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
                     
                     if zoneList is None:
-                        messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for sectors expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for sectors expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                         messagebox.exec_()
                         raise Exception("There is not data to evaluate for sectors expression.")
                     else:
                         if len(zoneList) > 0:                
                             generalOperands.push(zoneList)
                         else:
-                            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for sectors expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for sectors expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                             messagebox.exec_()
                             raise Exception("There is not data to evaluate for sectors expression.")
                     
@@ -260,7 +262,7 @@ class MapData(object):
             print(inst)
             zoneList = None
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             zoneList = None
@@ -302,14 +304,14 @@ class MapData(object):
                         zoneList = ExpressionData.execute_expression(operand1, operand2, sectorExpression, fieldName)
                         
                         if zoneList is None:
-                            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                             messagebox.exec_()
                             raise Exception("There is not data to evaluate for conditional expression.")
                         else:
                             if len(zoneList) > 0:                
                                 generalOperands.push(zoneList)
                             else:
-                                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                 messagebox.exec_()
                                 raise Exception("There is not data to evaluate conditional expression.")
                         
@@ -320,7 +322,7 @@ class MapData(object):
             print (inst)
             zoneList = None
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             zoneList = None
@@ -359,17 +361,17 @@ class MapData(object):
             
 
         if zoneList is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Zone data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Zone data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is not data to evaluate.")
             return False, minValue, maxValue, rowCounter
         else:
             rowCounter = len(zoneList)
             
-        csvFile = open(filePath + "\\" + layerName + ".csv", "wb")
+        csvFile = open(filePath + "\\" + layerName + ".csv", "w")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
         print ('Writing CSV File "{0}"'.format(layerName.encode('utf-8')))
-        
+
         # Write header
         newFile.writerow(["ZoneId", "\tZoneName", "\tJoinField" + fieldName])
         for itemZone in zoneList:
@@ -393,12 +395,83 @@ class MapData(object):
             maxValue = max(maxValue, value)
 
             newFile.writerow([itemZone.id, "\t" + itemZone.name, "\t" + str(value)])
+            # print("Write row value:"+str(value))
         
         del newFile, itemZone
         csvFile.close()
         del csvFile
-        print("Min: {0}, Max: {1}, Counter: {2}").format(minValue, maxValue, rowCounter)
+        print("Min: {0}, Max: {1}, Counter: {2}".format(minValue, maxValue, rowCounter))
         return True, minValue, maxValue, rowCounter
+
+    def create_data_memory(self, layerName, scenariosExpression, fieldName, filePath, sectorsExpression):
+        """
+            @summary: Method that creates a csv file to be used in the new layer
+            @param layerName: Layer name
+            @type: layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @param filePath: Path to save the file
+            @type filePath: String
+            @param sectorsExpression: Expression to be evaluated in reverse polish notation
+            @type sectorsExpression: Stack object    
+            @return: Result of the file creation, minValue, maxValue, rowCounter 
+        """
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+        rowCounter = 0
+        
+        expressionsPreResult = Stack()
+        
+        if len(sectorsExpression) > 1:
+            zoneList = self.evaluate_conditional_expression(scenariosExpression, sectorsExpression, fieldName)
+        else:
+            zoneList = self.evaluate_scenarios_expression(scenariosExpression, sectorsExpression, fieldName)
+            
+
+        if zoneList is None:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Zone data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print ("There is not data to evaluate.")
+            return False, minValue, maxValue, rowCounter
+        else:
+            rowCounter = len(zoneList)
+            
+        #csvFile = open(filePath + "\\" + layerName + ".csv", "w")
+        #newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
+        #print ('Writing CSV File "{0}"'.format(layerName.encode('utf-8')))
+
+        # Write header
+        #newFile.writerow(["ZoneId", "\tZoneName", "\tJoinField" + fieldName])
+        for itemZone in zoneList:
+            value = 0
+            if fieldName.upper() == 'TOTPROD':
+                value = float(itemZone.totProd)
+            if fieldName.upper() == 'TOTDEM':
+                value = float(itemZone.totDem)
+            if fieldName.upper() == 'PRODCOST':
+                value = float(itemZone.prodCost)
+            if fieldName.upper() == 'PRICE':
+                value = float(itemZone.price)
+            if fieldName.upper() == 'MINRES':
+                value = float(itemZone.minRes)
+            if fieldName.upper() == 'MAXRES':
+                value = float(itemZone.maxRes)
+            if fieldName.upper() == 'ADJUST':
+                value = float(itemZone.adjust)
+        
+            minValue = min(minValue, value)
+            maxValue = max(maxValue, value)
+
+            # newFile.writerow([itemZone.id, "\t" + itemZone.name, "\t" + str(value)])
+            # print("Write row value:"+str(value))
+        
+        #del newFile, itemZone
+        #csvFile.close()
+        #del csvFile
+        print("Min: {0}, Max: {1}, Counter: {2}".format(minValue, maxValue, rowCounter))
+        return True, minValue, maxValue, rowCounter, zoneList
     
     def load_matrix_zones(self):
         """
@@ -487,13 +560,13 @@ class MapData(object):
         
         scenarioData = next((sc for sc in self.trip_matrices if sc.Id == scenario), None)
         if scenarioData is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("The scenario {0} doesn't exist.".format(scenario))
             return None
         
         if matrixExpression is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is no expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is no expression to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is no expression to evaluate.")
             return None
@@ -553,7 +626,7 @@ class MapData(object):
                                         if conditionalFlag:
                                             return item
                                         else:
-                                            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                             messagebox.exec_()
                                             print ("There is not data to evaluate.")
                                             return None
@@ -571,14 +644,14 @@ class MapData(object):
                                         operands.push(item)
                                         
                                 else:
-                                    messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "Item {0}, is not recognized.".format(item), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "Item {0}, is not recognized.".format(item), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                     messagebox.exec_()
                                     print ("Item {0}, is not recognized.").format(item)
                                     return None
                         
             
             if matrixData is None:
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print ("There is not data to evaluate.")
                 return None
@@ -589,7 +662,7 @@ class MapData(object):
                 return matrixData
         
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             matrixData = None
         
@@ -631,14 +704,14 @@ class MapData(object):
                             matrixData = ExpressionData.execute_matrix_expression(operand1, operand2, item, operand1.dtype)
                             
                             if matrixData is None:
-                                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                 messagebox.exec_()
                                 raise Exception("There is not data to evaluate for matrix expression.")
                             else:
                                 if len(matrixData) > 0:
                                     generalOperands.push(matrixData)
                                 else:
-                                    messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix scenarios expression", "There is not data to evaluate for matrix expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                     messagebox.exec_()
                                     raise Exception("There is not data to evaluate for matrix expression.")
                             
@@ -654,10 +727,10 @@ class MapData(object):
         except Exception as inst:
             print(inst)
             matrixData = None
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             matrixData = None
@@ -736,14 +809,14 @@ class MapData(object):
                         matrixData = ExpressionData.execute_matrix_expression(operand1, operand2, matrixExpression, operandTypes)
                         
                         if matrixData is None:
-                            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                             messagebox.exec_()
                             raise Exception("There is not data to evaluate for conditional expression.")
                         else:
                             if len(matrixData) > 0:                
                                 generalOperands.push(matrixData)
                             else:
-                                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios matrix expression", "There is not data to evaluate for conditional expression.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                                 messagebox.exec_()
                                 raise Exception("There is not data to evaluate conditional expression.")
                             
@@ -754,7 +827,7 @@ class MapData(object):
             print(inst)
             matrixData = None
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios matrix expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios matrix expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             matrixData = None
@@ -790,7 +863,7 @@ class MapData(object):
             matrixResult = self.evaluate_matrix_scenarios_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
         
         if matrixResult is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is not data to evaluate.")
             return False

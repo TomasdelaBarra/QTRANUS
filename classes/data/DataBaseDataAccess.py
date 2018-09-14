@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtGui
+from PyQt5 import QtGui
 from ..general.QTranusMessageBox import QTranusMessageBox
 from ..general.FileManagement import FileManagement
 import zipfile, csv, sys, os
 import re, numpy as np, time
 from os import listdir
 from os.path import isfile, join
-from DBFiles import *
+from .DBFiles import *
 
 class DataBaseDataAccess(object):
     def __init__(self):

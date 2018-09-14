@@ -18,14 +18,14 @@ class SettingsDialog(QtGui.QDialog, FORM_CLASS):
 
         self.project = project
 
-        self.layer_list = self.findChild(QtGui.QListView, 'layer_list')
+        self.layer_list = self.findChild(QtWidgets.QListView, 'layer_list')
         self.layer_list_model = LayerListModel(self)
 
         self.layer_list.setModel(self.layer_list_model)
-        self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
+        self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         self.reload_scenarios()
 
-        self.zone_layer = self.findChild(QtGui.QCommandLinkButton, 'zone_layer')
+        self.zone_layer = self.findChild(QtWidgets.QCommandLinkButton, 'zone_layer')
         self.zone_layer.clicked.connect(self.add_zone_layer)
 
 

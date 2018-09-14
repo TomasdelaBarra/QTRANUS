@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser
 
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import *
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets 
+from PyQt5.QtCore import *
 from qgis.gui import QgsMessageBar
-from classes.ExpressionData import ExpressionData
+from .classes.ExpressionData import ExpressionData
 
 from .scenarios_model import ScenariosModel
-from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsMapLayerRegistry, QgsProject
-from classes.general.QTranusMessageBox import QTranusMessageBox
+from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsProject
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'zonelayer.ui'))
 
-class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
+class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __init__(self, parent=None):
         super(ZoneLayerDialog, self).__init__(parent)
@@ -24,24 +25,26 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         self.tempLayerName = ''
 
         # Linking objects with controls
-        self.help = self.findChild(QtGui.QPushButton, 'btn_help')
-        self.layerName = self.findChild(QtGui.QLineEdit, 'layerName')
-        self.base_scenario = self.findChild(QtGui.QComboBox, 'base_scenario')
-        self.sectors = self.findChild(QtGui.QListWidget, 'sectors')
-        self.scenarios = self.findChild(QtGui.QTreeView, 'scenarios')
-        self.expression = self.findChild(QtGui.QLineEdit, 'expression')
-        self.baseScenario = self.findChild(QtGui.QComboBox, 'base_scenario')
-        self.operators = self.findChild(QtGui.QComboBox, name='cb_operator')
-        self.alternateScenario = self.findChild(QtGui.QComboBox, name='cb_alternate_scenario')
-        self.fields = self.findChild(QtGui.QComboBox, 'comboField')
-        self.buttonBox = self.findChild(QtGui.QDialogButtonBox, 'buttonBox')        
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.layerName = self.findChild(QtWidgets.QLineEdit, 'layerName')
+        self.base_scenario = self.findChild(QtWidgets.QComboBox, 'base_scenario')
+        self.sectors = self.findChild(QtWidgets.QListWidget, 'sectors')
+        self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
+        self.expression = self.findChild(QtWidgets.QLineEdit, 'expression')
+        self.baseScenario = self.findChild(QtWidgets.QComboBox, 'base_scenario')
+        self.operators = self.findChild(QtWidgets.QComboBox, name='cb_operator')
+        self.alternateScenario = self.findChild(QtWidgets.QComboBox, name='cb_alternate_scenario')
+        self.fields = self.findChild(QtWidgets.QComboBox, 'comboField')
+        self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')        
 
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.ready)
-        self.baseScenario.connect(self.baseScenario,SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
-        self.operators.connect(self.operators, SIGNAL("currentIndexChanged(int)"), self.operator_changed)
+        #self.baseScenario.activated.connect(self.baseScenario,PyQt5.QtCore.SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
+        #self.operators.activated.connect(self.operators, PyQt5.QtCore.SIGNAL("currentIndexChanged(int)"), self.operator_changed)
+        self.baseScenario.currentIndexChanged.connect(self.scenario_changed)
+        self.operators.currentIndexChanged.connect(self.operator_changed)
         self.sectors.itemDoubleClicked.connect(self.sector_selected)
         
         # Loads combo-box controls
@@ -64,9 +67,9 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
             @param event: Key press event
             @type event: Event object
         """
-        QtGui.QLineEdit.keyPressEvent(self.layerName, event)
+        QtWidgets.QLineEdit.keyPressEvent(self.layerName, event)
         if not self.validate_string(event.text()):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Layer Name", "Invalid character: " + event.text() + ".", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             if self.layerName.isUndoAvailable():
                 self.layerName.setText(self.tempLayerName)
@@ -130,6 +133,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Triggered when accept button is clicked
         """
         validationResult, scenariosExpression, sectorsExpression = self.__validate_data() 
+        print(str(scenariosExpression))
         if validationResult:
             self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
             self.accept()
@@ -149,7 +153,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
             @summary: Loads sectors combo-box
         """
         for key in sorted(self.project.map_data.sectors_dic):
-            #print("key: {0}, Value: {1}").format(key, self.project.map_data.sectors_dic[key])
+            #print(("key: {}, Value: ").format(str(self.project.map_data.sectors_dic[key])))
             self.sectors.addItem(self.project.map_data.sectors_dic[key])
 
         
@@ -159,7 +163,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         """
         items = self.project.map_data.get_sorted_fields()
         if items is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Fields", "There are no fields to load, please reload SHP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There are no fields to load, please reload SHP file.")
         else:
@@ -190,19 +194,19 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         scenariosExpression = []
         # Base validations
         if self.layerName.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write Layer Name.")
             return False, None, None
         
         if self.expression.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write an expression to be evaluated.")
             return False, None, None
         
         if len(self.base_scenario) == 0:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There are no Base Scenarios loaded.")
             return False, None, None
@@ -210,7 +214,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
             scenariosExpression.append(str(self.baseScenario.currentText()))
         
         if len(self.fields) == 0:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Fields", "There are no Fields loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Fields", "There are no Fields loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("There are no Fields loaded.")
             return False, None, None
@@ -219,7 +223,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
         if self.operators.currentText() != '':
             scenariosExpression.append(str(self.operators.currentText()))
             if self.alternateScenario.currentText() == '':
-                messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select an Alternate Scenario.")
                 return False, None, None
@@ -232,7 +236,7 @@ class ZoneLayerDialog(QtGui.QDialog, FORM_CLASS):
             sectorsExpressionResult, sectorsExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
         
         if scenariosExpressionStack.tp > 1 and len(sectorsExpressionList) > 1:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Expression with conditionals only applies for one scenario.")
             return False, None, None

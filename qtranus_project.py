@@ -7,20 +7,22 @@ from os.path import isfile, join
 
 from .tranus import TranusProject
 
-from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsMapLayerRegistry, QgsField, QgsFeature, QgsSymbolLayerV2Registry, QgsSingleSymbolRendererV2, QgsRendererRangeV2, QgsStyleV2, QgsGraduatedSymbolRendererV2 , QgsSymbolV2, QgsVectorJoinInfo 
+from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo 
 
-from PyQt4.QtCore import QVariant
-from PyQt4.QtGui import QColor
+from qgis.core import QgsProject
+
+from PyQt5.QtCore import QVariant
+from PyQt5.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
-from classes.general.QTranusMessageBox import QTranusMessageBox
-from classes.GeneralObject import GeneralObject
-from classes.Indicator import Indicator
-from classes.MapData import MapData
-from classes.Stack import Stack
-from classes.ZoneCentroid import ZoneCentroid
-from classes.TripMatrix import TripMatrix
-from classes.network.Network import Network
+from .classes.GeneralObject import GeneralObject
+from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.Indicator import Indicator
+from .classes.MapData import MapData
+from .classes.Stack import Stack
+from .classes.ZoneCentroid import ZoneCentroid
+from .classes.TripMatrix import TripMatrix
+from .classes.network.Network import Network
 
 import os
 import re
@@ -68,6 +70,7 @@ class QTranusProject(object):
             @return: Boolean result of layer addition
         """
         
+        
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
@@ -80,12 +83,18 @@ class QTranusProject(object):
             print("Zone Id Field Name was not specified.")
             return False
         
-        registry = QgsMapLayerRegistry.instance()
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+        rowCounter = 0
+
+        registry = QgsProject.instance()
         layersCount = len(registry.mapLayers())
         #print ('Number of Layers: {0}'.format(layersCount))
+
         group = self.get_layers_group()
-        layer = QgsVectorLayer(self.shape, layerName, 'ogr') # memory???
-        registry.addMapLayer(layer, False)
+        layer = QgsVectorLayer(self.shape, layerName, 'ogr')
+        epsg = layer.crs().postgisSrid()
+        #registry.addMapLayer(layer, False)
         if not layer.isValid():
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
@@ -93,38 +102,71 @@ class QTranusProject(object):
         
         # Gets shape's file folder
         projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
-        #print(projectPath)
+        print(projectPath)
         
         # Gets field name
         fieldName = fieldName.strip()
         
-        #layerName = layerName.encode('UTF-8')
-        
-        # Creation of CSV file to be used for JOIN operation
-        result, minValue, maxValue, rowCounter = self.map_data.create_csv_file(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
+        # layerName = layerName.encode('UTF-8')
+        # Creation of VectorLayer on Memory
+        result, minValue, maxValue, rowCounter, zoneList = self.map_data.create_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
         if result:
-            csvFile_uri = ("file:///" + projectPath + "/" + layerName + ".csv?delimiter=,").encode('utf-8')
-            print(csvFile_uri)
-            csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
-            registry.addMapLayer(csvFile, False)
+
             shpField = self.zonesIdFieldName
-            csvField = 'ZoneId'
-            joinObject = QgsVectorJoinInfo()
-            joinObject.joinLayerId = csvFile.id()
-            joinObject.joinFieldName = csvField
-            joinObject.targetFieldName = shpField
-            joinObject.memoryCache = True
-            layer.addJoin(joinObject)
+            # Create a list with layer features
+            feats = [ feat for feat in layer.getFeatures() ]
+
+            # Create a vector layer with data on Memory 
+            memoryLayer = QgsVectorLayer("Polygon?crs=epsg:"+str(epsg), layerName, "memory")
+            registry.addMapLayer(memoryLayer)
+
+            memory_data = memoryLayer.dataProvider()
+            joinedFieldName = "JoinField"+"_"+fieldName
+
+            attr = layer.dataProvider().fields().toList()
+            attr += [QgsField(joinedFieldName,QVariant.Double)]
+            memory_data.addAttributes(attr)
+            memory_data.addFeatures(feats)
+
+            memoryLayer.startEditing()
+            for itemZone in zoneList:
+                value = 0
+                if fieldName.upper() == 'TOTPROD':
+                    value = float(itemZone.totProd)
+                if fieldName.upper() == 'TOTDEM':
+                    value = float(itemZone.totDem)
+                if fieldName.upper() == 'PRODCOST':
+                    value = float(itemZone.prodCost)
+                if fieldName.upper() == 'PRICE':
+                    value = float(itemZone.price)
+                if fieldName.upper() == 'MINRES':
+                    value = float(itemZone.minRes)
+                if fieldName.upper() == 'MAXRES':
+                    value = float(itemZone.maxRes)
+                if fieldName.upper() == 'ADJUST':
+                    value = float(itemZone.adjust)
             
+                minValue = min(minValue, value)
+                maxValue = max(maxValue, value)
+                
+                it = memoryLayer.getFeatures( u'"'+shpField+'" = '+itemZone.id )
+
+                for id_feature in it:
+                    #feature = memoryLayer.getFeature(id_feature.id())
+                    memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
+                    
+
+            memoryLayer.commitChanges()
+
             print(minValue, maxValue, rowCounter)
             
-            myStyle = QgsStyleV2().defaultStyle()
+            myStyle = QgsStyle().defaultStyle()
             defaultColorRampNames = myStyle.colorRampNames()        
             ramp = myStyle.colorRamp(defaultColorRampNames[0])
             ranges  = []
             nCats = ramp.count()
             #print("nCats: {0}".format(nCats))
-            print("Total colors: "+str(nCats))
+            #print("Total colors: "+str(nCats))
             rng = maxValue - minValue
             red0 = 255
             red1 = 0
@@ -132,29 +174,27 @@ class QTranusProject(object):
             green1 = 0
             blue0 = 255
             blue1 = 255
-            nCats = 50
+            nCats = 8
             for i in range(0,nCats):
                 v0 = minValue + rng/float(nCats)*i
                 v1 = minValue + rng/float(nCats)*(i+1)
-                symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
+                symbol = QgsSymbol.defaultSymbol(memoryLayer.geometryType())
                 red = red0 + float(i)/float(nCats-1)*(red1-red0)
                 green = green0 + float(i)/float(nCats-1)*(green1-green0)
                 blue = blue0 + float(i)/float(nCats-1)*(blue1-blue0)
                 symbol.setColor(QColor(red, green, blue))
-                myRange = QgsRendererRangeV2(v0,v1, symbol, "")
+                myRange = QgsRendererRange(v0,v1, symbol, "")
                 ranges.append(myRange)
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
-            renderer = QgsGraduatedSymbolRendererV2(layerName + "_JoinField" + fieldName, ranges)
-            #renderer = QgsGraduatedSymbolRendererV2("JoinField" + fieldname, ranges)
+            renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
             
             renderer.setSourceColorRamp(ramp)
-            layer.setRendererV2(renderer)
-
-            group.insertLayer((layersCount+1), layer)
+            memoryLayer.setRenderer(renderer)
+            
+            #group.insertLayer((layersCount+1), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
-
         return True
 
     def addMatrixLayer(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression):
@@ -228,6 +268,7 @@ class QTranusProject(object):
             @param path: Path
             @type path: String 
         """
+
         files = [f for f in listdir(path) if isfile(join(path, f))]
         prog = re.compile('location_indicators_(.*)\..*')
         indicators = Indicator()
@@ -243,7 +284,6 @@ class QTranusProject(object):
             @param path: Path
             @type path: String
         """
-        
         fileName = None
         tripMatrix = None
         files = [f for f in listdir(path) if isfile(join(path, f))]
@@ -286,7 +326,8 @@ class QTranusProject(object):
         """
         self.shape = shape
         #print("self.shape: "+self.shape)
-        registry = QgsMapLayerRegistry.instance()
+        #registry = QgsMapLayerRegistry.instance()
+        registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(shape, 'Zonas', 'ogr')
         if not layer.isValid():
@@ -294,13 +335,13 @@ class QTranusProject(object):
             self['zones_shape_id'] = ''
             return False, None
         
-        zones_shape_fields = [field.name() for field in layer.pendingFields()]
-        
+        zones_shape_fields = [field.name() for field in layer.fields()]
         project = shape[0:max(shape.rfind('\\'), shape.rfind('/'))]     
             
         if self.map_data.indicators is not None:
             if len(self.map_data.indicators.scenarios) == 0:
                 self.map_data.indicators = self.load_map_indicators(project)
+                self.map_data.load_dictionaries()
                 if self.load_map_trip_structure(project, None):
                     self.map_data.load_dictionaries()
 
@@ -323,14 +364,18 @@ class QTranusProject(object):
     def __setitem__(self, key, value):
         self.proj.writeEntry('qtranus', key, value)
 
+    
     def is_created(self):
         return not not self['project_name']
+        #return not not self.project_name
 
     def is_valid(self):
         return not not (self['zones_shape'] and self['project_name'] and self['tranus_folder'])
+        #return not not (self.zones_shape and self.project_name and self.tranus_folder)
     
     def is_valid_network(self):
         return not not (self['network_links_shape_file_path'] and self['project_name'] and self['tranus_folder'])
+        #return not not (self.network_links_shape_file_path and self.project_name and self.tranus_folder)
 
     def get_layers_group(self):
         """
@@ -355,9 +400,9 @@ class QTranusProject(object):
     
     def load_network_links_shape_file(self, file_path):
         self.network_link_shape_path = file_path
-        registry = QgsMapLayerRegistry.instance()
+        registry = QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path, 'Network_Links', 'ogr')
+        layer = QgsVectorLayer(file_path[0], 'Network_Links', 'ogr')
         if not layer.isValid():
             self['network_links_shape_file_path'] = ''
             self['network_links_shape_id'] = ''
@@ -371,9 +416,9 @@ class QTranusProject(object):
         
     def load_network_nodes_shape_file(self, file_path):
         self.network_nodes_shape_path = file_path
-        registry = QgsMapLayerRegistry.instance()
+        registry = QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path, 'Network_Nodes', 'ogr')
+        layer = QgsVectorLayer(file_path[0], 'Network_Nodes', 'ogr')
         if not layer.isValid():
             self['network_nodes_shape_file_path'] = ''
             self['network_nodes_shape_id'] = ''
@@ -393,9 +438,9 @@ class QTranusProject(object):
             @return: Boolean value of the load
         """
         self.centroids_file_path = file_path
-        registry = QgsMapLayerRegistry.instance()
+        registry =  QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path, 'Zonas_Centroids', 'ogr')
+        layer = QgsVectorLayer(file_path[0], 'Zonas_Centroids', 'ogr')
         if not layer.isValid():
             self['centroid_shape_file_path'] = ''
             self['centroid_shape_id'] = ''
@@ -444,7 +489,7 @@ class QTranusProject(object):
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas')[0]
         filePath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         group = self.get_layers_group()
-        print layer.name()
+        print (layer.name())
         
         if layer is not None:
             epsg = layer.crs().postgisSrid()
