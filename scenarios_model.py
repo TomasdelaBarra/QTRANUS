@@ -13,7 +13,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
         if parent.project.tranus_project:
             self.scenarios = parent.project.tranus_project.scenarios
             root = self.scenarios.root
-            self.root_item = self.add_scenario(root)
+            self.root_item = self.add_scenario(root) 
             self.appendRow(self.root_item)
         else:
             self.root_item = QtGui.QStandardItem("There is no data to load, please select a tranus workspace and click on load scenarios")
@@ -25,7 +25,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
         pass
 
     def add_scenario(self, scenario):
-        item = QtGui.QStandardItem(scenario.name + " - " + scenario.code)
+        item = QtGui.QStandardItem(scenario.code + " - " + scenario.name)
         item.setEditable(False)
         item.setCheckable(True)
         item.setSelectable(False)

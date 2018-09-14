@@ -16,7 +16,7 @@ class NetworkLayerDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent = None):
         """
             @summary: Class constructor
-            @param parent: Class that contains proyect information
+            @param parent: Class that contains project information
             @type parent: QTranusProject class 
         """
         super(NetworkLayerDialog, self).__init__(parent)

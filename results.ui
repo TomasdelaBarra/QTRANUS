@@ -190,8 +190,8 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>scenarios</tabstop>
   <tabstop>btn_help</tabstop>
+  <tabstop>scenarios</tabstop>
   <tabstop>zones</tabstop>
   <tabstop>network</tabstop>
   <tabstop>matrix</tabstop>

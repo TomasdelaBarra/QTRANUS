@@ -181,8 +181,8 @@
   </widget>
  </widget>
  <tabstops>
-  <tabstop>scenarios</tabstop>
   <tabstop>btn_help</tabstop>
+  <tabstop>scenarios</tabstop>
   <tabstop>layerName</tabstop>
   <tabstop>expression</tabstop>
   <tabstop>base_scenario</tabstop>
