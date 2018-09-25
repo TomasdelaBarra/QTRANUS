@@ -169,8 +169,8 @@ class QTranusProject(object):
                 it = memoryLayer.getFeatures( u'"'+shpField+'" = '+itemZone.id )
 
                 for id_feature in it:
-                    #feature = memoryLayer.getFeature(id_feature.id())
                     memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
+                    #feature = memoryLayer.getFeature(id_feature.id())
                     
 
             memoryLayer.commitChanges()
@@ -208,8 +208,14 @@ class QTranusProject(object):
             memoryLayer.setRenderer(renderer)
 
             # Create XML File ".qtranus" with the parameters of the executions
-            FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
-            # FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+            if FileMXML.if_exist_xml_layers(projectPath):
+                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
+                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                else:
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+            else:
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()

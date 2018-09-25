@@ -2,7 +2,6 @@
 
 class Helpers(object):
 
-    @staticmethod
     def indent(elem, level=0):
         """
         @summary: Indent element in XML File

@@ -95,8 +95,6 @@ class FileManagement(object):
         layer.set("type", "zones")
         layer.set("field", fieldName)
 
-        HP.indent(data)
-
         tree = XMLEt.ElementTree(data)
 
         try:
@@ -124,7 +122,7 @@ class FileManagement(object):
 
 
     @staticmethod
-    def is_exist_layer(projectPath, layerId):
+    def if_exist_layer(projectPath, layerId):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
@@ -168,8 +166,12 @@ class FileManagement(object):
             layer.set("scenario", str(scenariosExpression))
             layer.set("type", "zones")
             layer.set("field", fieldName)
-            tree.write(projectPath+'/.qtranus')
+            tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
             
         except Exception as e: 
             print(e)
             return False
+
+    @staticmethod
+    def if_exist_xml_layers(projectPath):
+        return isfile(projectPath+"/.qtranus")
