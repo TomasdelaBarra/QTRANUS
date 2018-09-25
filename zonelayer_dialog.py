@@ -7,6 +7,7 @@ from PyQt5.QtCore import *
 from qgis.gui import QgsMessageBar
 from .classes.ExpressionData import ExpressionData
 
+from .classes.general.FileManagement import FileManagement as FileM
 from .scenarios_model import ScenariosModel
 from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsProject
 from .classes.general.QTranusMessageBox import QTranusMessageBox
@@ -16,7 +17,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, layerId=None):
         super(ZoneLayerDialog, self).__init__(parent)
         self.setupUi(self)
 
@@ -53,6 +54,10 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_fields_combobox()
         self.__load_operators()
         self.reload_scenarios()
+
+        if layerId:
+            self.layerId = layerId
+            self.__load_default_data()
     
     def open_help(self):
         """
@@ -132,10 +137,10 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Triggered when accept button is clicked
         """
-        validationResult, scenariosExpression, sectorsExpression = self.__validate_data() 
-        print(str(scenariosExpression))
+        validationResult, scenariosExpression, sectorsExpression, sectorsExpressionText = self.__validate_data() 
+        print("validationResult {}, scenariosExpression {}, sectorsExpression {}".format(validationResult,scenariosExpression,sectorsExpression))
         if validationResult:
-            self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression)
+            self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
             self.accept()
         else:
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")
@@ -234,6 +239,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         
         if scenariosExpressionResult:
             sectorsExpressionResult, sectorsExpressionList = ExpressionData.validate_sectors_expression(self.expression.text().strip())
+            sectorsExpressionText = self.expression.text()
         
         if scenariosExpressionStack.tp > 1 and len(sectorsExpressionList) > 1:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -241,6 +247,34 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             print("Expression with conditionals only applies for one scenario.")
             return False, None, None
         
-        return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionList 
+        return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionList, sectorsExpressionText
     
-    
+    # Load data to edit the zones layer
+    def __load_default_data(self):
+        projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
+        
+        # Get data from XML File with the parameters
+        expression, field, name, scenario = FileM.find_layer_data(projectPath, self.layerId)
+
+        self.layerName.setText(name)
+        self.expression.setText(expression)
+        indexFields = self.fields.findText(field, Qt.MatchFixedString)
+        self.fields.setCurrentIndex(indexFields)
+        
+        scenario = scenario.split(",")
+        scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
+        indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
+        self.base_scenario.setCurrentIndex(indexBaseScenario)
+
+        if len(scenario) == 3:           
+            scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
+            indexOperators = self.operators.findText(scenario[2] , Qt.MatchFixedString)
+            self.operators.setCurrentIndex(indexOperators)
+            
+            scenario[1] = scenario[1].replace("'", "").strip()
+            indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
+            self.alternateScenario.setCurrentIndex(indexAlternateScenario)
+            
+            
+        
+

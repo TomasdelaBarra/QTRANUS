@@ -16,13 +16,14 @@ from PyQt5.QtGui import QColor
 
 from qgis.core import QgsMessageLog  # for debugging
 from .classes.GeneralObject import GeneralObject
-from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.Indicator import Indicator
 from .classes.MapData import MapData
 from .classes.Stack import Stack
 from .classes.ZoneCentroid import ZoneCentroid
 from .classes.TripMatrix import TripMatrix
 from .classes.network.Network import Network
+from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.FileManagement import FileManagement as FileMXML
 
 import os
 import re
@@ -56,7 +57,25 @@ class QTranusProject(object):
         self.load_tranus_folder()
         self.load_shapes()
 
-    def addZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression):
+
+    def getLayers(self,typeLayer):
+        """
+            @summary: List of layer Type
+            @param layerType: Type Layer
+            @type layerType: String
+            @return: List of type of layer
+        """
+        lstLayers = QgsProject.instance().mapLayers()
+
+        layers = []
+
+        for key, values in lstLayers.items():
+            if str(values.name())[-5:]==typeLayer:
+                layers.append({"id":values.id(),"text":values.name()})
+        
+        return layers
+
+    def addZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText):
         """
             @summary: Adds new zone layer to project
             @param layerName: Layer Name
@@ -86,7 +105,9 @@ class QTranusProject(object):
         minValue = float(1e100)
         maxValue = float(-1e100)
         rowCounter = 0
-
+        # Gets shape's file folder
+        projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
+        
         registry = QgsProject.instance()
         layersCount = len(registry.mapLayers())
         #print ('Number of Layers: {0}'.format(layersCount))
@@ -99,10 +120,6 @@ class QTranusProject(object):
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
             return False
-        
-        # Gets shape's file folder
-        projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
-        print(projectPath)
         
         # Gets field name
         fieldName = fieldName.strip()
@@ -117,9 +134,9 @@ class QTranusProject(object):
             feats = [ feat for feat in layer.getFeatures() ]
 
             # Create a vector layer with data on Memory 
-            memoryLayer = QgsVectorLayer("Polygon?crs=epsg:"+str(epsg), layerName, "memory")
+            memoryLayer = QgsVectorLayer("Polygon?crs=epsg:"+str(epsg), layerName+"_zones", "memory")
             registry.addMapLayer(memoryLayer)
-
+            
             memory_data = memoryLayer.dataProvider()
             joinedFieldName = "JoinField"+"_"+fieldName
 
@@ -157,7 +174,7 @@ class QTranusProject(object):
                     
 
             memoryLayer.commitChanges()
-
+            
             print(minValue, maxValue, rowCounter)
             
             myStyle = QgsStyle().defaultStyle()
@@ -165,8 +182,6 @@ class QTranusProject(object):
             ramp = myStyle.colorRamp(defaultColorRampNames[0])
             ranges  = []
             nCats = ramp.count()
-            #print("nCats: {0}".format(nCats))
-            #print("Total colors: "+str(nCats))
             rng = maxValue - minValue
             red0 = 255
             red1 = 0
@@ -191,8 +206,11 @@ class QTranusProject(object):
             
             renderer.setSourceColorRamp(ramp)
             memoryLayer.setRenderer(renderer)
-            
-            #group.insertLayer((layersCount+1), memoryLayer)
+
+            # Create XML File ".qtranus" with the parameters of the executions
+            FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+            # FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+            #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
         return True

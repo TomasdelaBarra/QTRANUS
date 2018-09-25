@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os, webbrowser
 from PyQt5 import QtWidgets, uic
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5.QtGui import QIcon
+from qgis.core import QgsProject
 
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model import ScenariosModel 
@@ -18,24 +20,31 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         super(ResultsDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
+        self.zones_dialog = None
+        self.plugin_dir = os.path.dirname(__file__)
         
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
         self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
+        self.layer_zone = self.findChild(QtWidgets.QListWidget, 'layerZone')
         #self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
         #self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
+
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
+        self.layer_zone.installEventFilter(self)
+        #self.layer_zone.itemClicked.connect(self.zone_layer_menu)
         #self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
         #self.network_btn.clicked.connect(self.network_layer_dialog)
         
         # Loads
         self.__reload_scenarios()
-        
+        self.__load_layers_zones()
+            
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -51,6 +60,18 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
     
+    def __load_layers_zones(self):
+        """
+            @summary: Reloads List Layers
+        """
+        lstLayers = self.project.getLayers("zones")
+        for i in lstLayers:
+            item = QtWidgets.QListWidgetItem()
+            item.setText(i['text'])
+            item.setData(1, i['id'])
+            self.layer_zone.addItem(item)
+
+
     def zone_layer_dialog(self):
         """
             @summary: Opens zone layer window
@@ -63,6 +84,35 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog = ZoneLayerDialog(parent=self)
             dialog.show()
             result = dialog.exec_()
+
+
+    def eventFilter(self, source, event):
+        """
+            @summary: EventFilter to filter Right Click
+        """
+        if (event.type() == QtCore.QEvent.ContextMenu and source is self.layer_zone):
+            menu = QtWidgets.QMenu()
+            editLayer = menu.addAction(QIcon(self.plugin_dir+"/edit_icon.png"), 'Edit Layer')
+            deleteLayer = menu.addAction(QIcon(self.plugin_dir+"/delete_icon.png"),'Delete Layer')
+            openLayer = menu.addAction(QIcon(self.plugin_dir+"/open_icon.png"),'Open Layer')
+            action = menu.exec_(event.globalPos())
+
+            if action == editLayer:
+                item = source.itemAt(event.pos())
+                layerId = item.data(1)
+                dialog = ZoneLayerDialog(parent=self,layerId=layerId)
+                dialog.show()
+                result = dialog.exec_()
+            elif action == deleteLayer:
+                item = source.itemAt(event.pos())
+                layerId = item.data(1)
+                QgsProject.instance().removeMapLayers([layerId])
+            elif action == openLayer:
+                item = source.itemAt(event.pos())
+                self.zones_dialog.close()
+
+            return True
+        return super(ResultsDialog, self).eventFilter(source, event)
 
     def matrix_layer_dialog(self):
         """
