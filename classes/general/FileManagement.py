@@ -139,11 +139,9 @@ class FileManagement(object):
     @staticmethod
     def update_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText):
         try:
-            print("******* Actualizacion archivo")
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
             for valor in root.findall("./project/layer/[@id='{}']".format(layerId)):
-                print("*********** Estoy dentro del for")
                 valor.attrib['field'] = fieldName
                 valor.attrib['scenario'] = str(scenariosExpression)
                 valor.attrib['sectors_expression'] = sectorsExpressionText

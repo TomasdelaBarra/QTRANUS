@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>791</width>
-    <height>365</height>
+    <width>684</width>
+    <height>337</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -69,29 +69,44 @@
       </layout>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>80</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QCommandLinkButton" name="zones">
-         <property name="text">
-          <string>Zones</string>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="currentIndex">
+          <number>0</number>
          </property>
+         <widget class="QWidget" name="zoneTab">
+          <attribute name="title">
+           <string>Zones</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QListWidget" name="layerZone"/>
+             </item>
+             <item>
+              <widget class="QCommandLinkButton" name="zones">
+               <property name="text">
+                <string>Zones</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="networkTab">
+          <attribute name="title">
+           <string>Network</string>
+          </attribute>
+         </widget>
+         <widget class="QWidget" name="tabMatrix">
+          <attribute name="title">
+           <string>Matrix</string>
+          </attribute>
+         </widget>
         </widget>
-       </item>
-       <item>
-        <widget class="QListWidget" name="layerZone"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8"/>
@@ -138,9 +153,9 @@
  <connections>
   <connection>
    <sender>button_box</sender>
-   <signal>accepted()</signal>
+   <signal>rejected()</signal>
    <receiver>QTranusDialogBase</receiver>
-   <slot>accept()</slot>
+   <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>605</x>
@@ -154,9 +169,9 @@
   </connection>
   <connection>
    <sender>button_box</sender>
-   <signal>rejected()</signal>
+   <signal>accepted()</signal>
    <receiver>QTranusDialogBase</receiver>
-   <slot>reject()</slot>
+   <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>605</x>

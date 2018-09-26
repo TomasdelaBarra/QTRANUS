@@ -24,6 +24,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
+        self.layerId = layerId
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -55,8 +56,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_operators()
         self.reload_scenarios()
 
-        if layerId:
-            self.layerId = layerId
+        if self.layerId:
             self.__load_default_data()
     
     def open_help(self):
@@ -139,8 +139,12 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         validationResult, scenariosExpression, sectorsExpression, sectorsExpressionText = self.__validate_data() 
         print("validationResult {}, scenariosExpression {}, sectorsExpression {}".format(validationResult,scenariosExpression,sectorsExpression))
+        print("***************** LAYER ID "+str(self.layerId))
         if validationResult:
-            self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
+            if not self.layerId:
+                self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
+            else:
+                self.project.editZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText, self.layerId)
             self.accept()
         else:
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")

@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, uic
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from qgis.core import QgsProject
+from qgis.utils import iface
 
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model import ScenariosModel 
@@ -20,7 +21,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         super(ResultsDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
-        self.zones_dialog = None
+        self.zones_dialog = ZoneLayerDialog(parent=self)
         self.plugin_dir = os.path.dirname(__file__)
         
         # Linking objects with controls
@@ -65,6 +66,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Reloads List Layers
         """
         lstLayers = self.project.getLayers("zones")
+        self.layer_zone.clear()
         for i in lstLayers:
             item = QtWidgets.QListWidgetItem()
             item.setText(i['text'])
@@ -81,9 +83,9 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             print ("There are no fields to load, please reload SHP file.")
         else:
-            dialog = ZoneLayerDialog(parent=self)
-            dialog.show()
-            result = dialog.exec_()
+            self.zones_dialog.show()
+            result = self.zones_dialog.exec_()
+            self.__load_layers_zones()
 
 
     def eventFilter(self, source, event):
@@ -92,9 +94,9 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         if (event.type() == QtCore.QEvent.ContextMenu and source is self.layer_zone):
             menu = QtWidgets.QMenu()
-            editLayer = menu.addAction(QIcon(self.plugin_dir+"/edit_icon.png"), 'Edit Layer')
-            deleteLayer = menu.addAction(QIcon(self.plugin_dir+"/delete_icon.png"),'Delete Layer')
-            openLayer = menu.addAction(QIcon(self.plugin_dir+"/open_icon.png"),'Open Layer')
+            openLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/open-layer.svg"),'Open Layer')
+            editLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/edit.svg"), 'Edit Layer')
+            deleteLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-layer.svg"),'Delete Layer')
             action = menu.exec_(event.globalPos())
 
             if action == editLayer:
@@ -107,9 +109,14 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
                 item = source.itemAt(event.pos())
                 layerId = item.data(1)
                 QgsProject.instance().removeMapLayers([layerId])
+                self.__load_layers_zones()
             elif action == openLayer:
                 item = source.itemAt(event.pos())
-                self.zones_dialog.close()
+                layerId = item.data(1)
+                registry = QgsProject.instance()
+                layer = registry.mapLayer(layerId)
+                iface.setActiveLayer(layer)
+                self.close()
 
             return True
         return super(ResultsDialog, self).eventFilter(source, event)
