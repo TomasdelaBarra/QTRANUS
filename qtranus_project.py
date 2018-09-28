@@ -202,8 +202,9 @@ class QTranusProject(object):
                 ranges.append(myRange)
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            modeRender = QgsGraduatedSymbolRenderer.Mode(2)
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
-            
+            renderer.setMode(modeRender)
             renderer.setSourceColorRamp(ramp)
             memoryLayer.setRenderer(renderer)
 

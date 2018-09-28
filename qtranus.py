@@ -67,7 +67,7 @@ class QTranus:
                 QCoreApplication.installTranslator(self.translator)
 
         self.project = QTranusProject(QgsProject.instance())
-
+        print("Estoy ejecutando Qtranus")
         # Create the dialog (after translation) and keep reference
         self.dlg = QTranusDialog(project=self.project)
 
