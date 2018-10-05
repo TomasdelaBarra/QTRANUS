@@ -7,6 +7,7 @@ from qgis.core import QgsProject
 from qgis.utils import iface
 
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .scenarios_model import ScenariosModel 
 from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
@@ -20,10 +21,14 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent = None):
         super(ResultsDialog, self).__init__(parent)
         self.setupUi(self)
+        # Resize Dialog for high resolution monitor
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
+
+
         self.project = parent.project
         self.zones_dialog = ZoneLayerDialog(parent=self)
         self.plugin_dir = os.path.dirname(__file__)
-        
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')

@@ -229,20 +229,6 @@
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QToolButton" name="db_folder_btn">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="new_project_btn">
-             <property name="text">
-              <string>New</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </item>
         </layout>
@@ -388,8 +374,6 @@
   <tabstop>btn_help</tabstop>
   <tabstop>scenarios</tabstop>
   <tabstop>layers_group_name</tabstop>
-  <tabstop>db_folder_btn</tabstop>
-  <tabstop>new_project_btn</tabstop>
   <tabstop>tranus_folder</tabstop>
   <tabstop>tranus_folder_btn</tabstop>
   <tabstop>zone_shape</tabstop>

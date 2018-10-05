@@ -208,6 +208,85 @@ class MapData(object):
             del operand2
             del operands
             return zoneList
+
+    def load_evaluate_sectors_expression(self, scenario, fieldName, sectorsExpression, conditionalFlag):
+        """
+            @summary: Method that evaluates sectors expression
+            @param scenario: Scenario where the expression will be evaluated
+            @type scenario: String
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @param sectorsExpression: Sectors expression to be evaluated for each scenario
+            @type sectorsExpression: Stack object
+            @param condtionalFlag: Flag to determine when a conditional will be evaluated
+            @type conditionalFlag: Boolean
+            @return: Zones list object  
+        """
+        
+        selectedScenario = next((sc for sc in self.indicators.scenarios if sc.id == scenario), None)
+        if selectedScenario is None:
+            print ("The scenario {0} doesn't exist.".format(scenario))
+            return None
+
+        if sectorsExpression is None:
+            print ("There is no expression to evaluate.")
+            return None
+        
+        operand1 = None
+        operand2 = None
+        zoneList = None
+        stackLen = len(sectorsExpression.data)
+        operands = Stack()
+        for item in sectorsExpression.data:
+            if ExpressionData.is_operator(item) or ExpressionData.is_conditional(item):
+                operand2 = operands.pop()
+                if type(operand2) is not list:
+                    if ExpressionData.is_number(operand2):
+                        operand2 = float(operand2)
+                    elif operand2.isalpha():
+                        operand2 = self.get_sector_zones(selectedScenario, operand2)
+                    
+                operand1 = operands.pop()
+                if type(operand1) is not list:
+                    if ExpressionData.is_number(operand1):
+                        operand1 = float(operand1)
+                    elif operand1.isalpha():
+                        operand1 = self.get_sector_zones(selectedScenario, operand1)
+                
+                zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
+                operands.push(zoneList)
+                operand1 = None
+                operand2 = None
+            else:
+                if ExpressionData.is_number(item):
+                    item = float(item)
+                    if stackLen == 1:
+                        if conditionalFlag:
+                            return item
+                        else:
+                            print ("There is not data to evaluate.")
+                            return None
+                    else:
+                        operands.push(item)
+
+                elif item.isalpha():
+                    if stackLen == 1:
+                        zoneList =  self.get_sector_zones(selectedScenario, item)
+                    else:
+                        operands.push(item)
+
+                else:
+                    print ("Item {0}, is not recognized.").format(item)
+                    return None
+                
+        if zoneList is None:
+            print ("There is not data to evaluate.")
+            return None
+        else:
+            del operand1
+            del operand2
+            del operands
+            return zoneList
     
     def evaluate_scenarios_expression(self, scenariosExpression, sectorsExpression, fieldName):
         """
@@ -264,6 +343,64 @@ class MapData(object):
         except:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
+            print("Unexpected error:", sys.exc_info()[0])
+            zoneList = None
+        finally:
+            del operand1
+            del operand2
+            del generalOperands
+            
+        return zoneList
+
+    def load_evaluate_scenarios_expression(self, scenariosExpression, sectorsExpression, fieldName):
+        """
+            @summary: Method that evaluates scenarios expression
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param sectorsExpression: Sectors expression to be evaluated for each scenario
+            @type sectorsExpression: Stack object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @return: Zones list object, result of scenarios evaluation 
+        """
+        operand1 = None
+        operand2 = None
+        zoneList = None
+        
+        try:
+            stackLen = len(scenariosExpression.data)
+            generalOperands = Stack()
+            
+            for item in scenariosExpression.data:
+                if ExpressionData.is_operator(item):            
+                    operand2 = generalOperands.pop()
+                    operand2 = self.load_evaluate_sectors_expression(operand2, fieldName, sectorsExpression[0], False)
+                    
+                    operand1 = generalOperands.pop()
+                    operand1 = self.load_evaluate_sectors_expression(operand1, fieldName, sectorsExpression[0], False)
+                    
+                    zoneList = ExpressionData.execute_expression(operand1, operand2, item, fieldName)
+                    
+                    if zoneList is None:
+                        raise Exception("There is not data to evaluate for sectors expression.")
+                    else:
+                        if len(zoneList) > 0:                
+                            generalOperands.push(zoneList)
+                        else:
+                            raise Exception("There is not data to evaluate for sectors expression.")
+                    
+                    operand1 = None
+                    operand2 = None
+                else:
+                    if stackLen == 1:
+                        zoneList = self.load_evaluate_sectors_expression(item, fieldName, sectorsExpression[0], False)
+                    else:
+                        generalOperands.push(item)
+                        
+        except Exception as inst:
+            print(inst)
+            zoneList = None
+        except:
             print("Unexpected error:", sys.exc_info()[0])
             zoneList = None
         finally:
@@ -437,13 +574,8 @@ class MapData(object):
             return False, minValue, maxValue, rowCounter
         else:
             rowCounter = len(zoneList)
-            
-        #csvFile = open(filePath + "\\" + layerName + ".csv", "w")
-        #newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
-        #print ('Writing CSV File "{0}"'.format(layerName.encode('utf-8')))
 
         # Write header
-        #newFile.writerow(["ZoneId", "\tZoneName", "\tJoinField" + fieldName])
         for itemZone in zoneList:
             value = 0
             if fieldName.upper() == 'TOTPROD':
@@ -464,12 +596,63 @@ class MapData(object):
             minValue = min(minValue, value)
             maxValue = max(maxValue, value)
 
-            # newFile.writerow([itemZone.id, "\t" + itemZone.name, "\t" + str(value)])
-            # print("Write row value:"+str(value))
+        print("Min: {0}, Max: {1}, Counter: {2}".format(minValue, maxValue, rowCounter))
+        return True, minValue, maxValue, rowCounter, zoneList
+
+    def load_data_memory(self, layerName, scenariosExpression, fieldName, filePath, sectorsExpression):
+        """
+            @summary: Method that creates a csv file to be used in the new layer
+            @param layerName: Layer name
+            @type: layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param fieldName: Field to be evaluated
+            @type fieldName: String
+            @param filePath: Path to save the file
+            @type filePath: String
+            @param sectorsExpression: Expression to be evaluated in reverse polish notation
+            @type sectorsExpression: Stack object    
+            @return: Result of the file creation, minValue, maxValue, rowCounter 
+        """
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+        rowCounter = 0
         
-        #del newFile, itemZone
-        #csvFile.close()
-        #del csvFile
+        expressionsPreResult = Stack()
+        
+        if len(sectorsExpression) > 1:
+            zoneList = self.evaluate_conditional_expression(scenariosExpression, sectorsExpression, fieldName)
+        else:
+            zoneList = self.load_evaluate_scenarios_expression(scenariosExpression, sectorsExpression, fieldName)
+            
+
+        if zoneList is None:
+            print ("There is not data to evaluate.")
+            return False, minValue, maxValue, rowCounter
+        else:
+            rowCounter = len(zoneList)
+
+        # Write header
+        for itemZone in zoneList:
+            value = 0
+            if fieldName.upper() == 'TOTPROD':
+                value = float(itemZone.totProd)
+            if fieldName.upper() == 'TOTDEM':
+                value = float(itemZone.totDem)
+            if fieldName.upper() == 'PRODCOST':
+                value = float(itemZone.prodCost)
+            if fieldName.upper() == 'PRICE':
+                value = float(itemZone.price)
+            if fieldName.upper() == 'MINRES':
+                value = float(itemZone.minRes)
+            if fieldName.upper() == 'MAXRES':
+                value = float(itemZone.maxRes)
+            if fieldName.upper() == 'ADJUST':
+                value = float(itemZone.adjust)
+        
+            minValue = min(minValue, value)
+            maxValue = max(maxValue, value)
+
         print("Min: {0}, Max: {1}, Counter: {2}".format(minValue, maxValue, rowCounter))
         return True, minValue, maxValue, rowCounter, zoneList
     

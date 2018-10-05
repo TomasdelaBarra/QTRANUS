@@ -65,7 +65,7 @@ class FileManagement(object):
 
     
     @staticmethod
-    def create_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText):
+    def create_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField):
         """
         @summary: Create Qtranus Project XML file 
         @param layerName: Layer Name
@@ -94,6 +94,9 @@ class FileManagement(object):
         layer.set("scenario", str(scenariosExpression))
         layer.set("type", "zones")
         layer.set("field", fieldName)
+        layer.set("id_field_name", shpField)
+
+        HP().indent(data)
 
         tree = XMLEt.ElementTree(data)
 
@@ -117,9 +120,23 @@ class FileManagement(object):
         field = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['field']
         scenario = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['scenario']
         expression = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['sectors_expression']
-        
-        return expression, field, name, scenario
+        id_field_name = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['id_field_name']
+        return expression, field, name, scenario, id_field_name
 
+    @staticmethod
+    def remove_layer_element(projectPath, layerId):
+        try:
+            tree = XMLEt.parse(projectPath+'/.qtranus')
+            root = tree.getroot()
+        except EnviromentError as e:
+            print(e)
+            return False
+
+        for parent in root.findall("project"):
+            for country in parent.findall("./layer/[@id='{}']".format(layerId)):
+                parent.remove(country)
+        
+        tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
 
     @staticmethod
     def if_exist_layer(projectPath, layerId):
@@ -145,6 +162,7 @@ class FileManagement(object):
                 valor.attrib['field'] = fieldName
                 valor.attrib['scenario'] = str(scenariosExpression)
                 valor.attrib['sectors_expression'] = sectorsExpressionText
+
             tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
 
         except Exception as e: 
@@ -152,7 +170,7 @@ class FileManagement(object):
             return False
 
     @staticmethod
-    def add_layer_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText):
+    def add_layer_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
@@ -164,6 +182,8 @@ class FileManagement(object):
             layer.set("scenario", str(scenariosExpression))
             layer.set("type", "zones")
             layer.set("field", fieldName)
+            layer.set("id_field_name", shpField)
+
             tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
             
         except Exception as e: 

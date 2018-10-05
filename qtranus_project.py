@@ -10,6 +10,7 @@ from .tranus import TranusProject
 from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo 
 
 from qgis.core import QgsProject
+import qgis.utils
 
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
@@ -23,7 +24,9 @@ from .classes.ZoneCentroid import ZoneCentroid
 from .classes.TripMatrix import TripMatrix
 from .classes.network.Network import Network
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.FileManagement import FileManagement as FileMXML
+from .classes.ExpressionData import ExpressionData
 
 import os
 import re
@@ -41,22 +44,57 @@ class QTranusProject(object):
         self.tranus_project = None
         self.shape = None
         self.centroids_file_path = None
-        self.load()
         self.map_data = MapData()
         self.zonesIdFieldName = None
         self.network_model = Network()
         self.network_link_shape_path = None
         self.network_nodes_shape_path = None
         self.db_path = None
+        self.load()
 
     def load(self):
         """
             @summary: Load method
         """
         self.tranus_project = None
+        self.proj.readProject.connect(self.loadLayersProject)
+        self.proj.layerRemoved.connect(self.removeLayerZone)
         self.load_tranus_folder()
         self.load_shapes()
 
+
+    def removeLayerZone(self, idLayer):
+        config = self.proj.customVariables()
+        try:
+            projectPath = config['project_qtranus_folder']
+
+            if FileMXML.if_exist_xml_layers(projectPath):
+                FileMXML.remove_layer_element(projectPath, idLayer)
+
+        except Exception as e:
+            projectPath = None
+            pass
+
+        
+        
+
+    def loadLayersProject(self):
+        config = self.proj.customVariables()
+        layers = self.proj.mapLayers()
+        projectPath = config['project_qtranus_folder'] or None
+        shapeFile = config['project_qtranus_zones_shape'] or None
+
+        if FileMXML.if_exist_xml_layers(projectPath):
+            for layerId in layers:
+                if layers[layerId].name()[-5:]=='zones':
+                    sectorsExpression, fieldName, layerName, scenariosExpression, idFieldName = FileMXML.find_layer_data(projectPath, layerId)
+                    scenariosExpression = Helpers().strToList(scenariosExpression)
+                    self.load_tranus_folder(projectPath)
+                    self.map_data.indicators = self.load_map_indicators(projectPath)
+                    self.map_data.load_dictionaries()
+                    scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
+                    sectorsExpressionResult, sectorsExpressionList = ExpressionData.validate_sectors_expression(sectorsExpression.strip())
+                    self.loadZonesLayer(layerName, scenariosExpressionStack, fieldName, sectorsExpressionList, layerId, shapeFile, idFieldName)
 
     def getLayers(self,typeLayer):
         """
@@ -89,7 +127,6 @@ class QTranusProject(object):
             @return: Boolean result of layer addition
         """
         
-        
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
@@ -107,11 +144,14 @@ class QTranusProject(object):
         rowCounter = 0
         # Gets shape's file folder
         projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
-        
+
+        # Set Custom Project Variable to save Project path
+        tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_zones_shape=self.shape)
+        QgsProject.instance().setCustomVariables(tranus_dictionary)
+
         registry = QgsProject.instance()
         layersCount = len(registry.mapLayers())
-        #print ('Number of Layers: {0}'.format(layersCount))
-
+        
         group = self.get_layers_group()
         layer = QgsVectorLayer(self.shape, layerName, 'ogr')
         epsg = layer.crs().postgisSrid()
@@ -125,11 +165,13 @@ class QTranusProject(object):
         fieldName = fieldName.strip()
         
         # layerName = layerName.encode('UTF-8')
-        # Creation of VectorLayer on Memory
+        # Create VectorLayer in Memory
         result, minValue, maxValue, rowCounter, zoneList = self.map_data.create_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
+        
         if result:
 
             shpField = self.zonesIdFieldName
+
             # Create a list with layer features
             feats = [ feat for feat in layer.getFeatures() ]
 
@@ -213,9 +255,9 @@ class QTranusProject(object):
                 if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
                     FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
                 else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField)
             else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField)
 
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
@@ -237,11 +279,10 @@ class QTranusProject(object):
             @type layerId: String
             @return: Boolean result of layer addition
         """
-        
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
             messagebox.exec_()
-            print  ("There is not scenarios information.")
+            print("There is not scenarios information.")
             return False
         
         if (self.zonesIdFieldName is None) or (self.zonesIdFieldName == ''):
@@ -255,17 +296,18 @@ class QTranusProject(object):
         rowCounter = 0
         # Gets shape's file folder
         projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
-        
         layer = QgsVectorLayer(self.shape, layerName, 'ogr')
         epsg = layer.crs().postgisSrid()
 
         registry = QgsProject.instance()
+
         memoryLayer = registry.mapLayer(layerId)
-        
+                
         # Gets field name
         fieldName = fieldName.strip()
         
         # Creation of VectorLayer on Memory
+        print("name {}, scenariosExpression {}, fieldName {}, projectPath {}, sectorsExpression {}".format(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression))
         result, minValue, maxValue, rowCounter, zoneList = self.map_data.create_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
         if result:
 
@@ -304,8 +346,6 @@ class QTranusProject(object):
 
                 for id_feature in it:
                     memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
-                    #feature = memoryLayer.getFeature(id_feature.id())
-                    
 
             memoryLayer.commitChanges()
             
@@ -351,6 +391,128 @@ class QTranusProject(object):
                 FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
                 
             #group.insertLayer((layersCount+2), memoryLayer)
+            self['zones_shape'] = layer.source()
+            self['zones_shape_id'] = layer.id()
+        return True
+
+    def loadZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression,  layerId, shapeFile, idFieldName):
+        """
+            @summary: Adds new zone layer to project
+            @param layerName: Layer Name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: String
+            @param fieldName: Field name
+            @type fieldName: String
+            @param sectorsExpression: Sectors expression
+            @type sectorsExpression: String
+            @param layerId: Layer ID to Edit features
+            @type layerId: String
+            @param shapeFile: URI to shapefile
+            @type shapeFile: String
+            @return: Boolean result of layer addition
+        """
+        self.zonesIdFieldName = idFieldName
+        
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+        rowCounter = 0
+        # Gets shape's file folder
+        projectPath = shapeFile[0:max(shapeFile.rfind('\\'), shapeFile.rfind('/'))]
+        layer = QgsVectorLayer(shapeFile, layerName, 'ogr')
+        epsg = layer.crs().postgisSrid()
+
+        registry = QgsProject.instance()
+
+        memoryLayer = registry.mapLayer(layerId)
+        
+        # Delete all Attributes of the Layer
+        memoryLayer.startEditing()
+        memoryLayer.deleteAttributes(memoryLayer.attributeList())
+        memoryLayer.commitChanges()
+
+        # Gets field name
+        fieldName = fieldName.strip()
+        
+        # Creation of VectorLayer on Memory
+        result, minValue, maxValue, rowCounter, zoneList = self.map_data.load_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
+        if result:
+
+            shpField = self.zonesIdFieldName
+
+            # Create a vector layer with data on Memory 
+            memory_data = memoryLayer.dataProvider()
+
+            joinedFieldName = "JoinField"+"_"+fieldName
+
+            # Create a list with layer features
+            feats = [ feat for feat in layer.getFeatures() ]
+
+            # Create a vector layer with data on Memory 
+            attr = layer.dataProvider().fields().toList()
+            attr += [QgsField(joinedFieldName,QVariant.Double)]
+            memory_data.addAttributes(attr)
+            memory_data.addFeatures(feats)
+
+            memoryLayer.startEditing()
+            for itemZone in zoneList:
+                value = 0
+                if fieldName.upper() == 'TOTPROD':
+                    value = float(itemZone.totProd)
+                if fieldName.upper() == 'TOTDEM':
+                    value = float(itemZone.totDem)
+                if fieldName.upper() == 'PRODCOST':
+                    value = float(itemZone.prodCost)
+                if fieldName.upper() == 'PRICE':
+                    value = float(itemZone.price)
+                if fieldName.upper() == 'MINRES':
+                    value = float(itemZone.minRes)
+                if fieldName.upper() == 'MAXRES':
+                    value = float(itemZone.maxRes)
+                if fieldName.upper() == 'ADJUST':
+                    value = float(itemZone.adjust)
+            
+                minValue = min(minValue, value)
+                maxValue = max(maxValue, value)
+                it = memoryLayer.getFeatures( u'"'+shpField+'" = '+itemZone.id )
+
+                for id_feature in it:
+                    memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
+
+            memoryLayer.commitChanges()
+            
+            print(minValue, maxValue, rowCounter)
+            
+            myStyle = QgsStyle().defaultStyle()
+            defaultColorRampNames = myStyle.colorRampNames()        
+            ramp = myStyle.colorRamp(defaultColorRampNames[0])
+            ranges  = []
+            nCats = ramp.count()
+            rng = maxValue - minValue
+            red0 = 255
+            red1 = 0
+            green0 = 255
+            green1 = 0
+            blue0 = 255
+            blue1 = 255
+            nCats = 8
+            for i in range(0,nCats):
+                v0 = minValue + rng/float(nCats)*i
+                v1 = minValue + rng/float(nCats)*(i+1)
+                symbol = QgsSymbol.defaultSymbol(memoryLayer.geometryType())
+                red = red0 + float(i)/float(nCats-1)*(red1-red0)
+                green = green0 + float(i)/float(nCats-1)*(green1-green0)
+                blue = blue0 + float(i)/float(nCats-1)*(blue1-blue0)
+                symbol.setColor(QColor(red, green, blue))
+                myRange = QgsRendererRange(v0,v1, symbol, "")
+                ranges.append(myRange)
+            
+            # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
+            
+            renderer.setSourceColorRamp(ramp)
+            memoryLayer.setRenderer(renderer)
+
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
         return True
@@ -408,7 +570,7 @@ class QTranusProject(object):
         """
         folder = folder or self['tranus_folder']
         path = os.path.join(folder, 'W_TRANUS.CTL')
-        print (path)
+
         try:
             tranus_project = TranusProject.load_project(path)
         except Exception as e:
@@ -647,7 +809,7 @@ class QTranusProject(object):
         layer = QgsMapLayerRegistry.instance().mapLayersByName('Zonas')[0]
         filePath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         group = self.get_layers_group()
-        print (layer.name())
+        print(layer.name())
         
         if layer is not None:
             epsg = layer.crs().postgisSrid()

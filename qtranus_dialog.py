@@ -29,6 +29,7 @@ import os, re, webbrowser
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QMessageBox
+from qgis.core import QgsProject
 
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
@@ -59,8 +60,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtWidgets.QLineEdit, 'layers_group_name')
-        self.db_folder_btn = self.findChild(QtWidgets.QToolButton, 'db_folder_btn')
-        self.new_db_btn = self.findChild(QtWidgets.QPushButton, name='new_project_btn')
+        #self.db_folder_btn = self.findChild(QtWidgets.QToolButton, 'db_folder_btn')
+        #self.new_db_btn = self.findChild(QtWidgets.QPushButton, name='new_project_btn')
         self.tranus_folder = self.findChild(QtWidgets.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtWidgets.QLineEdit, 'zone_shape')
         self.network_links_shape = self.findChild(QtWidgets.QLineEdit, 'network_links_shape')
@@ -81,8 +82,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
-        self.db_folder_btn.clicked.connect(self.select_db_zip_file(self.select_db))
-        self.new_db_btn.clicked.connect(self.new_db)
+        #self.db_folder_btn.clicked.connect(self.select_db_zip_file(self.select_db))
+        #self.new_db_btn.clicked.connect(self.new_db)
         self.data_btn.clicked.connect(self.data_dialog)
         self.results_btn.clicked.connect(self.results_dialog)
         self.run_btn.clicked.connect(self.run_dialog)
@@ -152,9 +153,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         #print(str(file_name[0]))
         result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
-        print("************************************************"+str(file_name[0]))
-        print("******************** Select Zones Shape result "+str(result))
-        print("******************** Select Zones Shape Names "+str(zoneShapeFieldNames))
+
         if result:
             self.zone_shape.setText(file_name[0])
             self.load_zone_shape_fields(zoneShapeFieldNames)
@@ -206,9 +205,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.folder_ws:
             self.tranus_folder.setText(self.folder_ws)
             self.project.load_tranus_folder(self.folder_ws)
-            #if not self.project.load_tranus_folder(self.folder_ws):
-            #    print("DENTRO IF not folder_ws ******************************************************")
-            #    self.tranus_folder.setText('')
+
             self.reload_scenarios()
         self.check_configure()
 

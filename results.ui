@@ -88,7 +88,7 @@
              <item>
               <widget class="QCommandLinkButton" name="zones">
                <property name="text">
-                <string>Zones</string>
+                <string>Create</string>
                </property>
               </widget>
              </item>

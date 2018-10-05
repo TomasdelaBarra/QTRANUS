@@ -138,8 +138,6 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Triggered when accept button is clicked
         """
         validationResult, scenariosExpression, sectorsExpression, sectorsExpressionText = self.__validate_data() 
-        print("validationResult {}, scenariosExpression {}, sectorsExpression {}".format(validationResult,scenariosExpression,sectorsExpression))
-        print("***************** LAYER ID "+str(self.layerId))
         if validationResult:
             if not self.layerId:
                 self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
@@ -206,19 +204,19 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write Layer Name.")
-            return False, None, None
+            return False, None, None, None
         
         if self.expression.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write an expression to be evaluated.")
-            return False, None, None
+            return False, None, None, None
         
         if len(self.base_scenario) == 0:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There are no Base Scenarios loaded.")
-            return False, None, None
+            return False, None, None, None
         else:
             scenariosExpression.append(str(self.baseScenario.currentText()))
         
@@ -226,7 +224,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Fields", "There are no Fields loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("There are no Fields loaded.")
-            return False, None, None
+            return False, None, None, None
         
         # Validations for alternate scenario
         if self.operators.currentText() != '':
@@ -235,10 +233,9 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select an Alternate Scenario.")
-                return False, None, None
+                return False, None, None, None
             else:
                 scenariosExpression.append(str(self.alternateScenario.currentText()))
-        
         scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
         
         if scenariosExpressionResult:
@@ -249,7 +246,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Expression with conditionals only applies for one scenario.")
-            return False, None, None
+            return False, None, None, None
         
         return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionList, sectorsExpressionText
     
@@ -258,7 +255,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
         
         # Get data from XML File with the parameters
-        expression, field, name, scenario = FileM.find_layer_data(projectPath, self.layerId)
+        expression, field, name, scenario, fieldName = FileM.find_layer_data(projectPath, self.layerId)
 
         self.layerName.setText(name)
         self.expression.setText(expression)
@@ -279,6 +276,3 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
             self.alternateScenario.setCurrentIndex(indexAlternateScenario)
             
-            
-        
-
