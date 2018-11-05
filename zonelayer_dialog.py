@@ -8,6 +8,7 @@ from qgis.gui import QgsMessageBar
 from .classes.ExpressionData import ExpressionData
 
 from .classes.general.FileManagement import FileManagement as FileM
+from .classes.general.Helpers import Helpers
 from .scenarios_model import ScenariosModel
 from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsProject
 from .classes.general.QTranusMessageBox import QTranusMessageBox
@@ -20,6 +21,8 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None, layerId=None):
         super(ZoneLayerDialog, self).__init__(parent)
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = parent.project
         self.proj = QgsProject.instance()
@@ -38,6 +41,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.alternateScenario = self.findChild(QtWidgets.QComboBox, name='cb_alternate_scenario')
         self.fields = self.findChild(QtWidgets.QComboBox, 'comboField')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')        
+        self.progressBar = self.findChild(QtWidgets.QProgressBar, 'progressBar')        
 
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -138,11 +142,14 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Triggered when accept button is clicked
         """
         validationResult, scenariosExpression, sectorsExpression, sectorsExpressionText = self.__validate_data() 
+        self.progressBar.show()
+        self.progressBar.setValue(10)
+
         if validationResult:
             if not self.layerId:
-                self.project.addZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
+                self.project.addZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
             else:
-                self.project.editZonesLayer(self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText, self.layerId)
+                self.project.editZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText, self.layerId)
             self.accept()
         else:
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")

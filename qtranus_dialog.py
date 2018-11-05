@@ -37,6 +37,7 @@ from .networklayer_dialog import NetworkLayerDialog
 from .results_dialog import ResultsDialog
 from .data_dialog import DataDialog
 from .classes.general.FileManagement import FileManagement
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 
@@ -53,6 +54,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(50)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = project
         self.folder_ws = ''

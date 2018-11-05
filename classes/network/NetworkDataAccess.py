@@ -5,6 +5,8 @@ from ..ExpressionData import ExpressionData
 from .Level import *
 import csv, numpy as np
 from ..general.QTranusMessageBox import QTranusMessageBox
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets 
 
 class NetworkDataAccess(object):
     def __init__(self):
@@ -91,6 +93,7 @@ class NetworkDataAccess(object):
             @type projectPath: String
             @return: Network matrix and matrix of links
         """
+        # IMPORTANTE OJO PARAMETRO CABLEADO
         networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*')
         links = self.__get_network_ids(networkMatrix)
         
@@ -138,6 +141,7 @@ class NetworkDataAccess(object):
             @type networkMatrix: Numpy array
             @return: Matrix rows
         """
+        #print("Origin {} Dest {} networkMatrix {} ".format(networkMatrix['Orig'], networkMatrix['Dest'], networkMatrix))
         rowsData = None
         rowsData = networkMatrix[
                                   (networkMatrix['Orig'] == origin)
@@ -398,10 +402,10 @@ class NetworkDataAccess(object):
         except Exception as inst:
             print(inst)
             matrixData = None
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         except:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Unexpected error:", sys.exc_info()[0])
             matrixData = None
@@ -670,16 +674,55 @@ class NetworkDataAccess(object):
         except Exception as inst:
             matrixData = None
             print(inst)
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         except:
             matrixData = None
             print("Unexpected error:", sys.exc_info()[0])
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
 
         return matrixData  
     
+    def create_network_memory(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath):
+        """
+            @summary: Creates new network csv file
+            @param layerName: Layer name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression to be evaluated
+            @type scenariosExpression: Stack object
+            @param networkExpression: Network expression to be evaluated
+            @type networkExpression: Stack object
+            @param variable: Variable
+            @type variable: String
+            @param level: Level we are evaluating (Operator or Route)
+            @type level: Enum 
+            @param projectPath: Project path
+            @type projectPath: String
+            @return: Resul of the process
+        """
+        rowCounter = 0
+        networkMatrixResult = None
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+
+        if level == Level.Total or len(networkExpression) == 1:
+            networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+        
+        if networkMatrixResult is None:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print ("There is not data to evaluate.")
+            return False
+        
+        for value in networkMatrixResult:
+            maxValue = max(maxValue, value[1])
+            minValue = min(minValue, value[1])
+
+        
+        
+        return True, networkMatrixResult, minValue, maxValue
+
     def create_network_csv_file(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath):
         """
             @summary: Creates new network csv file
@@ -704,18 +747,19 @@ class NetworkDataAccess(object):
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There is not data to evaluate.")
             return False
         
-        csvFile = open(projectPath + "\\" + layerName + ".csv", "wb")
+        csvFile = open(projectPath + "\\" + layerName + ".csv", "w")
         
         newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        newFile.writerow(['Id', 'Result'])
+        newFile.writerow(['ID', 'Result'])
+        print(" Información: ".format(networkMatrixResult))
         for rowItem in np.nditer(networkMatrixResult):
-            newFile.writerow([rowItem['Id'], rowItem['Result']])
-                    
+            newFile.writerow([str(rowItem['Id']).replace("b","").replace("'",""), rowItem['Result']])
+
         del newFile
         csvFile.close
         del csvFile

@@ -73,7 +73,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="zoneTab">
           <attribute name="title">
@@ -100,6 +100,25 @@
           <attribute name="title">
            <string>Network</string>
           </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QListWidget" name="layerNetwork">
+             <property name="autoScrollMargin">
+              <number>0</number>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::SingleSelection</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCommandLinkButton" name="network">
+             <property name="text">
+              <string>Create</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
          <widget class="QWidget" name="tabMatrix">
           <attribute name="title">

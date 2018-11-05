@@ -34,8 +34,9 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
         self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
         self.layer_zone = self.findChild(QtWidgets.QListWidget, 'layerZone')
+        self.layer_network = self.findChild(QtWidgets.QListWidget, 'layerNetwork')
         #self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
-        #self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
+        self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
 
         
@@ -43,13 +44,15 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.help.clicked.connect(self.open_help)
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.layer_zone.installEventFilter(self)
+        self.layer_network.installEventFilter(self)
         #self.layer_zone.itemClicked.connect(self.zone_layer_menu)
         #self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
-        #self.network_btn.clicked.connect(self.network_layer_dialog)
+        self.network_btn.clicked.connect(self.network_layer_dialog)
         
         # Loads
         self.__reload_scenarios()
         self.__load_layers_zones()
+        self.__load_layers_network()
             
     def open_help(self):
         """
@@ -74,9 +77,21 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.layer_zone.clear()
         for i in lstLayers:
             item = QtWidgets.QListWidgetItem()
+            item.setData(11, i['id'])
             item.setText(i['text'])
-            item.setData(1, i['id'])
             self.layer_zone.addItem(item)
+
+    def __load_layers_network(self):
+        """
+            @summary: Reloads List Layers
+        """
+        lstLayers = self.project.getLayers("network")
+        self.layer_network.clear()
+        for i in lstLayers:
+            item = QtWidgets.QListWidgetItem()
+            item.setData(11, i['id'])
+            item.setText(i['text'])
+            self.layer_network.addItem(item)
 
 
     def zone_layer_dialog(self):
@@ -97,7 +112,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: EventFilter to filter Right Click
         """
-        if (event.type() == QtCore.QEvent.ContextMenu and source is self.layer_zone):
+        if (event.type() == QtCore.QEvent.ContextMenu and (source is self.layer_zone or source is self.layer_network)):
             menu = QtWidgets.QMenu()
             openLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/open-layer.svg"),'Open Layer')
             editLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/edit.svg"), 'Edit Layer')
@@ -106,18 +121,19 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if action == editLayer:
                 item = source.itemAt(event.pos())
-                layerId = item.data(1)
-                dialog = ZoneLayerDialog(parent=self,layerId=layerId)
+                layerId = item.data(11)
+                dialog = ZoneLayerDialog(parent=self,layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(parent=self, layerId=layerId)
                 dialog.show()
                 result = dialog.exec_()
             elif action == deleteLayer:
                 item = source.itemAt(event.pos())
-                layerId = item.data(1)
+                layerId = item.data(11)
                 QgsProject.instance().removeMapLayers([layerId])
                 self.__load_layers_zones()
+                self.__load_layers_network()
             elif action == openLayer:
                 item = source.itemAt(event.pos())
-                layerId = item.data(1)
+                layerId = item.data(11)
                 registry = QgsProject.instance()
                 layer = registry.mapLayer(layerId)
                 iface.setActiveLayer(layer)
@@ -153,3 +169,4 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog = NetworkLayerDialog(parent = self)
             dialog.show()
             result = dialog.exec_()
+            self.__load_layers_network()

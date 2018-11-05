@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
-from ..general.FileManagement import FileManagement
+import numpy as np
+
+from PyQt5.QtCore import QVariant
+from PyQt5.QtGui import QColor
+
+from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase
+
+from ..general.FileManagement import FileManagement as FileMXML
+from ..general.Helpers import Helpers as HP
 from ..GeneralObject import GeneralObject
 from .NetworkDataAccess import NetworkDataAccess
-from qgis.core import QgsVectorLayer,  QgsProject, QgsVectorLayerJoinInfo
-import numpy as np
+
 
 class Network(object):
     def __init__(self):
@@ -110,7 +117,7 @@ class Network(object):
         """
         self.routes_dic = self.network_data_access.get_scenario_routes(projectPath, scenario)
 
-    def addNetworkLayer(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath):
+    def addNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, expressionNetworkText, color):
         """
             @summary: Get operators dictionary
             @param layerName: Layer name
@@ -136,31 +143,270 @@ class Network(object):
             print  ("There is not scenarios information.")
             return False
         
-        result = self.network_data_access.create_network_csv_file(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+        result, resultData, minValue, maxValue = self.network_data_access.create_network_memory(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+        progressBar.setValue(15)
+        registry = QgsProject.instance()
+        layersCount = len(registry.mapLayers())
+
         if result:
-            registry = QgsMapLayerRegistry.instance()
-            layersCount = len(registry.mapLayers())
-
             # Source shape, name of the new shape, providerLib
-            layer = QgsVectorLayer(networkLinkShapePath, layerName, 'ogr')
-
-            registry.addMapLayer(layer, False)
+            layer = QgsVectorLayer(networkLinkShapePath, layerName+"_network", 'ogr')
+            epsg = layer.crs().postgisSrid()
+            intMethod = 0 if method == "Color" else 1
+            progressBar.setValue(20)
             if not layer.isValid():
                 return False
 
-            csvFile_uri = ("file:///" + projectPath + "/"+ layerName + ".csv?delimiter=,").encode('utf-8')
-            print(csvFile_uri)
-            csvFile = QgsVectorLayer(csvFile_uri, layerName, "delimitedtext")
-            registry.addMapLayer(csvFile, False)
-            shpField = 'LinkId'
-            csvField = 'Id'
-            joinObject = QgsVectorJoinInfo()
-            joinObject.joinLayerId = csvFile.id()
-            joinObject.joinFieldName = csvField
-            joinObject.targetFieldName = shpField
-            joinObject.memoryCache = True
-            layer.addJoin(joinObject)
+            feats = [ feat for feat in layer.getFeatures() ]
 
-            group.insertLayer((layersCount+1), layer)
+            # Create a vector layer with data on Memory 
+            memoryLayer = QgsVectorLayer("LineString?crs=epsg:"+str(epsg), layerName+"_network", "memory")
+            registry.addMapLayer(memoryLayer)
+            memory_data = memoryLayer.dataProvider()
+            joinedFieldName = "Result"
+            shpField = "Id"
+            attr = layer.dataProvider().fields().toList()
+            attr += [QgsField(joinedFieldName, QVariant.Double)]
+            
+            progressBar.setValue(25)
+
+            memory_data.addAttributes(attr)
+            memory_data.addFeatures(feats)
+            memoryLayer.startEditing()
+            
+            num = 30
+            progressBar.setValue(num)
+            progressInterval = 70/len(resultData)
+
+            for rowItem in np.nditer(resultData):
+                value = 0
+                num += progressInterval
+                progressBar.setValue(num)
+
+                it = memoryLayer.getFeatures( "LINKID  = '{0}'".format(str(rowItem['Id']).replace("b","").replace("'","")))
+                for id_feature in it:
+                    memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(float(rowItem['Result'])))
+
+            memoryLayer.commitChanges()
+            
+            rowCounter = len(resultData)
+            myStyle = QgsStyle().defaultStyle()
+            defaultColorRampNames = myStyle.colorRampNames()        
+            ramp = myStyle.colorRamp(defaultColorRampNames[0])
+            ranges  = []
+            nCats = ramp.count()
+            rng = maxValue - minValue
+            nCats = 8
+            scale = QgsMapUnitScale(minValue, maxValue)
+
+            if method == "Color":
+                color1 = list(map(lambda x: int(x), color['color1'].split(",")[0:3]))
+                color2 = list(map(lambda x: int(x), color['color2'].split(",")[0:3]))
+                interpolatedColors = HP.linear_gradient(color1, color2, nCats)
+            
+            for i in range(0,nCats):
+                v0 = minValue + rng/float(nCats)*i
+                v1 = minValue + rng/float(nCats)*(i+1)
+                
+                if method == "Color":
+                    line = QgsSimpleLineSymbolLayer(QColor(interpolatedColors['r'][i], interpolatedColors['g'][i], interpolatedColors['b'][i]))
+                    line.setOffsetUnit(2)
+                    line.setOffset(2)
+                    line.setWidth(0.8)
+                    symbol = QgsLineSymbol()
+                    symbol.changeSymbolLayer(0,line)
+                    myRange = QgsRendererRange(v0,v1, symbol, "")
+                    
+                elif method == "Size":
+                    qcolor = QColor()
+                    qcolor.setRgb(color)
+                    line = QgsSimpleLineSymbolLayer(qcolor)
+                    line.setOffsetUnit(2)
+                    line.setOffset(0.7)
+                    # Symbol
+                    # symbolLine = QgsSimpleMarkerSymbolLayer(QgsSimpleMarkerSymbolLayerBase.ArrowHead)
+                    # Mark line
+                    # markLine = QgsMarkerLineSymbolLayer()
+                    # markLine.setPlacement(4)
+                    symbolo = QgsLineSymbol()
+                    symbolo.changeSymbolLayer(0,line)
+                    # symbolo.appendSymbolLayer(line)
+                    myRange = QgsRendererRange(v0,v1, symbolo, "")
+                ranges.append(myRange)
+                
+            # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            modeRender = QgsGraduatedSymbolRenderer.Mode(2)
+            renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
+            renderer.setMode(modeRender)
+            renderer.setGraduatedMethod(intMethod)
+            
+            if method == "Size":
+                renderer.setSymbolSizes(0.200000, 2.60000)
+
+            renderer.setSourceColorRamp(ramp)
+            memoryLayer.setRenderer(renderer)
+
+            typeLayer = "network"
+            networkExpressionText = str(scenariosExpression)
+            print("expresionText: {}, NetworkExpression: {}".format(scenariosExpression, networkExpression))
+
+            # Create XML File ".qtranus" with the parameters of the executions
+            if FileMXML.if_exist_xml_layers(projectPath):
+                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
+                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, method, level, color)
+                else:
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
+            else:
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
+
+            #group.insertLayer((layersCount+1), memoryLayer)
+            progressBar.setValue(100)
+        return True
+
+    def editNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, layerId, expressionNetworkText, color):
+        """
+            @summary: Get operators dictionary
+            @param layerName: Layer name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression: Stack object
+            @param networkExpression: Network expression
+            @type networkExpression: Stack object
+            @param variable: Variable to evaluate
+            @type variable: String
+            @param level: Level to evaluate (Total, Routes, Operators)
+            @type level: Level object
+            @param projectPath: Project path
+            @type projectPath: String
+            @param group: Project group
+            @type group: Layer group
+            @param networkLinkShapePath: Network link shape path
+            @type networkLinkShapePath: String
+            @return: Result of the layer creation
+        """
+        if scenariosExpression is None:
+            QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
+            print  ("There is not scenarios information.")
+            return False
+        
+        registry = QgsProject.instance()
+        layersCount = len(registry.mapLayers())
+        result, resultData, minValue, maxValue = self.network_data_access.create_network_memory(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
+        progressBar.setValue(15)
+
+        if result:
+            # Source shape, name of the new shape, providerLib
+            layer = QgsVectorLayer(networkLinkShapePath, layerName+"_network", 'ogr')
+            epsg = layer.crs().postgisSrid()
+            intMethod = 0 if method == "Color" else 1
+            rowCounter = len(resultData)
+
+            if not layer.isValid():
+                return False
+
+            feats = [ feat for feat in layer.getFeatures() ]
+
+            # Create a vector layer with data on Memory 
+            memoryLayer = registry.mapLayer(layerId)
+
+            memory_data = memoryLayer.dataProvider()
+            joinedFieldName = "Result"
+            shpField = "Id"
+            attr = layer.dataProvider().fields().toList()
+            attr += [QgsField(joinedFieldName, QVariant.Double)]
+            progressBar.setValue(25)
+
+            memory_data.addAttributes(attr)
+            memory_data.addFeatures(feats)
+
+            num = 30
+            progressBar.setValue(num)
+            progressInterval = 70/len(resultData)
+
+            memoryLayer.startEditing()
+            for rowItem in np.nditer(resultData):
+                value = 0
+                num += progressInterval
+                progressBar.setValue(num)
+
+                it = memoryLayer.getFeatures( "LINKID  = '{0}'".format(str(rowItem['Id']).replace("b","").replace("'","")))
+                for id_feature in it:
+                    #print("ID: {0} Result: {1}".format(id_feature.id(), float(rowItem['Result'])))
+                    memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(float(rowItem['Result'])))
+
+            memoryLayer.commitChanges()
+            
+            myStyle = QgsStyle().defaultStyle()
+            defaultColorRampNames = myStyle.colorRampNames()        
+            ramp = myStyle.colorRamp(defaultColorRampNames[0])
+            ranges  = []
+            nCats = ramp.count()
+            rng = maxValue - minValue
+            nCats = 8
+            scale = QgsMapUnitScale(minValue, maxValue)
+
+            if method == "Color":
+                color1 = list(map(lambda x: int(x), color['color1'].split(",")[0:3]))
+                color2 = list(map(lambda x: int(x), color['color2'].split(",")[0:3]))
+                interpolatedColors = HP.linear_gradient(color1, color2, nCats)
+                
+            for i in range(0,nCats):
+                v0 = minValue + rng/float(nCats)*i
+                v1 = minValue + rng/float(nCats)*(i+1)
+                if method == "Color":
+                    line = QgsSimpleLineSymbolLayer(QColor(interpolatedColors['r'][i], interpolatedColors['g'][i], interpolatedColors['b'][i]))
+                    line.setOffsetUnit(2)
+                    line.setOffset(2)
+                    line.setWidth(0.8)
+                    symbol = QgsLineSymbol()
+                    symbol.changeSymbolLayer(0,line)
+                    myRange = QgsRendererRange(v0,v1, symbol, "")
+                    
+                elif method == "Size":
+                    qcolor = QColor()
+                    qcolor.setRgb(color)
+                    line = QgsSimpleLineSymbolLayer(qcolor)
+                    line.setOffsetUnit(2)
+                    line.setOffset(0.7)
+                    # Symbol
+                    # symbolLine = QgsSimpleMarkerSymbolLayer(QgsSimpleMarkerSymbolLayerBase.ArrowHead)
+                    # Mark line
+                    # markLine = QgsMarkerLineSymbolLayer()
+                    # markLine.setPlacement(4)
+                    symbolo = QgsLineSymbol()
+                    symbolo.changeSymbolLayer(0,line)
+                    # symbolo.appendSymbolLayer(line)
+                    myRange = QgsRendererRange(v0,v1, symbolo, "")
+                ranges.append(myRange)
+                
+            
+            # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            modeRender = QgsGraduatedSymbolRenderer.Mode(2)
+            renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
+            renderer.setMode(modeRender)
+            renderer.setGraduatedMethod(intMethod)
+            
+            if method == "Size":
+                renderer.setSymbolSizes(0.200000, 2.60000)
+
+            renderer.setSourceColorRamp(ramp)
+            memoryLayer.setRenderer(renderer)
+
+            typeLayer = "network"
+            fieldName = "LINKID"
+            networkExpressionText = str(scenariosExpression)
+            print("expresionText: {}, NetworkExpression: {}".format(scenariosExpression, networkExpression))
+
+            # Create XML File ".qtranus" with the parameters of the executions
+            if FileMXML.if_exist_xml_layers(projectPath):
+                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
+                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, method, level, color)
+                else:
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
+            else:
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
+
+            #group.insertLayer((layersCount+1), memoryLayer)
+            progressBar.setValue(100)
 
         return True

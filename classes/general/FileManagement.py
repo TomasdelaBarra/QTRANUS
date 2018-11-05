@@ -45,14 +45,14 @@ class FileManagement(object):
         for fn in files:
             isValidFile = fileName.match(fn)
             if isValidFile != None:
-                
                 matrix_result = DataMatrix()
+                dtype = [('Id','U25'),('Orig', int),('Dest', int),('LinkName','U25'),('Type',int),('Dist', float),('LinkCap', 'U25'),('TotDem/TotCap', 'U25'),('TotStVeh', int),('TotVeh', int),('ServLev', 'U25'),('OperId', int),('OperName', 'U25'),('RouteId', int),('RouteName', 'U25'),('Capac',float),('Demand',float),('Vehics',float),('Dem/Cap', 'U25'),('StVeh',float),('IniSpeed', int),('FinSpeed', int),('IniWait', 'U25'),('FinWait', 'U25'),('Energy', float)]
                 npMatrix = np.genfromtxt(path + "/" + fn, delimiter = ',', skip_header = 0
-                                , dtype = None , names = True)
+                                , dtype = dtype , names = True)
                 matrix_result.Id = scenario
                 matrix_result.Name = scenario
                 matrix_result.data_matrix = npMatrix
-        
+
         return matrix_result
         
     @staticmethod
@@ -65,7 +65,7 @@ class FileManagement(object):
 
     
     @staticmethod
-    def create_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField):
+    def create_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer, method=None, level=None, color=None):
         """
         @summary: Create Qtranus Project XML file 
         @param layerName: Layer Name
@@ -85,16 +85,19 @@ class FileManagement(object):
 
         data = XMLEt.Element("data")
         project = XMLEt.SubElement(data, "project")
-        project.set("id", "123123_123123")
 
         layer = XMLEt.SubElement(project, "layer")
         layer.set("name", layerName)
         layer.set("id", layerId)
         layer.set("sectors_expression", sectorsExpressionText)
         layer.set("scenario", str(scenariosExpression))
-        layer.set("type", "zones")
+        layer.set("type", typeLayer)
         layer.set("field", fieldName)
         layer.set("id_field_name", shpField)
+        if method and level and color:
+            layer.set("method", method)
+            layer.set("level", str(level))
+            layer.set("color", str(color))
 
         HP().indent(data)
 
@@ -103,7 +106,7 @@ class FileManagement(object):
         try:
             tree.write(projectPath+"/.qtranus", xml_declaration=True, encoding='utf-8', method="xml")
             return True
-        except EnviromentError as e:
+        except Exception as e:
             print(e)
             return False
 
@@ -112,23 +115,32 @@ class FileManagement(object):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
-        except EnviromentError as e:
+        except Exception as e:
             print(e)
             return False
-
+        method = None
         name = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['name']
         field = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['field']
         scenario = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['scenario']
         expression = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['sectors_expression']
         id_field_name = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['id_field_name']
-        return expression, field, name, scenario, id_field_name
+        try:
+            method = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['method']
+            level = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['level']
+            color = root.findall("./project/layer/[@id='{}']".format(layerId))[0].attrib['color']
+        except:
+            return expression, field, name, scenario, id_field_name    
+        else:
+            return expression, field, name, scenario, id_field_name, method, level, color
+        
+        
 
     @staticmethod
     def remove_layer_element(projectPath, layerId):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
-        except EnviromentError as e:
+        except Exception as e:
             print(e)
             return False
 
@@ -148,13 +160,13 @@ class FileManagement(object):
                 return True
             else:
                 return False
-        except EnviromentError as e:
+        except Exception as e:
             print(e)
             return False
 
 
     @staticmethod
-    def update_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText):
+    def update_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, method=None, level=None, color=None):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
@@ -162,6 +174,11 @@ class FileManagement(object):
                 valor.attrib['field'] = fieldName
                 valor.attrib['scenario'] = str(scenariosExpression)
                 valor.attrib['sectors_expression'] = sectorsExpressionText
+                if method and level:
+                    valor.attrib['method'] = method
+                    valor.attrib['level'] = str(level)
+                if color:
+                    valor.attrib['color'] = str(color)
 
             tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
 
@@ -170,7 +187,7 @@ class FileManagement(object):
             return False
 
     @staticmethod
-    def add_layer_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField):
+    def add_layer_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer, method=None, level=None, color=None):
         try:
             tree = XMLEt.parse(projectPath+'/.qtranus')
             root = tree.getroot()
@@ -180,9 +197,16 @@ class FileManagement(object):
             layer.set("id", layerId)
             layer.set("sectors_expression", sectorsExpressionText)
             layer.set("scenario", str(scenariosExpression))
-            layer.set("type", "zones")
+            layer.set("type", typeLayer)
             layer.set("field", fieldName)
             layer.set("id_field_name", shpField)
+
+            if method:
+                layer.set("method", method)
+            if level:
+                layer.set("level", str(level))
+            if color:
+                layer.set("color", str(color))
 
             tree.write(projectPath+'/.qtranus', xml_declaration=True, encoding='utf-8', method="xml")
             

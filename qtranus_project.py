@@ -58,16 +58,16 @@ class QTranusProject(object):
         """
         self.tranus_project = None
         self.proj.readProject.connect(self.loadLayersProject)
-        self.proj.layerRemoved.connect(self.removeLayerZone)
+        self.proj.layerRemoved.connect(self.removeLayer)
         self.load_tranus_folder()
         self.load_shapes()
 
 
-    def removeLayerZone(self, idLayer):
+    def removeLayer(self, idLayer):
         config = self.proj.customVariables()
         try:
             projectPath = config['project_qtranus_folder']
-
+            print("ID LAYER TO REMOVE {} ".format(idLayer))
             if FileMXML.if_exist_xml_layers(projectPath):
                 FileMXML.remove_layer_element(projectPath, idLayer)
 
@@ -108,12 +108,16 @@ class QTranusProject(object):
         layers = []
 
         for key, values in lstLayers.items():
-            if str(values.name())[-5:]==typeLayer:
-                layers.append({"id":values.id(),"text":values.name()})
+            if typeLayer == 'zones':
+                if str(values.name())[-5:]==typeLayer:
+                    layers.append({"id":values.id(),"text":values.name()})
+            elif typeLayer == 'network':
+                if str(values.name())[-7:]==typeLayer:
+                    layers.append({"id":values.id(),"text":values.name()})
         
         return layers
 
-    def addZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText):
+    def addZonesLayer(self, progressBar, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText):
         """
             @summary: Adds new zone layer to project
             @param layerName: Layer Name
@@ -167,7 +171,8 @@ class QTranusProject(object):
         # layerName = layerName.encode('UTF-8')
         # Create VectorLayer in Memory
         result, minValue, maxValue, rowCounter, zoneList = self.map_data.create_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
-        
+        progressBar.setValue(15)
+
         if result:
 
             shpField = self.zonesIdFieldName
@@ -186,6 +191,10 @@ class QTranusProject(object):
             attr += [QgsField(joinedFieldName,QVariant.Double)]
             memory_data.addAttributes(attr)
             memory_data.addFeatures(feats)
+            
+            num = 30
+            progressBar.setValue(num)
+            progressInterval = 70/len(zoneList)
 
             memoryLayer.startEditing()
             for itemZone in zoneList:
@@ -210,9 +219,12 @@ class QTranusProject(object):
                 
                 it = memoryLayer.getFeatures( u'"'+shpField+'" = '+itemZone.id )
 
+                num += progressInterval
+                progressBar.setValue(num)
+                
                 for id_feature in it:
                     memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
-                    #feature = memoryLayer.getFeature(id_feature.id())
+
                     
 
             memoryLayer.commitChanges()
@@ -249,22 +261,24 @@ class QTranusProject(object):
             renderer.setMode(modeRender)
             renderer.setSourceColorRamp(ramp)
             memoryLayer.setRenderer(renderer)
-
+            typeLayer = "zones"
             # Create XML File ".qtranus" with the parameters of the executions
             if FileMXML.if_exist_xml_layers(projectPath):
                 if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
                     FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
                 else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField)
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer)
             else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField)
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer)
 
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
+            progressBar.setValue(100)
+
         return True
 
-    def editZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText, layerId):
+    def editZonesLayer(self, progressBar, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText, layerId):
         """
             @summary: Adds new zone layer to project
             @param layerName: Layer Name
@@ -307,8 +321,9 @@ class QTranusProject(object):
         fieldName = fieldName.strip()
         
         # Creation of VectorLayer on Memory
-        print("name {}, scenariosExpression {}, fieldName {}, projectPath {}, sectorsExpression {}".format(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression))
         result, minValue, maxValue, rowCounter, zoneList = self.map_data.create_data_memory(layerName, scenariosExpression, fieldName, projectPath, sectorsExpression)
+        progressBar.setValue(15)
+
         if result:
 
             shpField = self.zonesIdFieldName
@@ -320,6 +335,10 @@ class QTranusProject(object):
             attr = memoryLayer.dataProvider().fields().toList()
             attr += [QgsField(joinedFieldName,QVariant.Double)]
             memory_data.addAttributes(attr)
+
+            num = 30
+            progressBar.setValue(num)
+            progressInterval = 70/len(zoneList)
 
             memoryLayer.startEditing()
             for itemZone in zoneList:
@@ -342,6 +361,8 @@ class QTranusProject(object):
                 minValue = min(minValue, value)
                 maxValue = max(maxValue, value)
                 
+                num += progressInterval
+                progressBar.setValue(num)
                 it = memoryLayer.getFeatures( u'"'+shpField+'" = '+itemZone.id )
 
                 for id_feature in it:
@@ -380,15 +401,15 @@ class QTranusProject(object):
             
             renderer.setSourceColorRamp(ramp)
             memoryLayer.setRenderer(renderer)
-
+            typeLayer = "zones"
             # Create XML File ".qtranus" with the parameters of the executions
             if FileMXML.if_exist_xml_layers(projectPath):
                 if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
                     FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
                 else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, typeLayer)
             else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
+                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, typeLayer)
                 
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
@@ -719,7 +740,8 @@ class QTranusProject(object):
                 self['zones_shape_id'] = layer.layer().id()
     
     def load_network_links_shape_file(self, file_path):
-        self.network_link_shape_path = file_path
+        self.network_link_shape_path = file_path[0]
+        
         registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(file_path[0], 'Network_Links', 'ogr')
