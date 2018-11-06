@@ -210,9 +210,10 @@ class Network(object):
                 
                 if method == "Color":
                     line = QgsSimpleLineSymbolLayer(QColor(interpolatedColors['r'][i], interpolatedColors['g'][i], interpolatedColors['b'][i]))
-                    line.setOffsetUnit(2)
-                    line.setOffset(2)
-                    line.setWidth(0.8)
+                    #line.setOffsetUnit(2)
+                    line.setOffset(0.55)
+                    #line.setWidthUnit(2)
+                    line.setWidth(0.7)
                     symbol = QgsLineSymbol()
                     symbol.changeSymbolLayer(0,line)
                     myRange = QgsRendererRange(v0,v1, symbol, "")
@@ -221,8 +222,11 @@ class Network(object):
                     qcolor = QColor()
                     qcolor.setRgb(color)
                     line = QgsSimpleLineSymbolLayer(qcolor)
-                    line.setOffsetUnit(2)
-                    line.setOffset(0.7)
+                    #line.setOffsetUnit(2)
+                    line.setOffset(0.2)
+                    #line.setWidthUnit(2)
+                    #line.setWidth(1)
+
                     # Symbol
                     # symbolLine = QgsSimpleMarkerSymbolLayer(QgsSimpleMarkerSymbolLayerBase.ArrowHead)
                     # Mark line
