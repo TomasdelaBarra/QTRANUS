@@ -96,7 +96,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
-        
+        self.data_btn.setEnabled(False)
         # Loads
         self.reload_scenarios()
 	
@@ -305,9 +305,19 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.layers_group_name.setText('QTranus Project')
             self.layers_group_name.selectAll()
         
+        self.project.load_tranus_folder(self.folder_ws)
+        self.reload_scenarios()
+
+        result, zoneShapeFieldNames = self.project.load_project_file_shape_files(self.project['zones_shape'], 'zones')
+        if result:
+            self.load_zone_shape_fields(zoneShapeFieldNames)
+
         if self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
         
+        if self.project['centroid_shape_file_path']:
+            self.centroid_shape.setText(self.project['centroid_shape_file_path'])
+
         if self.project['network_links_shape_file_path']:
             self.network_links_shape.setText(self.project['network_links_shape_file_path'])
         

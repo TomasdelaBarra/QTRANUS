@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser
+from string import *
+
+from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
+from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem
+
 from .classes.general.QTranusMessageBox import QTranusMessageBox
-from string import *
 from .scenarios_dialog import ScenariosDialog
 from .classes.data.DataBase import DataBase
 from .classes.data.Scenario import Scenario
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.data.DBFiles import DBFiles
-from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'data.ui'))
@@ -24,6 +27,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
             @type parent: QTranusProject class 
         """
         super(DataDialog, self).__init__(parent)
+        self.plugin_dir = os.path.dirname(__file__)
         self.setupUi(self)
         self.project = parent.project
         self.dataBase = DataBase()
@@ -47,6 +51,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #Loads
         self.__extract_db_files()
+
         
     def open_help(self):
         """
@@ -65,7 +70,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __extract_db_files(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtGui.QMessageBox.Warning, "Data", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("DB File was not found.")
         else:
@@ -73,7 +78,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.dataBase.create_backup_file(self.project['tranus_folder'], DBFiles.Scenarios)
                 self.__load_scenarios()               
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("DB files could not be extracted.")
         
@@ -94,11 +99,11 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def save_db(self):
         if(self.dataBase.save_db(self.project['tranus_folder'], self.project.db_path, self.project.db_path, DBFiles.Scenarios, self.scenariosMatrix)):
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("DB has been saved.")
         else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was a problem trying to save DB, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was a problem trying to save DB, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("There was a problem trying to save DB, please verify and try again.")
             
@@ -109,14 +114,14 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         print(file_name)
         if file_name.strip() != '':
             if(self.dataBase.save_db(self.project['tranus_folder'], self.project.db_path, file_name, DBFiles.Scenarios, self.scenariosMatrix)):
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("DB has been saved.")
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was a problem trying to save DB, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was a problem trying to save DB, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("There was a problem trying to save DB, please verify and try again.")
         else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was not selected any file name to save, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was not selected any file name to save, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("There was not selected any file name to save, please verify and try again.")

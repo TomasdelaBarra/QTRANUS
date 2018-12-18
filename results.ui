@@ -73,7 +73,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="zoneTab">
           <attribute name="title">
@@ -124,6 +124,22 @@
           <attribute name="title">
            <string>Matrix</string>
           </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QListWidget" name="layerMatrix"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QCommandLinkButton" name="matrix">
+             <property name="text">
+              <string>Create</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </widget>
        </item>

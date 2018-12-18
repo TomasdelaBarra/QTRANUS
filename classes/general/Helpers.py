@@ -25,6 +25,12 @@ class Helpers(object):
         return string.split(',')
 
     @staticmethod
+    def expressionToList(expression):
+        expression = str(expression)
+        expression = expression.replace("[","").replace("]","").replace("'","")
+        return expression.split(',')
+
+    @staticmethod
     def screenResolution(percent=0):
         try:
             from win32api import GetSystemMetrics

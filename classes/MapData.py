@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import csv, numpy as np, sys
+
+from PyQt5 import QtWidgets
+
 from .Indicator import Indicator
 from .ExpressionData import ExpressionData
 from .Stack import Stack
 from .general.QTranusMessageBox import QTranusMessageBox
-from PyQt5 import QtWidgets
+from .general.Helpers import Helpers as HP
 
-import csv, numpy as np, sys
 
 class MapData(object):
     def __init__(self):
@@ -25,7 +28,7 @@ class MapData(object):
         """
             @summary: Destroys the object
         """
-        print (self.__class__.__name__, "destroyed")
+        print(self.__class__.__name__, "destroyed")
         
     def __set_scenarios(self):
         """
@@ -670,19 +673,19 @@ class MapData(object):
                         for item in np.nditer(temp_matrix.tripMatrix):
                             if temp_zone is None:
                                 temp_zone = item.item(0)[0]
-                                self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1]
+                                self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1].decode("utf-8")
                             else:
                                 if temp_zone != item.item(0)[0]:
                                     temp_zone = item.item(0)[0]
-                                    self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1]
+                                    self.matrix_zones_dic[item.item(0)[0]] = item.item(0)[1].decode("utf-8")
                                     
                             if temp_cat is None:
                                 temp_cat = item.item(0)[4]
-                                self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
+                                self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5].decode("utf-8")
                             else:
                                 if temp_cat != item.item(0)[4]:
                                     temp_cat = item.item(0)[4]
-                                    self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5]
+                                    self.matrix_categories_dic[item.item(0)[4]] = item.item(0)[5].decode("utf-8")
                                     
     def get_matrix_row(self, scenarioData, originZone, destZone, category, types):
         """
@@ -701,14 +704,16 @@ class MapData(object):
         """
         
         rowData = None
-        rowData = scenarioData.tripMatrix[
-                                          (scenarioData.tripMatrix['OrZonName'] == originZone)
-                                          &
-                                          (scenarioData.tripMatrix['DeZonName'] == destZone)
-                                          &
-                                          (scenarioData.tripMatrix['CatName'] == category)
-                                         ]
+        originZone, destZone, category = originZone.strip(), destZone.strip(), category.strip()
         
+        rowData = scenarioData.tripMatrix[
+                                          (scenarioData.tripMatrix['OrZonName'].astype('U25') == originZone)
+                                          &
+                                          (scenarioData.tripMatrix['DeZonName'].astype('U25') == destZone)
+                                          &
+                                          (scenarioData.tripMatrix['CatName'].astype('U25') == category)
+                                        ]
+
         if rowData is not None:
             if rowData.size == 0:
                 for item in self.matrix_zones_dic:
@@ -722,9 +727,13 @@ class MapData(object):
                 for item in self.matrix_categories_dic:
                     if self.matrix_categories_dic[item] == category:
                         catIndex = item
-                        
+                
                 rowData = np.array([(originZoneIndex, originZone, destZoneIndex, destZone, catIndex ,category, 0)], dtype = types)
-        
+
+        rowData[0][1] = rowData[0][1].decode("utf-8")
+        rowData[0][3] = rowData[0][3].decode("utf-8")
+        rowData[0][5] = rowData[0][5].decode("utf-8")
+
         return rowData
 
     def evaluate_matrix_expression(self, scenario, originList, destinationList, matrixExpression, conditionalFlag):
@@ -740,8 +749,11 @@ class MapData(object):
             @type conditionalFlag: Boolean
             @return: Matrix of trips
         """
-        
+        for sc in self.trip_matrices:
+            print("SC DATA {}".format(sc))
+
         scenarioData = next((sc for sc in self.trip_matrices if sc.Id == scenario), None)
+        print("scenarioData {}".format(scenarioData))
         if scenarioData is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenario selected", "The scenario {0} doesn't exist.".format(scenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -1018,7 +1030,7 @@ class MapData(object):
             del operand1
             del operand2
             del generalOperands
-            
+        
         return matrixData
 
     def create_trip_matrix_csv_file(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath):
@@ -1040,6 +1052,9 @@ class MapData(object):
         """
         
         rowCounter = 0
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+
         if len(matrixExpression) > 1:
             matrixResult = self.evaluate_conditional_matrix_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
         else:
@@ -1050,8 +1065,12 @@ class MapData(object):
             messagebox.exec_()
             print ("There is not data to evaluate.")
             return False
-                           
-        csvFile = open(projectPath + "\\trips_map.csv", "wb")
+
+        for value in matrixResult:
+            maxValue = max(maxValue, float(value[len(value)-1]))
+            minValue = min(minValue, float(value[len(value)-1]))
+
+        csvFile = open(projectPath + "\\trips_map.csv", "w")
         newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         newFile.writerow(['OrZoneId_DestZoneId', 'Geom', 'Trip'])
         
@@ -1081,4 +1100,70 @@ class MapData(object):
         csvFile.close
         del csvFile
         
-        return True
+        return True, matrixResult, minValue, maxValue
+
+
+    def create_trip_matrix_memory_file(self, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath):
+        """
+            @summary: Method that creates a csv file to be used in the new matrix layer
+            @param layerName: Layer Name
+            @type layerName: String
+            @param scenariosExpression: Scenarios expression
+            @type scenariosExpression : Stack object
+            @param originZones: Origin zones list
+            @type originZones: List object
+            @param destinationZones: Destination zones list
+            @type destinationZones: List object
+            @param matrixExpression: Matrix expression to be evaluated in reverse polish notation
+            @type matrixExpression: Stack object
+            @param projectPath: Main project path
+            @type projectPath: String
+            @return: The boolean result of file creation
+        """
+        
+        rowCounter = 0
+        minValue = float(1e100)
+        maxValue = float(-1e100)
+
+        if len(matrixExpression) > 1:
+            matrixResult = self.evaluate_conditional_matrix_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
+        else:
+            matrixResult = self.evaluate_matrix_scenarios_expression(scenariosExpression, matrixExpression, originZones, destinationZones)
+        
+        if matrixResult is None:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print ("There is not data to evaluate.")
+            return False
+
+        for value in matrixResult:
+            maxValue = max(maxValue, float(value[len(value)-1]))
+            minValue = min(minValue, float(value[len(value)-1]))
+
+        matrixList = []
+        """dataRow = ['OrZoneId_DestZoneId', 'Geom', 'Trip']
+        matrixList.append(dataRow)"""
+
+        originZoneCentroid = None
+        destinationZoneCentroid = None
+        for trip in np.nditer(matrixResult):
+            if originZoneCentroid is None:
+                originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+            else:
+                if originZoneCentroid != trip.item(0)[0]:
+                    originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
+                    
+            if destinationZoneCentroid is None:
+                destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+            else:
+                if destinationZoneCentroid != trip.item(0)[2]:
+                    destinationZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[2]))
+            if originZoneCentroid is not None and destinationZoneCentroid is not None:
+                matrixList.append([str(trip.item(0)[0]) + "_" + str(trip.item(0)[2]),  
+                        "LINESTRING("
+                        + str(originZoneCentroid.longitude) + " " + str(originZoneCentroid.latitude)
+                        + ","
+                        + str(destinationZoneCentroid.longitude) + " " + str(destinationZoneCentroid.latitude)
+                        + ")", str(trip.item(0)[6]) if len(matrixResult.dtype.names)> 5 else str(trip.item(0)[4])])
+        
+        return True, matrixResult, minValue, maxValue, matrixList

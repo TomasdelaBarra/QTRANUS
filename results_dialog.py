@@ -25,34 +25,32 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
-
         self.project = parent.project
         self.zones_dialog = ZoneLayerDialog(parent=self)
         self.plugin_dir = os.path.dirname(__file__)
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
-        self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
         self.layer_zone = self.findChild(QtWidgets.QListWidget, 'layerZone')
         self.layer_network = self.findChild(QtWidgets.QListWidget, 'layerNetwork')
-        #self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
+        self.layer_matrix = self.findChild(QtWidgets.QListWidget, 'layerMatrix')
+        self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
         self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
+        self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
-
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
-        self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.layer_zone.installEventFilter(self)
         self.layer_network.installEventFilter(self)
-        #self.layer_zone.itemClicked.connect(self.zone_layer_menu)
-        #self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
+        self.layer_matrix.installEventFilter(self)
+        self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.network_btn.clicked.connect(self.network_layer_dialog)
+        self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
         
         # Loads
         self.__reload_scenarios()
-        self.__load_layers_zones()
-        self.__load_layers_network()
+        self.__load_layers_list()
             
     def open_help(self):
         """
@@ -69,29 +67,29 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
     
-    def __load_layers_zones(self):
+    def __load_layers_list(self):
         """
             @summary: Reloads List Layers
         """
-        lstLayers = self.project.getLayers("zones")
-        self.layer_zone.clear()
-        for i in lstLayers:
-            item = QtWidgets.QListWidgetItem()
-            item.setData(11, i['id'])
-            item.setText(i['text'])
-            self.layer_zone.addItem(item)
+        for valor in ['zones', 'network', 'matrix']:
+            lstLayers = self.project.getLayers(valor)
+            if valor == 'zones':
+                self.layer_zone.clear()
+            elif valor == 'network':
+                self.layer_network.clear()
+            elif valor == 'matrix':
+                self.layer_matrix.clear()
 
-    def __load_layers_network(self):
-        """
-            @summary: Reloads List Layers
-        """
-        lstLayers = self.project.getLayers("network")
-        self.layer_network.clear()
-        for i in lstLayers:
-            item = QtWidgets.QListWidgetItem()
-            item.setData(11, i['id'])
-            item.setText(i['text'])
-            self.layer_network.addItem(item)
+            for i in lstLayers:
+                item = QtWidgets.QListWidgetItem()
+                item.setData(11, i['id'])
+                item.setText(i['text'])
+                if valor == 'zones':
+                    self.layer_zone.addItem(item)
+                if valor == 'network':
+                    self.layer_network.addItem(item)
+                if valor == 'matrix':
+                    self.layer_matrix.addItem(item)
 
 
     def zone_layer_dialog(self):
@@ -105,32 +103,33 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             self.zones_dialog.show()
             result = self.zones_dialog.exec_()
-            self.__load_layers_zones()
+            self.__load_layers_list()
 
 
     def eventFilter(self, source, event):
         """
             @summary: EventFilter to filter Right Click
         """
-        if (event.type() == QtCore.QEvent.ContextMenu and (source is self.layer_zone or source is self.layer_network)):
+        if (event.type() == QtCore.QEvent.ContextMenu and (source is self.layer_zone or source is self.layer_network or source is self.layer_matrix)):
             menu = QtWidgets.QMenu()
             openLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/open-layer.svg"),'Open Layer')
-            editLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/edit.svg"), 'Edit Layer')
+            editLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"), 'Edit Layer')
             deleteLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-layer.svg"),'Delete Layer')
             action = menu.exec_(event.globalPos())
 
             if action == editLayer:
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
-                dialog = ZoneLayerDialog(parent=self,layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(parent=self, layerId=layerId)
+                dialog = ZoneLayerDialog(parent=self,layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(parent=self, layerId=layerId) if source is self.layer_network else MatrixLayerDialog(parent=self, layerId=layerId)
                 dialog.show()
                 result = dialog.exec_()
+                if result==1:
+                    self.close()
             elif action == deleteLayer:
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
                 QgsProject.instance().removeMapLayers([layerId])
-                self.__load_layers_zones()
-                self.__load_layers_network()
+                self.__load_layers_list()
             elif action == openLayer:
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
@@ -138,7 +137,6 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
                 layer = registry.mapLayer(layerId)
                 iface.setActiveLayer(layer)
                 self.close()
-
             return True
         return super(ResultsDialog, self).eventFilter(source, event)
 
@@ -155,6 +153,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog = MatrixLayerDialog(parent = self)
             dialog.show()
             result = dialog.exec_()
+            self.__load_layers_list()
 
     def network_layer_dialog(self):
         """
@@ -169,4 +168,4 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog = NetworkLayerDialog(parent = self)
             dialog.show()
             result = dialog.exec_()
-            self.__load_layers_network()
+            self.__load_layers_list()

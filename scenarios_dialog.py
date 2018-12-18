@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser, numpy as np
+from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from .classes.data.DataBase import DataBase
@@ -24,7 +25,7 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
         self.project = parent.project
         self.dataBase = DataBase()
-        #self.scenariosMatrix = None
+        self.plugin_dir = os.path.dirname(__file__)
         
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -33,8 +34,10 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioName = self.findChild(QtWidgets.QLineEdit, 'name')
         self.scenarioDescription = self.findChild(QtWidgets.QLineEdit, 'description')
         self.previousScenarios = self.findChild(QtWidgets.QComboBox, 'cb_previous')
-        self.remove_btn = self.findChild(QtWidgets.QPushButton, 'remove')
         self.add_btn = self.findChild(QtWidgets.QPushButton, 'add')
+        self.remove_btn = self.findChild(QtWidgets.QPushButton, 'remove')
+        self.copy_btn = self.findChild(QtWidgets.QPushButton, 'copy')
+        self.paste_btn = self.findChild(QtWidgets.QPushButton, 'paste')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -46,6 +49,12 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #Loads
         self.__load_scenarios_from_db_file()
+
+        #Add Icons
+        self.add_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+        self.remove_btn.setIcon(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"))
+        self.copy_btn.setIcon(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"))
+        self.paste_btn.setIcon(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"))
         
     def open_help(self):
         """
@@ -64,7 +73,7 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def remove_scenario(self):
         if self.scenarioCode.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Please select a scenario to remove.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Please select a scenario to remove.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Please select a scenario to remove.")
         else:
@@ -82,14 +91,14 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def __load_scenarios_from_db_file(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("DB File was not found.")
         else:
             if(self.dataBase.extract_scenarios_file_from_zip(self.project.db_path, self.project['tranus_folder'])):
                 self.__get_scenarios_data()
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtGui.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Scenarios file could not be extracted.")
                 

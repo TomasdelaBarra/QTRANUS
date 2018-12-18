@@ -9,6 +9,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import QColor
 
+from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
+from qgis.core import QgsGradientColorRamp, QgsProject
+
 from .scenarios_model import ScenariosModel
 from .classes.ExpressionData import ExpressionData
 from .classes.network.Network import Network
@@ -16,8 +19,6 @@ from .classes.network.Level import *
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.FileManagement import FileManagement as FileM
 from .classes.general.Helpers import Helpers as HP
-from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
-from qgis.core import QgsGradientColorRamp
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
@@ -61,6 +62,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         self.progressBar = self.findChild(QtWidgets.QProgressBar, 'progressBar')
+        
 
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -116,7 +118,6 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             self.labelColor.setText("Color Ramp")    
             self.formLayout = self.findChild(QFormLayout, 'formLayout_4')
             self.formLayout.takeAt(10)
-            #self.buttonColorRamp = QgsColorRampButton(self, 'Color Ramp')
             self.buttonColor.hide()
             self.buttonColorRamp.show()
             self.buttonColorRamp.setShowGradientOnly(True)
@@ -125,7 +126,6 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             self.labelColor.setText("Color")    
             self.formLayout = self.findChild(QFormLayout, 'formLayout_4')
             self.formLayout.takeAt(10)
-            #self.buttonColor = QgsColorButton(self, 'Color')
             self.buttonColorRamp.hide()
             self.buttonColor.show()
             self.formLayout.addRow(self.labelColor, self.buttonColor)
@@ -330,20 +330,20 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Layer Name", "Please write Layer Name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write Layer Name.")
-            return False, None, None
+            return False, None, None, None
         
         if self.expression.text().strip() == '' and (self.level is not Level.Total):#self.operators.isChecked() or self.routes.isChecked()):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Please write an expression to be evaluated.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write an expression to be evaluated.")
-            return False, None, None
+            return False, None, None, None
         
         # Base scenario
         if len(self.base_scenario) == 0:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Base Scenario", "There are no Base Scenarios loaded.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("There are no Base Scenarios loaded.")
-            return False, None, None
+            return False, None, None, None
         else:
             if self.baseScenario.currentText().strip() != '':
                 scenariosExpression.append(str(self.baseScenario.currentText()))
@@ -351,7 +351,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Base Scenario", "Please select a Base Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select a Base Scenario.")
-                return False, None, None
+                return False, None, None, None
             
         # Validations for alternate scenario
         if self.scenarioOperator.currentText() != '':
@@ -360,16 +360,15 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Alternate Scenario", "Please select an Alternate Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select an Alternate Scenario.")
-                return False, None, None
+                return False, None, None, None
             else:
                 scenariosExpression.append(str(self.alternateScenario.currentText()))
-        
         
         if self.variablesList.currentText() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Variable", "Please select a variable.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print ("Please write an expression to be evaluated.")
-            return False, None, None
+            return False, None, None, None
         
         scenariosExpressionResult, scenariosExpressionStack = ExpressionData.validate_scenarios_expression(scenariosExpression)
         
@@ -385,8 +384,19 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Expression", "Expression with conditionals only applies for one scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Expression with conditionals only applies for one scenario.")
-                return False, None, None
-        
+                return False, None, None, None
+
+        if self.method.currentText()=='Color' and self.buttonColorRamp.isNull():
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Color Ramp", "Color Ramp is required.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print("Color Ramp is NULL.")
+            return False, None, None, None
+        elif self.method.currentText()=='Size' and self.buttonColor.isNull():
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Color", "Color is required.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print("Color is NULL.")
+            return False, None, None, None
+
         return scenariosExpressionResult and networkExpressionResult, scenariosExpressionStack, networkExpressionList, self.expression.text()
       
 
@@ -396,17 +406,23 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             @return: Result of the process
         """
         validationResult, scenariosExpression, networkExpression, expressionNetworkText = self.__validate_data()
-        self.progressBar.show()
-        self.progressBar.setValue(10)
-
-        if self.method.currentText()=="Size":
-            color = self.buttonColor.color()
-            color = color.rgb()
-        elif self.method.currentText()=="Color":
-            color = self.buttonColorRamp.colorRamp()
-            color = color.properties()
 
         if validationResult:
+            self.progressBar.show()
+            self.progressBar.setValue(10)
+            if self.method.currentText()=="Size":
+                color = self.buttonColor.color()
+                color = color.rgb()
+            elif self.method.currentText()=="Color":
+                color = self.buttonColorRamp.colorRamp()
+                color = color.properties()
+
+            # Set Custom Project Variable to save Project path
+            projectPath = self.project.network_link_shape_path[0:max(self.project.network_link_shape_path.rfind('\\'), self.project.network_link_shape_path.rfind('/'))]
+            tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_network_shape=self.project.network_link_shape_path)
+            self.project.custom_variables_dict.update(tranus_dictionary)
+            QgsProject.instance().setCustomVariables(self.project.custom_variables_dict)
+
             if not self.layerId: 
                 result = self.network.addNetworkLayer(self.progressBar, self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path, self.method.currentText(), expressionNetworkText, color)
             else:
@@ -415,7 +431,6 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             if not result:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network", "Could not create network layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-                print("Could not create network layer.")
                 self.project['network_links_shape_file_path'] = ''
                 self.project['network_links_shape_id'] = ''
 
@@ -423,9 +438,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             print("New network layer was not created.")
         #print("Color Ramp {} ".format(self.buttonColorRamp.colorRampName()))
-        
         return True
-
 
     # Load data to edit the zones layer
     def __load_default_data(self):
@@ -433,8 +446,9 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # Get data from XML File with the parameters
         expression, field, name, scenario, fieldName, method, level, color = FileM.find_layer_data(projectPath, self.layerId)
-        print("EXPRESSION {} ".format(expression))
+        
         self.layerName.setText(name)
+        
         if level == "1":
             self.total.click()
             self.rbtn_total.setChecked(True)
@@ -444,6 +458,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         elif level == "3":
             self.rbtn_routes.setChecked(True)
             self.routes.click()
+        
         self.expression.setText(expression)
         
         scenario = scenario.split(",")

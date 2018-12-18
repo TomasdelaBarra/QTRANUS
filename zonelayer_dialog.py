@@ -47,8 +47,6 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.help.clicked.connect(self.open_help)
         self.layerName.keyPressEvent = self.keyPressEvent
         self.buttonBox.accepted.connect(self.ready)
-        #self.baseScenario.activated.connect(self.baseScenario,PyQt5.QtCore.SIGNAL("currentIndexChanged(int)"),self.scenario_changed)
-        #self.operators.activated.connect(self.operators, PyQt5.QtCore.SIGNAL("currentIndexChanged(int)"), self.operator_changed)
         self.baseScenario.currentIndexChanged.connect(self.scenario_changed)
         self.operators.currentIndexChanged.connect(self.operator_changed)
         self.sectors.itemDoubleClicked.connect(self.sector_selected)
@@ -137,15 +135,17 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
         
+
     def ready(self):
         """
             @summary: Triggered when accept button is clicked
         """
         validationResult, scenariosExpression, sectorsExpression, sectorsExpressionText = self.__validate_data() 
-        self.progressBar.show()
-        self.progressBar.setValue(10)
-
+        
         if validationResult:
+            self.progressBar.show()
+            self.progressBar.setValue(10)
+
             if not self.layerId:
                 self.project.addZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
             else:
@@ -155,12 +155,14 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             #QMessageBox.critical(None, "New Layer", "New layer was not created.")
             print("New zones layer was not created.")
             
+
     def __load_scenarios_combobox(self):
         """
             @summary: Loads scenarios combo-box
         """
         items = self.project.map_data.get_sorted_scenarios()
         self.base_scenario.addItems(items)
+        
         
     def __load_sectors_combobox(self):
         """
@@ -257,10 +259,11 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return scenariosExpressionResult and sectorsExpressionResult, scenariosExpressionStack, sectorsExpressionList, sectorsExpressionText
     
+    
     # Load data to edit the zones layer
     def __load_default_data(self):
         projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
-        
+        print("projectPath: {} LayerId {}".format(projectPath, self.layerId))
         # Get data from XML File with the parameters
         expression, field, name, scenario, fieldName = FileM.find_layer_data(projectPath, self.layerId)
 

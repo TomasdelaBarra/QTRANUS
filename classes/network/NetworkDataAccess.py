@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+from .Level import *
+import csv, numpy as np
+
+from PyQt5 import QtGui, uic
+from PyQt5 import QtWidgets 
+from PyQt5.QtWidgets import  QMessageBox 
+
+from ..general.QTranusMessageBox import QTranusMessageBox
 from ..general.FileManagement import FileManagement
 from ..Stack import Stack
 from ..ExpressionData import ExpressionData
-from .Level import *
-import csv, numpy as np
-from ..general.QTranusMessageBox import QTranusMessageBox
-from PyQt5 import QtGui, uic
-from PyQt5 import QtWidgets 
 
 class NetworkDataAccess(object):
     def __init__(self):
@@ -553,17 +556,15 @@ class NetworkDataAccess(object):
         """
         rowData = None
         rowsData = None
-        
-        if level == Level.Operators:
+        if int(level) == int(Level.Operators):
             rowsData = self.__get_network_rows_by_operator(item, oriDestMatrix)
-        
-        if level == Level.Routes:
+
+        if int(level) == int(Level.Routes):
             rowsData = self.__get_network_rows_by_route(item, oriDestMatrix)
         
         if rowsData is not None:
             if rowsData.size > 0:
                 rowData = self.__evaluate_variable(rowsData, variable)
-            
         return rowData
     
     def __evaluate_scenarios(self, networkMatrixScenario1, networkMatrixScenario2, links, variable, operator):
@@ -617,8 +618,8 @@ class NetworkDataAccess(object):
         """
     
         matrixData = None
-
         types = oriDestPairs.dtype
+        #print("DENTRO DE __evaluate_scenario types {} oriDestPairs {} level {} Level.Total {} ".format(types, oriDestPairs, level, Level.Total))
         if oriDestPairs is not None:
             if level == Level.Total:
                 matrixData = self.__evaluate_total(networkMatrix.data_matrix, oriDestPairs, variable)
@@ -648,6 +649,7 @@ class NetworkDataAccess(object):
         operand1 = None
         operand2 = None
         matrixData = None
+        #print("Dentro __evaluate_network_scenarios_expression 1")
         try:
             stackLen = len(scenariosExpression.data)
             generalOperands = Stack()
@@ -665,9 +667,14 @@ class NetworkDataAccess(object):
                     
                     matrixData =  self.__evaluate_scenarios(operand1, operand2, links, variable, item)                   
                 else:
+                    #print("dentro de la data else")
                     if stackLen == 1:
+                        #print("dentro de la data else if ")
                         networkMatrix, links = self.__get_scenario_data(item, projectPath)
+                        #print("dentro de la data else if {} links {}".format(networkMatrix, links))
                         matrixData = self.__evaluate_scenario(networkMatrix, links, networkExpression, variable, level, projectPath)
+                        #print("DATAMATRIX {} ".format(matrixData))
+
                     else:
                         generalOperands.push(item)
 
@@ -705,22 +712,22 @@ class NetworkDataAccess(object):
         networkMatrixResult = None
         minValue = float(1e100)
         maxValue = float(-1e100)
-
+        print(" dentro create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
         if level == Level.Total or len(networkExpression) == 1:
+            print(" dentro del primer create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
+            messagebox = QMessageBox.warning(None, "Network matrix data", "There is not data to evaluate.")
+            #messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", "", self, buttons = QtWidgets.QMessageBox.Ok)
+            #messagebox.exec_()
             print ("There is not data to evaluate.")
-            return False
+            return False, None, minValue, maxValue
         
         for value in networkMatrixResult:
             maxValue = max(maxValue, value[1])
             minValue = min(minValue, value[1])
 
-        
-        
         return True, networkMatrixResult, minValue, maxValue
 
     def create_network_csv_file(self, layerName, scenariosExpression, networkExpression, variable, level, projectPath):

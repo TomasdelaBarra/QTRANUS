@@ -10,6 +10,7 @@
         Collaborators        : Tomas de la Barra    - delabarra@gmail.com
                                Omar Valladolid      - omar.valladolidg@gmail.com
                                Pedro Buron          - pedroburonv@gmail.com
+                               Luis Yanez           - yanezblancoluis@gmail.com
         
         git sha              : $Format:%H$
  ***************************************************************************/
