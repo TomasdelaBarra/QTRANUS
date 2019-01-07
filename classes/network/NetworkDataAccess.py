@@ -649,7 +649,7 @@ class NetworkDataAccess(object):
         operand1 = None
         operand2 = None
         matrixData = None
-        #print("Dentro __evaluate_network_scenarios_expression 1")
+        
         try:
             stackLen = len(scenariosExpression.data)
             generalOperands = Stack()
