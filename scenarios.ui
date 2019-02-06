@@ -63,50 +63,40 @@
          </property>
         </widget>
        </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
-        <widget class="QPushButton" name="remove">
-         <property name="text">
-          <string>Remove Scenario</string>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>icons/remove-scenario.svg</normaloff>icons/remove-scenario.svg</iconset>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
          </property>
-        </widget>
+        </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="copy">
-         <property name="text">
-          <string>Copy Scenario</string>
+        <widget class="QDialogButtonBox" name="buttonBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>icons/copy-scenario.svg</normaloff>icons/copy-scenario.svg</iconset>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="paste">
-         <property name="text">
-          <string>Paste Scenario</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>icons/paste-scenario.svg</normaloff>icons/paste-scenario.svg</iconset>
+         <property name="standardButtons">
+          <set>QDialogButtonBox::Close</set>
          </property>
         </widget>
        </item>
       </layout>
-     </item>
-     <item>
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
@@ -115,10 +105,6 @@
  <tabstops>
   <tabstop>btn_help</tabstop>
   <tabstop>scenarios_tree</tabstop>
-  <tabstop>remove</tabstop>
-  <tabstop>copy</tabstop>
-  <tabstop>paste</tabstop>
-  <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
  <connections>

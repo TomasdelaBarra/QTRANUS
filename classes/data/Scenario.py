@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-#from ..general.QTranusMessageBox import QTranusMessageBox
 from ..GeneralObject import GeneralObject
 
 class Scenario(GeneralObject):
@@ -14,11 +13,4 @@ class Scenario(GeneralObject):
         self.previous = previous
         self.children = []
         if self.previous is not None:
-            self.previous.children.append(self)
-        
-#         if self.previous is not None and self.previous.strip() != '':
-#             self.previous.children.append(self)
-#         else:
-#             self.root = True
-    #def add_children(self, parent, scenario):
-        
+            self.previous.children.append(self)   

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from PyQt5 import QtGui
-from PyQt5.Qt import QMessageBox
-
 import os
 import re
 import csv
 import glob
+
+from PyQt5 import QtGui
+from PyQt5.Qt import QMessageBox
+
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 __ALL__ = ['TranusProject', 'TranusProjectValidationError']
 
@@ -59,6 +61,14 @@ class Scenarios(object):
     def load(lines):
         nodes = Scenarios.parse_lines(lines)
         root = Scenarios.create_tree(nodes)
+        Scenarios.parse_lines_from_sqlite()
+        return Scenarios(root)
+
+    @staticmethod
+    def load_sqlite(lines):
+        nodes = Scenarios.parse_lines_from_sqlite(lines)
+        root = Scenarios.create_tree(nodes)
+        
         return Scenarios(root)
 
     def validate(self):
@@ -73,6 +83,19 @@ class Scenarios(object):
                 'name': values[1],
                 'prev': values[2] if values[2] else None
             }
+        
+        return nodes
+
+    @staticmethod
+    def parse_lines_from_sqlite(lines):
+        nodes = {}
+        print("parse_lines_from_sqlite {}".format(lines))
+        for line in lines:
+            nodes[line[1]] = {
+                'name': line[2],
+                'prev': line[4] if line[4] else None
+            }
+        print(nodes)
         return nodes
 
     @staticmethod

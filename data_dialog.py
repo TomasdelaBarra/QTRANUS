@@ -9,18 +9,23 @@ from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem
 
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_dialog import ScenariosDialog
+from .sectors_dialog import SectorsDialog
+from .configuration_dialog import ConfigurationDialog
 from .classes.data.DataBase import DataBase
 from .classes.data.Scenario import Scenario
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
+from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.data.DBFiles import DBFiles
+from .classes.data.DataBaseSqlite import DataBaseSqlite
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'data.ui'))
 
 class DataDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, parent = None):
+    def __init__(self, layers_group_name, tranus_folder, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -30,7 +35,10 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.plugin_dir = os.path.dirname(__file__)
         self.setupUi(self)
         self.project = parent.project
+        self.layers_group_name = layers_group_name
+        self.tranus_folder = tranus_folder
         self.dataBase = DataBase()
+        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.scenarios =  None
         self.scenariosMatrix = None
         self.scenariosMatrixBackUp = None
@@ -38,19 +46,25 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
-        self.btn_scenarios = self.findChild(QtWidgets.QPushButton, 'btn_scenarios')
         self.scenario_tree.setRootIsDecorated(False)
+        self.btn_scenarios = self.findChild(QtWidgets.QPushButton, 'btn_scenarios')
+        self.btn_options = self.findChild(QtWidgets.QPushButton, 'btn_options')
+        self.btn_sectors = self.findChild(QtWidgets.QPushButton, 'btn_sectors')
         
         self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).setText('Save as...')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.btn_scenarios.clicked.connect(self.open_scenarios_window)
+        self.btn_sectors.clicked.connect(self.open_sectors_window)
+        self.btn_options.clicked.connect(self.open_configuration_window)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_db)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).clicked.connect(self.save_db_as)
         
         #Loads
-        self.__extract_db_files()
+        #self.__extract_db_files()
+        self.__connect_database_sqlite()
+        self.__load_scenarios()
 
         
     def open_help(self):
@@ -60,14 +74,40 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
         
+        
     def open_scenarios_window(self):
         """
             @summary: Opens data window
         """
-        dialog = ScenariosDialog(parent = self)
+        dialog = ScenariosDialog(self.tranus_folder, parent = self)
         dialog.show()
         result = dialog.exec_()
-    
+
+    def open_sectors_window(self):
+        """
+            @summary: Opens data window
+        """
+        dialog = SectorsDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+
+    def open_configuration_window(self):
+        """
+            @summary: Opens data window
+        """
+        dialog = ConfigurationDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+    def __connect_database_sqlite(self):
+        if  not self.dataBaseSqlite.validateConnection():
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Database conection unsatisfactory.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print("DB File was not found.")
+        else:
+            print("DataBase Connection Successfully")
+        
     def __extract_db_files(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -83,7 +123,13 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
                 print("DB files could not be extracted.")
         
     def __load_scenarios(self):
-        if self.scenariosMatrix is None:
+        model = QtGui.QStandardItemModel()
+        model.setHorizontalHeaderLabels(['Scenarios'])
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenario_tree.setModel(self.scenarios_model)
+        self.scenario_tree.expandAll()
+
+        """if self.scenariosMatrix is None:
             self.scenariosMatrix = self.dataBase.get_scenarios_array(self.project['tranus_folder'])
 
         self.scenariosMatrixBackUp = self.scenariosMatrix
@@ -92,7 +138,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         
         scenariosModel = ScenariosModel(self)
         self.scenario_tree.setModel(scenariosModel)
-        self.scenario_tree.setExpanded(scenariosModel.indexFromItem(scenariosModel.root_item), True)
+        self.scenario_tree.setExpanded(scenariosModel.indexFromItem(scenariosModel.root_item), True)"""
         
     def load_scenarios(self):
         self.__load_scenarios()

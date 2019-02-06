@@ -96,7 +96,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
-        self.data_btn.setEnabled(False)
+        self.data_btn.setEnabled(True)
+
+
         # Loads
         self.reload_scenarios()
 	
@@ -265,7 +267,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens data window
         """
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
-            dialog = DataDialog(parent = self)
+            print("TRANUS FOLDER22 {} ".format(self.tranus_folder.text()))
+            dialog = DataDialog(self.layers_group_name, self.tranus_folder.text(), parent = self)
             dialog.show()
             result = dialog.exec_()
         else:
@@ -350,6 +353,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         if self.project.is_valid() or self.project.is_valid_network():
             self.results_btn.setEnabled(True)
+            self.data_btn.setEnabled(True)
 
     def load_zone_shape_fields(self, fields):
         """
