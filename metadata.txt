@@ -11,29 +11,27 @@ name=TRANUS Options
 qgisMinimumVersion=2.0
 description=This plugin automates the execution of TRANUS programs.
 version=0.1
-author=STEEP Inria
-email=emna.jribi@inria.fr
-
-about=This plugin allows the execution of TRANUS programs without the use of the console or the TUS(TRANUS User Shell). It allows the simultaneous execution of these programs with several options and for different scenarios of the same project. Four programs are implemented in this plugin : Imploc,Imptra,Mats and Matesp.
-
-tracker=unknown
-repository=https://gitlab.inria.fr/tranus/Tranus_QGIS_Plugins/tree/master/TRANUS_Options
-# End of mandatory metadata
-
-# Recommended items:
-
-# Uncomment the following line and add your changelog:
-# changelog=
-
-# Tags are comma separated with spaces allowed
-tags=TRANUS, Options, Execution, Simultaneous
-
 homepage=https://gitlab.inria.fr/tranus/
 category=Database
 icon=icon.png
 # experimental flag
 experimental=True
-
+author=Tomas de la Barra
+email=emna.jribi@inria.fr
+about=This plugin allows the execution of TRANUS programs without the use of the console or the TUS(TRANUS User Shell). It allows the simultaneous execution of these programs with several options and for different scenarios of the same project. Four programs are implemented in this plugin : Imploc,Imptra,Mats and Matesp.
+tracker=unknown
+# Uncomment the following line and add your changelog:
+# changelog=
+repository=https://gitlab.inria.fr/tranus/Tranus_QGIS_Plugins/tree/master/TRANUS_Options
+# Tags are comma separated with spaces allowed
+tags=TRANUS, Options, Execution, Simultaneous
+# End of mandatory metadata
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
+# Recommended items:
+
+
+
+
+
 
