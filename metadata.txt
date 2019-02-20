@@ -1,3 +1,4 @@
+
 ; This file contains metadata for your plugin. Since 
 ; version 2.0 of QGIS this is the proper way to supply 
 ; information about a plugin. The old method of 
@@ -23,6 +24,3 @@ category=Database
 icon=icon.png
 experimental=True
 deprecated=False
-
-
-
