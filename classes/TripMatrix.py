@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from GeneralObject import GeneralObject
+from .GeneralObject import GeneralObject
 
 """ TripMtrix Class """
 class TripMatrix(GeneralObject):

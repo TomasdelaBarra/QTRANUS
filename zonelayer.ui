@@ -13,8 +13,8 @@
   <property name="windowTitle">
    <string>Add new layer</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QLabel" name="label_7">
@@ -45,7 +45,7 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QTreeView" name="scenarios"/>
@@ -161,27 +161,44 @@
      </item>
     </layout>
    </item>
-   <item row="4" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QProgressBar" name="progressBar">
+       <property name="value">
+        <number>0</number>
+       </property>
+       <property name="textVisible">
+        <bool>true</bool>
+       </property>
+       <property name="visible">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>scenarios</tabstop>
   <tabstop>btn_help</tabstop>
+  <tabstop>scenarios</tabstop>
   <tabstop>layerName</tabstop>
   <tabstop>expression</tabstop>
-  <tabstop>sectors</tabstop>
   <tabstop>base_scenario</tabstop>
   <tabstop>cb_operator</tabstop>
   <tabstop>cb_alternate_scenario</tabstop>
+  <tabstop>sectors</tabstop>
   <tabstop>comboField</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """ GeneralObject Class """
+__ALL__ = ['GeneralObject']
+
 class GeneralObject(object):
     def __init__(self):
         """

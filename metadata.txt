@@ -1,37 +1,26 @@
-# This file contains metadata for your plugin. Since 
-# version 2.0 of QGIS this is the proper way to supply 
-# information about a plugin. The old method of 
-# embedding metadata in __init__.py will 
-# is no longer supported since version 2.0.
 
-# This file should be included when you package your plugin.# Mandatory items:
+; This file contains metadata for your plugin. Since 
+; version 2.0 of QGIS this is the proper way to supply 
+; information about a plugin. The old method of 
+; embedding metadata in __init__.py will 
+; is no longer supported since version 2.0.
+; a new line
+; a new line 1
+
+; This file should be included when you package your plugin.; Mandatory items:
 
 [general]
-name=TRANUS Options
-qgisMinimumVersion=2.0
-description=This plugin automates the execution of TRANUS programs.
-version=0.1
-homepage=https://gitlab.inria.fr/tranus/
+name=qtranus
+qgisMinimumVersion=3.2
+description=qtranus
+version=0.1.1
+author=Tomas de la Barra
+about=Qtranus is an GUI based on Tranus. Tranus is an integrated land use and transport modeling system, the most advanced, comprehensive, flexible and user friendly of its kind. Use this software to model cities or regions, to estimate the future location of activities, the real estate market, and the multimodal transportation system with freight and/or passengers. 
+email=delabarra@gmail.com
+homepage=https://plugins.qgis.org/plugins/qtranus/
+tracker=https://github.com/TomasdelaBarra/QTRANUS/issues
+repository=https://github.com/TomasdelaBarra/QTRANUS
 category=Database
 icon=icon.png
-# experimental flag
 experimental=True
-author=Tomas de la Barra
-email=emna.jribi@inria.fr
-about=This plugin allows the execution of TRANUS programs without the use of the console or the TUS(TRANUS User Shell). It allows the simultaneous execution of these programs with several options and for different scenarios of the same project. Four programs are implemented in this plugin : Imploc,Imptra,Mats and Matesp.
-tracker=unknown
-# Uncomment the following line and add your changelog:
-# changelog=
-repository=https://gitlab.inria.fr/tranus/Tranus_QGIS_Plugins/tree/master/TRANUS_Options
-# Tags are comma separated with spaces allowed
-tags=TRANUS, Options, Execution, Simultaneous
-# End of mandatory metadata
-# deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-# Recommended items:
-
-
-
-
-
-
