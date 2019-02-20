@@ -88,9 +88,18 @@ class MapData(object):
         """
             @summary: Loads dictionaries 
         """
+        print("CARGA DE DICCIONARIOS")
         self.__set_scenarios()
         self.__set_sectors()
         self.__set_data_fields()
+
+    def clear_dictionaries(self):
+        """
+            @summary: Loads dictionaries 
+        """
+        self.scenarios_dic = {}
+        self.sectors_dic = {}
+
     
     def get_sector_zones(self, scenario, sectorName):
         """
@@ -945,7 +954,7 @@ class MapData(object):
             @type layerName: String 
         """
         if self.zoneCentroids is not None:
-            csvFile = open(filePath + "\\" + layerName + "_Centroids.csv", "wb")
+            csvFile = open(filePath + "\\" + layerName + "_Centroids.csv", "w")
             newFile = csv.writer(csvFile, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
             newFile.writerow(["ZoneId", "\tZoneName", "\tPointX", "\tPointY"])
             for itemCentroid in self.zoneCentroids:

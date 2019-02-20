@@ -41,6 +41,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.price_factor = self.findChild(QtWidgets.QLineEdit, 'price_factor')
         self.attractor_factor = self.findChild(QtWidgets.QLineEdit, 'attractor_factor')
         self.location_choice_elasticity = self.findChild(QtWidgets.QLineEdit, 'location_choice_elasticity')
+        self.sustitute = self.findChild(QtWidgets.QLineEdit, 'sustitute')
 
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
@@ -116,14 +117,14 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         transportable = 1 if self.transportable.isChecked() else 0
 
         if self.codeSector is None:
-            newSector = self.dataBaseSqlite.addSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text())
+            newSector = self.dataBaseSqlite.addSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text(), self.sustitute.text())
             if not newSector:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select other previous scenario code.")    
                 return False
         else:
-            newSector = self.dataBaseSqlite.updateSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text(), self.codeSector)
+            newSector = self.dataBaseSqlite.updateSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text(), self.sustitute.text(), self.codeSector)
 
         if newSector is not None:
             self.parent().load_scenarios()
@@ -150,6 +151,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.location_choice_elasticity.setText(str('' if data[0][5] is None else data[0][5]))
         self.attractor_factor.setText(str(data[0][6]))
         self.price_factor.setText(str(data[0][7]))
+        self.sustitute.setText(str(data[0][8]))
         self.evaluate_transportable()
 
 

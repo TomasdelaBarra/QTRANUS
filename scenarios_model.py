@@ -26,10 +26,7 @@ class ScenariosModel(QtGui.QStandardItemModel):
     def add_scenario(self, scenario):
         item = QtGui.QStandardItem(scenario.code + " - " + scenario.name)
         item.setEditable(False)
-        #item.setIcon(QIcon(self.plugin_dir+"/icons/edit-layer.svg"))
-        self.plugin_dir
         for child in scenario.children:
             item.appendRow(self.add_scenario(child))
-            item.setIcon(QIcon(self.plugin_dir+"/icons/edit-layer.svg"))
         self.parent().scenarios.setExpanded(self.indexFromItem(item), True)
         return item

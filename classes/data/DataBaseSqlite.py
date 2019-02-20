@@ -69,7 +69,8 @@ class DataBaseSqlite():
 				transportable 			   INTEGER NOT NULL,
 				location_choice_elasticity REAL,
 				atractor_factor   		   REAL NOT NULL,
-				price_factor  		       REAL NOT NULL
+				price_factor  		       REAL NOT NULL,
+				sustitute   		       REAL NOT NULL
 			);
 			"""]
 
@@ -182,7 +183,7 @@ class DataBaseSqlite():
 		except Exception as e:
 			return False
 
-	def addSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor):
+	def addSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute):
 		if transportable == '0':
 			sql = "insert into sector \
 				(id, name, description, transportable, atractor_factor, price_factor) \
@@ -203,12 +204,12 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def updateSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, key):
+	def updateSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute, key):
 		location_choice_elasticity_value =  location_choice_elasticity  if transportable > 0 else 'null'
 		sql = "update sector set  \
-			 id={}, name='{}', description='{}', transportable={}, location_choice_elasticity={}, atractor_factor={}, price_factor={} \
+			 id={}, name='{}', description='{}', transportable={}, location_choice_elasticity={}, atractor_factor={}, price_factor={}, sustitute={}  \
 			 where key = {};".format(
-				ident, name, description, transportable, location_choice_elasticity_value, atractor_factor, price_factor, key
+				ident, name, description, transportable, location_choice_elasticity_value, atractor_factor, price_factor, sustitute, key
 			)
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()

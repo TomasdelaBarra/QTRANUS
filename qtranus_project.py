@@ -29,7 +29,7 @@ from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Helpers import Helpers
 from .classes.general.FileManagement import FileManagement as FileMXML
 from .classes.ExpressionData import ExpressionData
-
+from .classes.CustomExceptions import InputFileSourceError
 
 class QTranusProject(object):
     def __init__(self, proj):
@@ -38,8 +38,8 @@ class QTranusProject(object):
         """
         self.proj = proj
         self.tranus_project = None
-        self.shape = None
         self.map_data = MapData()
+        self.shape = None
         self.zonesIdFieldName = None
         self.network_model = Network()
         self.centroids_file_path = None
@@ -48,6 +48,7 @@ class QTranusProject(object):
         self.db_path = None
         self.custom_variables_dict = dict()
         self.load()
+            
 
     def load(self):
         """
@@ -57,8 +58,18 @@ class QTranusProject(object):
         self.tranus_project = None
         self.proj.readProject.connect(self.loadLayersProject)
         self.proj.layerRemoved.connect(self.removeLayer)
+        self.proj.removeAll.connect(self.clearObjects)
         self.load_tranus_folder()
         self.load_shapes()
+
+
+    def clearObjects(self):
+        """
+            @summary: Clear Objects
+        """
+        #print("Data Eliminada")
+        self.map_data.clear_dictionaries()
+
 
     def removeLayer(self, idLayer):
         config = self.proj.customVariables()
@@ -73,6 +84,15 @@ class QTranusProject(object):
 
         
     def loadLayersProject(self):
+        """
+            @summary: Load layers from XML file
+            @param config: Type Layer
+            @type config: Varible Project
+            @param layers: layers
+            @type layers: layers
+            @param config: projectPath
+            @type config: projectPath
+        """
         config = self.proj.customVariables()
         layers = self.proj.mapLayers()
         projectPath = config['project_qtranus_folder'] or None
@@ -87,7 +107,6 @@ class QTranusProject(object):
             network_nodes_shape_file_path = self['network_nodes_shape_file_path'] or None
             zones_shape_file_path = self['zones_shape'] or None
 
-            print("Tranus Projecto Path {} {}".format(self.tranus_project.path, self['tranus_folder']))
             self.load_tranus_folder(self.tranus_project.path)
             self.load_project_file_shape_files(zones_shape_file_path, 'zones')
             self.load_project_file_shape_files(network_links_shape_file_path, 'network')
@@ -230,6 +249,7 @@ class QTranusProject(object):
             progressInterval = 70/len(zoneList)
 
             memoryLayer.startEditing()
+            counter = 0
             for itemZone in zoneList:
                 value = 0
                 if fieldName.upper() == 'TOTPROD':
@@ -254,13 +274,13 @@ class QTranusProject(object):
 
                 num += progressInterval
                 progressBar.setValue(num)
-                
+
                 for id_feature in it:
-                    memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(round(value,2)))
+                    result = memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(round(value,2)))
+                    counter += 1
+
 
             memoryLayer.commitChanges()
-            
-            print(minValue, maxValue, rowCounter)
             
             myStyle = QgsStyle().defaultStyle()
             defaultColorRampNames = myStyle.colorRampNames()        
@@ -291,6 +311,7 @@ class QTranusProject(object):
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
             renderer.setMode(modeRender)
             renderer.setSourceColorRamp(ramp)
+            renderer.updateClasses(memoryLayer, modeRender, 8)
             memoryLayer.setRenderer(renderer)
             typeLayer = "zone"
             # Create XML File ".qtranus" with the parameters of the executions
@@ -307,7 +328,10 @@ class QTranusProject(object):
             self['zones_shape_id'] = layer.id()
             progressBar.setValue(100)
 
+            if counter == 0:
+                return False
         return True
+
 
     def editZonesLayer(self, progressBar, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText, layerId):
         """
@@ -372,6 +396,7 @@ class QTranusProject(object):
             progressInterval = 70/len(zoneList)
 
             memoryLayer.startEditing()
+            counter = 0
             for itemZone in zoneList:
                 value = 0
                 if fieldName.upper() == 'TOTPROD':
@@ -398,10 +423,9 @@ class QTranusProject(object):
 
                 for id_feature in it:
                     memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(value))
+                    counter += 1
 
             memoryLayer.commitChanges()
-            
-            print(minValue, maxValue, rowCounter)
             
             myStyle = QgsStyle().defaultStyle()
             defaultColorRampNames = myStyle.colorRampNames()        
@@ -429,7 +453,7 @@ class QTranusProject(object):
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
-            
+            renderer.updateClasses(memoryLayer, modeRender, 8)
             renderer.setSourceColorRamp(ramp)
             memoryLayer.setRenderer(renderer)
             typeLayer = "zone"
@@ -445,6 +469,8 @@ class QTranusProject(object):
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
+            if counter == 0:
+                return False
         return True
 
     def loadZonesLayer(self, layerName, scenariosExpression, fieldName, sectorsExpression,  layerId, shapeFile, idFieldName):
@@ -560,9 +586,12 @@ class QTranusProject(object):
                 ranges.append(myRange)
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            modeRender = QgsGraduatedSymbolRenderer.Mode(2)
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
-            
+            renderer.setMode(modeRender)
             renderer.setSourceColorRamp(ramp)
+            renderer.updateClasses(memoryLayer, modeRender, 8)
+            
             memoryLayer.setRenderer(renderer)
 
             self['zones_shape'] = layer.source()
@@ -601,14 +630,19 @@ class QTranusProject(object):
         projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
 
         # Set Custom Project Variable to save Project path
-        tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_matrix_shape=self.centroids_file_path[0])
+        try:
+            self.centroids_file_path = self.centroids_file_path[0]
+        except:
+            self.centroids_file_path=''
+
+        tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_matrix_shape=self.centroids_file_path)
         self.custom_variables_dict.update(tranus_dictionary)
         QgsProject.instance().setCustomVariables(self.custom_variables_dict)
 
         intMethod = 0 if method == "Color" else 1
-        #result, matrixResultData, minValue, maxValue = self.map_data.create_trip_matrix_csv_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
-        result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
 
+        result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
+        
         if result:
             layer = registry.mapLayersByName('Zonas_Centroids')[0]
             epsg = layer.crs().postgisSrid()
@@ -721,12 +755,6 @@ class QTranusProject(object):
             print  ("There is not destination zones information.")
             return False
 
-        # Creates centroids layer
-        """if not self.centroids_file_path is None:
-            self.load_zones_centroids_data()
-        else:
-            self.load_zones_centroids()"""
-
         # Gets shape's file folder
         registry = QgsProject.instance()
 
@@ -739,7 +767,7 @@ class QTranusProject(object):
             group = self.get_layers_group()
 
             tripsMatrixLayer = registry.mapLayer(layerId)
-            #tripsMatrixLayer = QgsVectorLayer("LineString?crs=epsg:"+str(epsg),  layerName +"_matrix", "memory")
+
         tripsMatrixLayer.startEditing()
         tripsMatrixLayer.deleteAttributes([0,1]) 
         tripsMatrixLayer.commitChanges()
@@ -940,6 +968,7 @@ class QTranusProject(object):
         progressBar.setValue(100)
         return True
 
+
     def load_tranus_folder(self, folder=None):
         """
             @summary: Loads tranus project folder
@@ -960,6 +989,7 @@ class QTranusProject(object):
             self['tranus_folder'] = folder
             return True
     
+
     def load_map_indicators(self, path):
         """
             @summary: Loads zone indicators
@@ -976,6 +1006,7 @@ class QTranusProject(object):
                 indicators.load_indicator_file(path+"/"+fn)
         return indicators
     
+
     def load_map_trip_structure(self, path, scenario):
         """
             @summary: Loads trips structure
@@ -1035,20 +1066,22 @@ class QTranusProject(object):
         
         zones_shape_fields = [field.name() for field in layer.fields()]
         project = shape[0:max(shape.rfind('\\'), shape.rfind('/'))]     
-            
-        if self.map_data.indicators is not None:
-            if len(self.map_data.indicators.scenarios) == 0:
-                self.map_data.indicators = self.load_map_indicators(project)
-                self.map_data.load_dictionaries()
-                if self.load_map_trip_structure(project, None):
-                    self.map_data.load_dictionaries()
-
+        
         if self['zones_shape_id']:
             existing_tree = self.proj.layerTreeRoot().findLayer(self['zones_shape_id'])
             if existing_tree:
                 existing = existing_tree.layer()
                 registry.removeMapLayer(existing.id())
 
+        # Load dictionaries with data "Sectors, Scenarios etc ..."
+        #if self.map_data.indicators is not None:
+            #if len(self.map_data.indicators.scenarios) == 0:
+        self.map_data = MapData()
+        self.map_data.indicators = self.load_map_indicators(project)
+        self.map_data.load_dictionaries()
+        if self.load_map_trip_structure(project, None):
+            self.map_data.load_dictionaries()
+        
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['zones_shape'] = layer.source()
@@ -1237,7 +1270,7 @@ class QTranusProject(object):
         
         if layer is not None:
             epsg = layer.crs().postgisSrid()
-            uri = ("Point?crs=epsg:" + str(epsg) + "&field=zoneID:long&field=zoneName:string&field=posX:double&field=posY:double&index=yes").encode('utf-8')
+            uri = ("Point?crs=epsg:" + str(epsg) + "&field=zoneID:long&field=zoneName:string&field=posX:double&field=posY:double&index=yes")
             print("Proyecto: {}".format(type(uri), uri))
             mem_layer = QgsVectorLayer(uri, layer.name() + '_Centroids', 'memory')
             prov = mem_layer.dataProvider()
@@ -1245,8 +1278,9 @@ class QTranusProject(object):
             for f in layer.getFeatures():
                 feat = QgsFeature()
                 pt = f.geometry().centroid().asPoint()
+                print(pt)
                 feat.setAttributes([f.attributes()[0], f.attributes()[1], pt.x(), pt.y()])
-                feat.setGeometry(QgsGeometry.fromPoint(pt))
+                feat.setGeometry(QgsGeometry.fromPointXY(pt))
                 prov.addFeatures([feat])
                 
                 zoneCentroid = ZoneCentroid()
@@ -1261,45 +1295,3 @@ class QTranusProject(object):
             
             # Creates the Centroids CSV file
             self.map_data.create_zone_centroids_csv_file(filePath, layer.name())
-            #self.map_data.create_trip_matrix_csv_file(filePath)
-            
-            #tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
-            #tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
-            
-            ###
-            ### This section loads style file to the layer
-            ###
-            #styleUri = ("file:///%s" % (filePath + "/Style.qlm")).encode('utf-8')
-#             styleUri = (filePath + "/Style.qml").encode('utf-8')
-#             tripsMatrixLayer.loadNamedStyle(styleUri)
-#             tripsMatrixLayer.triggerRepaint()
-#             QgsProject.instance().addMapLayer(tripsMatrixLayer)
-            
-            ###
-            ### This section manage the layer style
-            ###
-            #registry = QgsSymbolLayerV2Registry.instance()
-            #lineMeta = registry.symbolLayerMetadata("SimpleLine")
-            #markerMeta = registry.symbolLayerMetadata("MarkerLine")
-            #symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
-            #Line layer
-            #lineLayer = lineMeta.createSymbolLayer({'width': '0.26', 'color': '255,0,0', 'offset': '0', 'penstyle': 'solid', 'use_custom_dash': '0', 'joinstyle': 'bevel', 'capstyle': 'square'})
-            
-            #Marker layer
-            #markerLayer = markerMeta.createSymbolLayer({'width': '0.26', 'color': '255,0,0', 'rotate': '1', 'placement': 'centralpoint', 'offset': '0'})
-            #subSymbol = markerLayer.subSymbol()
-            #subSymbol.deleteSymbolLayer(0)
-            #triangle = registry.symbolLayerMetadata("SimpleMarker").createSymbolLayer({'name': 'filled_arrowhead', 'color': '255,0,0', 'color_border': '0,0,0', 'offset': '0,0', 'size': '3', 'angle': '0'})
-            #subSymbol.appendSymbolLayer(triangle)
-            
-            #Replace the default layer with our two custom layers
-            #symbol.deleteSymbolLayer(0)
-            #symbol.appendSymbolLayer(lineLayer)
-            #symbol.appendSymbolLayer(markerLayer)
-            
-            #Replace the renderer of the current layer
-            #renderer = QgsSingleSymbolRendererV2(symbol)
-            #tripsMatrixLayer.setRendererV2(renderer)
-            
-            #QgsProject.instance().addMapLayer( tripsMatrixLayer, False )
-            #group.insertLayer(len(QgsProject.instance().mapLayers())+1, tripsMatrixLayer)

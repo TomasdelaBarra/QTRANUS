@@ -125,7 +125,12 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             @param item: Item selected
             @type item: QListWidget item 
         """
-        self.expression.setText(self.expression.text() + item.text())
+        textToAdd = item.text()
+            
+        if self.expression.text().strip() == '':
+            self.expression.setText(self.expression.text() + textToAdd)
+        else:
+            self.expression.setText(self.expression.text() + " + " + textToAdd)
     
     def reload_scenarios(self):
         """
@@ -147,12 +152,15 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             self.progressBar.setValue(10)
 
             if not self.layerId:
-                self.project.addZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
+                result = self.project.addZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText)
             else:
-                self.project.editZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText, self.layerId)
+                result = self.project.editZonesLayer(self.progressBar, self.layerName.text(), scenariosExpression, str(self.fields.currentText()), sectorsExpression, sectorsExpressionText, self.layerId)
+
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Zones", "Layer generated without information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()  
             self.accept()
         else:
-            #QMessageBox.critical(None, "New Layer", "New layer was not created.")
             print("New zones layer was not created.")
             
 
@@ -160,6 +168,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Loads scenarios combo-box
         """
+
         items = self.project.map_data.get_sorted_scenarios()
         self.base_scenario.addItems(items)
         
@@ -168,8 +177,8 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Loads sectors combo-box
         """
+
         for key in sorted(self.project.map_data.sectors_dic):
-            #print(("key: {}, Value: ").format(str(self.project.map_data.sectors_dic[key])))
             self.sectors.addItem(self.project.map_data.sectors_dic[key])
 
         

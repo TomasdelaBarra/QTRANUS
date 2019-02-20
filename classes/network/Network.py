@@ -244,12 +244,13 @@ class Network(object):
             modeRender = QgsGraduatedSymbolRenderer.Mode(2)
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
             renderer.setMode(modeRender)
-            renderer.setGraduatedMethod(intMethod)
             
             if method == "Size":
                 renderer.setSymbolSizes(0.200000, 2.60000)
-
-            renderer.setSourceColorRamp(ramp)
+            else:
+                renderer.setSourceColorRamp(ramp)
+            renderer.setGraduatedMethod(intMethod)
+            #renderer.updateClasses(memoryLayer, modeRender, 8)
             memoryLayer.setRenderer(renderer)
 
             typeLayer = "network"

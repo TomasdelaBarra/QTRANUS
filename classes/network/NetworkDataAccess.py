@@ -41,7 +41,7 @@ class NetworkDataAccess(object):
             @type projectPath: String
             @return: List of Scenarios
         """
-        return FileManagement.get_scenarios_from_filename(projectPath, 'Assignment_SWN(.*)', '\..*')
+        return FileManagement.get_scenarios_from_filename(projectPath, 'Assignment_(.*)', '\..*')
     
     def get_scenario_operators(self, projectPath, scenario):
         """
@@ -54,7 +54,7 @@ class NetworkDataAccess(object):
         """
         operatorsMatrix = None
         operators_dic = {}
-        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*') 
+        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_', scenario, '\..*') 
         if networkMatrix is not None:
             if networkMatrix.data_matrix.size > 0:
                 operatorsMatrix = np.unique(networkMatrix.data_matrix[['OperId', 'OperName']])
@@ -76,7 +76,7 @@ class NetworkDataAccess(object):
         """
         routesMatrix = None
         routes_dic = {}
-        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*') 
+        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_', scenario, '\..*') 
         if networkMatrix is not None:
             if networkMatrix.data_matrix.size > 0:
                 routesMatrix = np.unique(networkMatrix.data_matrix[['RouteId', 'RouteName']])
@@ -97,7 +97,7 @@ class NetworkDataAccess(object):
             @return: Network matrix and matrix of links
         """
         # IMPORTANTE OJO PARAMETRO CABLEADO
-        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_SWN', scenario, '\..*')
+        networkMatrix = FileManagement.get_np_matrix_from_csv(projectPath, 'Assignment_', scenario, '\..*')
         links = self.__get_network_ids(networkMatrix)
         
         return networkMatrix, links 
@@ -712,9 +712,9 @@ class NetworkDataAccess(object):
         networkMatrixResult = None
         minValue = float(1e100)
         maxValue = float(-1e100)
-        print(" dentro create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
+        #print(" dentro create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
         if level == Level.Total or len(networkExpression) == 1:
-            print(" dentro del primer create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
+            #print(" dentro del primer create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:

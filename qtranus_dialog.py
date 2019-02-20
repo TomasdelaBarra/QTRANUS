@@ -29,6 +29,7 @@ import os, re, webbrowser
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QMessageBox
+from PyQt5.QtCore import *
 from qgis.core import QgsProject
 
 from .zonelayer_dialog import ZoneLayerDialog
@@ -40,6 +41,7 @@ from .classes.general.FileManagement import FileManagement
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.CustomExceptions import InputFileSourceError
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -58,6 +60,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = project
+        self.projectInst = QgsProject.instance()
         self.folder_ws = ''
 
         # Linking objects with controls
@@ -93,14 +96,37 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
-        self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
+        #self.zones_shape_fields.currentIndexChanged[int].connect(self.zones_shape_fields_changed)
+        self.zones_shape_fields.currentIndexChanged.connect(self.zones_shape_fields_changed)
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
-        self.data_btn.setEnabled(True)
-
+        #self.projectInst.cleared(self.clear_project)  
+        #self.proj.removeAll.connect(self.clearObjects)
 
         # Loads
         self.reload_scenarios()
+        if self.project['zones_id_field_name']:
+            self.default_data()
+
+        self.projectInst.removeAll.connect(self.deleteObjects)
+
+
+    def deleteObjects(self):
+        """
+            @summary: Opens QTranus users help
+        """
+        self.folder_ws = ''
+        self.tranus_folder.setText('')
+        self.zone_shape.setText('')
+        self.zones_shape_fields.clear()
+        self.centroid_shape.setText('')
+        self.network_links_shape.setText('')
+        self.centroid_shape.setText('')
+        self.network_links_shape.setText('')
+        self.network_nodes_shape.setText('')
+        self.results_btn.setEnabled(False)
+
+
 	
     def open_help(self):
         """
@@ -156,15 +182,20 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @param file_name: Path and name of the shape file
             @type file_name: String
         """
-        #print(str(file_name[0]))
-        result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
+        try:
+            result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
+            if result:
+                self.zone_shape.setText(file_name[0])
+                self.load_zone_shape_fields(zoneShapeFieldNames)
+            else:
+                self.zone_shape.setText('')
+            self.check_configure()
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
 
-        if result:
-            self.zone_shape.setText(file_name[0])
-            self.load_zone_shape_fields(zoneShapeFieldNames)
-        else:
-            self.zone_shape.setText('')
-        self.check_configure()
+        
+
         
     def select_centroid_shape(self, file_name):
         """
@@ -205,12 +236,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Sets selected Tranus workspace
         """
-        
         self.folder_ws = QtWidgets.QFileDialog.getExistingDirectory(self, "Select directory")
         if self.folder_ws:
             self.tranus_folder.setText(self.folder_ws)
             self.project.load_tranus_folder(self.folder_ws)
-
             self.reload_scenarios()
         self.check_configure()
 
@@ -267,7 +296,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens data window
         """
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
-            print("TRANUS FOLDER22 {} ".format(self.tranus_folder.text()))
             dialog = DataDialog(self.layers_group_name, self.tranus_folder.text(), parent = self)
             dialog.show()
             result = dialog.exec_()
@@ -297,6 +325,11 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         #Call your window here
         pass
 
+    def default_data(self):
+        print(" show zonesIdFieldName {} ".format(self.project['zones_id_field_name']))
+        indexZonesIdFieldName = self.zones_shape_fields.findText(self.project['zones_id_field_name'], Qt.MatchFixedString)
+        self.zones_shape_fields.setCurrentIndex(indexZonesIdFieldName)
+
     def show(self):
         """
             @summary: Opens dialog window
@@ -312,8 +345,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.reload_scenarios()
 
         result, zoneShapeFieldNames = self.project.load_project_file_shape_files(self.project['zones_shape'], 'zones')
-        if result:
-            self.load_zone_shape_fields(zoneShapeFieldNames)
 
         if self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
@@ -326,6 +357,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         
         if self.project['network_nodes_shape_file_path']:
             self.network_nodes_shape.setText(self.project['network_nodes_shape_file_path'])
+
         
         if self.project.tranus_project:
             self.tranus_folder.setText(self.project.tranus_project.path)
@@ -347,13 +379,14 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
 
+
     def check_configure(self):
         """
             @summary: Validates configuration
         """
         if self.project.is_valid() or self.project.is_valid_network():
             self.results_btn.setEnabled(True)
-            self.data_btn.setEnabled(True)
+            #self.data_btn.setEnabled(True)
 
     def load_zone_shape_fields(self, fields):
         """
@@ -366,10 +399,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
             print ("There are no fields to load.")
         else:
-            print(fields)
             self.zones_shape_fields.setEnabled(True)
             self.zones_shape_fields.clear()
             self.zones_shape_fields.addItems(fields)
+            print("")
             
     def zones_shape_fields_changed(self):
         """
@@ -377,5 +410,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         if self.zones_shape_fields.currentText() != '':
             self.project.zonesIdFieldName = self.zones_shape_fields.currentText()
-            print(self.zones_shape_fields.currentText())
+            self.project['zones_id_field_name'] = self.project.zonesIdFieldName
+            print("zones_shape_fields_changed {} ".format(self.project['zones_id_field_name']))
             

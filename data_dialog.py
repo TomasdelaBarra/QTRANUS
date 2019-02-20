@@ -10,6 +10,7 @@ from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_dialog import ScenariosDialog
 from .sectors_dialog import SectorsDialog
+from .intersectors_dialog import IntersectorsDialog
 from .configuration_dialog import ConfigurationDialog
 from .classes.data.DataBase import DataBase
 from .classes.data.Scenario import Scenario
@@ -50,6 +51,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_scenarios = self.findChild(QtWidgets.QPushButton, 'btn_scenarios')
         self.btn_options = self.findChild(QtWidgets.QPushButton, 'btn_options')
         self.btn_sectors = self.findChild(QtWidgets.QPushButton, 'btn_sectors')
+        self.btn_intersectors = self.findChild(QtWidgets.QPushButton, 'btn_intersectors')
         
         self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).setText('Save as...')
         
@@ -58,6 +60,7 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_scenarios.clicked.connect(self.open_scenarios_window)
         self.btn_sectors.clicked.connect(self.open_sectors_window)
         self.btn_options.clicked.connect(self.open_configuration_window)
+        self.btn_intersectors.clicked.connect(self.open_intersectors_window)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_db)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).clicked.connect(self.save_db_as)
         
@@ -88,6 +91,14 @@ class DataDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens data window
         """
         dialog = SectorsDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+    def open_intersectors_window(self):
+        """
+            @summary: Opens intersectors window
+        """
+        dialog = IntersectorsDialog(self.tranus_folder, parent = self)
         dialog.show()
         result = dialog.exec_()
 

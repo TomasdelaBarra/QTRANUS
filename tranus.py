@@ -61,13 +61,14 @@ class Scenarios(object):
     def load(lines):
         nodes = Scenarios.parse_lines(lines)
         root = Scenarios.create_tree(nodes)
-        Scenarios.parse_lines_from_sqlite()
+        #Scenarios.parse_lines(lines)
         return Scenarios(root)
 
     @staticmethod
     def load_sqlite(lines):
         nodes = Scenarios.parse_lines_from_sqlite(lines)
         root = Scenarios.create_tree(nodes)
+        #Scenarios.parse_lines_from_sqlite(nodes)
         
         return Scenarios(root)
 
