@@ -40,7 +40,7 @@
                     <figcaption>Fig. 2: Zones layer window.</figcaption>
                 </figure>
                 
-                <p>In (1) the scenario tree is displayed as a reference, and in (2) the list of sectors in your model is shown.</p>
+                <p>In (1) the scenario tree is displayed as a reference and in (2) the list of sectors in your model is shown.</p>
                 <h3>New layer name</h3>
                 <p>Give a name to the layer you are generating. In this first example the new layer will be called ‘Total population density 01A’. This is an obligatory field. The program will use this name to generate an auxiliary file in the Project Folder, so that you cannot use special characters that Windows will not accept as part of file names, such as ? * \ etc. </p>
                 <h3>Expression</h3>
@@ -48,7 +48,8 @@
                 <p> - sectors: any sector defined in the model. The list in the box contains the names of all sectors that have been defined. They may be entered into the expression by either typing the name, or by double-clicking in the list</p>
                 <p> - operands: valid operands are "+ - * / ( ) < >". They are just typed-in the Expression box. Spaces between sectors and operands are optional</p>
 				<p> - constants: any integer or real value</p>
-				<p>Note that if the Expression contains a conditional operand < or > the result will be a Boolean map, with zones being either true or false. This implies that there can only be one conditional operand in the Expression.</p>		<p>In the example above density is calculated as the sum of all household sectors (HhHigh+HhMed+HhLow), divided by the two land sectors that households may consume (Mixed+ResL).</p> 
+				<p>Note that if the Expression contains a conditional operand < or > the result will be a Boolean map, with zones being either true or false. This implies that there can only be one conditional operand in the Expression.</p>		
+                <p>In the example above density is calculated as the sum of all household sectors (HhHigh+HhMed+HhLow), divided by the two land sectors that households may consume (Mixed+ResL).</p> 
                 <h3>Scenarios </h3>
                 <p>It is also possible to generate a map that relates variables from two different scenarios. For example, you may want a map with the growth of industrial employment from 91A to 16T. Double-click the Indus sector to put it in the Expression box, then select 16T from the Base Scenario pull-down, then select an operand, that may be – or /, and then choose the 91A scenario for the Alternative Scenario pull-down box. The program will subtract 16T – 91A, and this value will be used to generate the map.</p>
 				<p>Note that if there is a conditional in Expression, it is not possible to compare two scenarios, and in fact the program will not let you.</p>
@@ -110,9 +111,12 @@
 				<a href=matrix.html>Flow maps</a>
  				<a class="linkSpace" href=network.html>Network maps</a>
 			</article>
-            <footer>
-                QTranus 2016
+            <footer id="year">
             </footer>
         </div>
     </body>
 </html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>

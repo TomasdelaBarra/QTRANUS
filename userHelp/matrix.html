@@ -36,10 +36,14 @@
 				<a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
 				<p>To begin the process, a window called New Matrix Layer is presented with boxes to fill:</p>
                 <figure>
-                    <img src="img/matrix1.jpg">
+                    <img src="img/matrix.png">
                     <figcaption>Matrix layer window.</figcaption>
                 </figure>
-				<p>In (1) the list of all transport categories that were found in the data is displayd. In (2) and (3) the list of zones that was found in your data is listed.</p>
+                <figure>
+                    <img src="img/matrix.png">
+                    <figcaption>Matrix layer window, Method color.</figcaption>
+                </figure>
+				<p>In (1) the list of all transport categories that were found in the data is displayd. In (2) and (3) the list of zones that was found in your data is listed. In (4) and (5) show method will use to show the results of the program. </p>
                 <h3>New layer name</h3>
 				<p>Give a name to the layer you are generating, an obligatory field. The program will use this name to generate an auxiliary file in the Project Folder, so that you cannot use special characters that Windows will not accept as part of file names, such as ? * etc.</p>
 				<h3>Expression</h3>
@@ -48,6 +52,8 @@
 				<p>In the list of origins select one, several or 'All', and similarly in the list of destinations. This will generate a flow map of one-to-many, many-to-many, all-to-all, etc., zones.</p>
 				<h3>Scenarios </h3>
 				<p>It is also possible to generate a map that relates trips that result from Expression for two different scenarios. For example, you may want a flow map with the growth of home-to-work trips from 91A to 16T. Double-click all home-to-work categories to put them in the Expression box, then select 16T from the Base Scenario pull-down, then select an operand, that may be - or /, and then choose the 91A scenario for the Alternative Scenario pull-down box. The program will subtract 16T - 91A, and this value will be used to generate the flow map.</p>
+                <h3>Method</h3>     
+                <p>Defines the method that will be used to show results of the model. There are two options, Color or Size.</p> 
 				<h3>Some examples:</h3>
 				<p>This will produce a flow map with the total number of trips for scenario 91A</p>
 				<p> - New layer name: Total trips 1991</p>
@@ -63,9 +69,12 @@
 				<p> - Scenario operand: -</p>
                 <hr>
             </article>
-            <footer>
-                QTranus 2017
+            <footer id="year">
             </footer>
         </div>
     </body>
 </html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>

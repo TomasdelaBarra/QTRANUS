@@ -36,22 +36,35 @@
 				<a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
 				<p>To begin the process, a window called New Network Layer is presented with boxes to fill:</p>
                 <figure>
-                    <img src="img/network1.jpg">
+                    <img src="img/network.png">
                     <figcaption>Network layer window.</figcaption>
                 </figure>
-				<p>In (1) there are three options. Total means that all operaators found in the model will be included in the map. Operators displays the list of operators found in the model. Routes displays all routes found in the model, including non route-based operators.</p>
+                <figure>
+                    <img src="img/network2.png">
+                    <figcaption>Method color.</figcaption>
+                </figure>
+                <figure>
+                    <img src="img/network3.png">
+                    <figcaption>Method Size.</figcaption>
+                </figure>
+				<p>In (1) there are three options. Total means that all operators found in the model will be included in the map. Operators displays the list of operators found in the model. Routes displays all routes found in the model, including non route-based operators, in (2) method color use color ramp to show results, in (3) method size use the size of the lines to show results.</p>
                 <h3>New layer name</h3>
-				<p>Give a name to the layer you are generating, an obligatory field. The program will use this name to generate an auxiliary file in the Project Folder, so that you cannot use special characters that Windows will not accept as part of file names, such as ? * etc.</p>
+				    <p>Give a name to the layer you are generating, an obligatory field. The program will use this name to generate an auxiliary file in the Project Folder, so that you cannot use special characters that Windows will not accept as part of file names, such as ? * etc.</p>
 				<h3>Expression</h3>
-				<p>The values to be mapped are defined in this expression. The expression may contain one or several operators or routes added together. Double click the ones you want in the list to put them into the Expression box. Click on 'All' to define the sum of all categories. If Total was selected, you don't have to specify anything in Expression.</p>
+				    <p>The values to be mapped are defined in this expression. The expression may contain one or several operators or routes added together. Double click the ones you want in the list to put them into the Expression box. Click on 'All' to define the sum of all categories. If Total was selected, you don't have to specify anything in Expression.</p>
 				<h3>Scenarios </h3>
-				<p>A scenario may be specified, but it is also possible to generate a map that relates values that result from Expression for two different scenarios. For example, you may want a network map with the growth in auto trips from 91A to 16T. The operator relating the two scenarios may be - or /.</p>
-				<h3>Variables</h3>		<p>Defines the variable that will be used to calculate Expression and to produce the map. There are several options, such as Demand, Vehicles, Standard vehicles, Level of Service, etc.</p>				<h3>Some examples:</h3>
+				    <p>A scenario may be specified, but it is also possible to generate a map that relates values that result from Expression for two different scenarios. For example, you may want a network map with the growth in auto trips from 91A to 16T. The operator relating the two scenarios may be - or /.</p>
+				<h3>Variables</h3>      
+                    <p>Defines the variable that will be used to calculate Expression and to produce the map. There are several options, such as Demand, Vehicles, Standard vehicles, Level of Service, etc.</p>                
+                <h3>Method</h3>		
+                    <p>Defines the method that will be used to show results of the model. There are two options, Color or Size.</p>				
+                <h3>Some examples:</h3>
 				<p>This will produce a network map with the total number of passengers for scenario 91A</p>
 				<p> - New layer name: Total passengers 1991</p>
 				<p> - Expression: nothing (Total)</p>
 				<p> - Base Scenario: 91A</p>
-				<p> - Alternate Scenario: (nothing)</p>		<p> - Variables: Demand</p>
+				<p> - Alternate Scenario: (nothing)</p>		
+                <p> - Variables: Demand</p>
 				<hr>
 				<p>This will produce a map with the growth in the number of auto trips from 91A to 11T</p>
 				<p> - New layer name: Growth in auto trips from 91A to 11T</p>
@@ -62,9 +75,12 @@
 		 		<p> - Variables: Demand</p>
 				<hr>
             </article>
-            <footer>
-                QTranus 2017
+            <footer id="year">
 			</footer>
         </div>
     </body>
 </html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>

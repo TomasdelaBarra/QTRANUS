@@ -32,9 +32,12 @@
             <article class="article">
                 <h1>Welcome to QTranus</h1>
             </article>
-            <footer>
-                QTranus 2016
+            <footer id="year">
             </footer>
         </div>
     </body>
 </html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>

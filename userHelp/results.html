@@ -35,9 +35,10 @@
 				<a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
 				<p>To begin the process, a simple window is presented with three buttons: Zones, Network, Matrix.</p>
                 <figure>
-                    <img src="img/results1.jpg">
+                    <img src="img/results.png">
                     <figcaption>QTranus Results Window.</figcaption>
                 </figure>
+                <p>In (1) the scenario tree is displayed as a reference, and in (2) manage the list of created layers.</p>
                 <h3>Zones</h3>
 				<p>Jumps to the Zones Window, where zone-based maps are produced, such as population by zone, employment density by zone, etc.</p>
 				<h3>Network</h3>
@@ -48,10 +49,14 @@
                 <a href="zones.html">Zone-based maps</a>
 				<a class="linkSpace" href="network.html">Network maps</a>
 				<a class="linkSpace" href="matrix.html">Matrix maps</a>
+                <a href="" ></a>
 			</article>
-            <footer>
-                QTranus 2017
+            <footer id="year">
             </footer>
         </div>
     </body>
 </html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>
