@@ -979,7 +979,17 @@ class QTranusProject(object):
         path = os.path.join(folder, 'W_TRANUS.CTL')
 
         try:
+
+            #Load all indicators (Sectors, Scenarios, Operator, Routes)
+            self.map_data = MapData()
+            self.map_data.indicators = self.load_map_indicators(folder)
+            self.map_data.load_dictionaries()
+            if self.load_map_trip_structure(folder, None):
+                self.map_data.load_dictionaries()
+            #End load
+            
             tranus_project = TranusProject.load_project(path)
+
         except Exception as e:
             print (e)
             self.tranus_project = None
@@ -1076,11 +1086,11 @@ class QTranusProject(object):
         # Load dictionaries with data "Sectors, Scenarios etc ..."
         #if self.map_data.indicators is not None:
             #if len(self.map_data.indicators.scenarios) == 0:
-        self.map_data = MapData()
+        """self.map_data = MapData()
         self.map_data.indicators = self.load_map_indicators(project)
         self.map_data.load_dictionaries()
         if self.load_map_trip_structure(project, None):
-            self.map_data.load_dictionaries()
+            self.map_data.load_dictionaries()"""
         
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)

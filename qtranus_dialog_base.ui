@@ -259,7 +259,7 @@
          <item alignment="Qt::AlignVCenter">
           <widget class="QCommandLinkButton" name="data">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
             <string>Data</string>
