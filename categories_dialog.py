@@ -39,7 +39,7 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
         self.categories_tree = self.findChild(QtWidgets.QTreeView, 'categories_tree')
-        #self.categories_tree.setRootIsDecorated(False)
+        self.categories_tree.setRootIsDecorated(False)
         self.add_category_btn = self.findChild(QtWidgets.QPushButton, 'add_category')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
@@ -102,21 +102,6 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         dialog.show()
         result = dialog.exec_()
         self.__get_categories_data()
-        
-
-    
-    def __load_scenarios_from_db_file(self):
-        if(self.project.db_path is None or self.project.db_path.strip() == ''):
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            print("DB File was not found.")
-        else:
-            if(self.dataBase.extract_scenarios_file_from_zip(self.project.db_path, self.project['tranus_folder'])):
-                self.__get_scenarios_data()
-            else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Scenarios file could not be extracted.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-                print("Scenarios file could not be extracted.")
               
 
     def __get_scenarios_data(self):
@@ -136,11 +121,11 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         result = self.dataBaseSqlite.executeSql(sql)
 
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Id','Name', 'Description', 'VTT', 'VWT', 'Min Trip Gener', 'Max Trip Gener', 'Elas Trip Gener', 'Choice Elast','Mode'])
+        model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
         for x in range(0, len(result)):
             model.insertRow(x)
             z=0
-            for y in range(0,10):
+            for y in range(0,3):
                 model.setData(model.index(x, y), result[x][z])
                 z+=1
         self.categories_tree.setModel(model)

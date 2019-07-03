@@ -15,6 +15,8 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .add_scenario_dialog import AddScenarioDialog
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_operator.ui'))
@@ -78,6 +80,52 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 		self.by_category_tbl.itemChanged.connect(self.__update_category)
 		
+		# Validations
+		self.id.setValidator(validatorExpr('integer'))
+		self.id.textChanged.connect(self.check_state)
+		self.name.setValidator(validatorExpr('alphaNum'))
+		self.name.textChanged.connect(self.check_state)
+		self.description.setValidator(validatorExpr('alphaNum'))
+		self.description.textChanged.connect(self.check_state)
+
+		self.basics_modal_constant.setValidator(validatorExpr('decimal'))
+		self.basics_modal_constant.textChanged.connect(self.check_state)
+		self.basics_path_asc.setValidator(validatorExpr('decimal'))
+		self.basics_path_asc.textChanged.connect(self.check_state)
+		self.basics_occupency.setValidator(validatorExpr('decimal'))
+		self.basics_occupency.textChanged.connect(self.check_state)
+		self.basics_time_factor.setValidator(validatorExpr('decimal'))
+		self.basics_time_factor.textChanged.connect(self.check_state)
+		self.basics_fixed_wating_factor.setValidator(validatorExpr('decimal'))
+		self.basics_fixed_wating_factor.textChanged.connect(self.check_state)
+		self.basics_boarding_tariff.setValidator(validatorExpr('decimal'))
+		self.basics_boarding_tariff.textChanged.connect(self.check_state)
+		self.basics_distance_tariff.setValidator(validatorExpr('decimal'))
+		self.basics_distance_tariff.textChanged.connect(self.check_state)
+		self.basics_time_tariff.setValidator(validatorExpr('decimal'))
+		self.basics_time_tariff.textChanged.connect(self.check_state)
+
+		self.energy_min.setValidator(validatorExpr('decimal'))
+		self.energy_min.textChanged.connect(self.check_state)
+		self.energy_max.setValidator(validatorExpr('decimal'))
+		self.energy_max.textChanged.connect(self.check_state)
+		self.energy_slope.setValidator(validatorExpr('decimal'))
+		self.energy_slope.textChanged.connect(self.check_state)
+		self.energy_cost.setValidator(validatorExpr('decimal'))
+		self.energy_cost.textChanged.connect(self.check_state)
+
+		self.cost_time_operation.setValidator(validatorExpr('decimal'))
+		self.cost_time_operation.textChanged.connect(self.check_state)
+		self.cost_porc_paid_by_user.setValidator(validatorExpr('decimal'))
+		self.cost_porc_paid_by_user.textChanged.connect(self.check_state)
+
+		self.stops_min_stop_time.setValidator(validatorExpr('decimal'))
+		self.stops_min_stop_time.textChanged.connect(self.check_state)
+		self.stops_unit_boarding_time.setValidator(validatorExpr('decimal'))
+		self.stops_unit_boarding_time.textChanged.connect(self.check_state)
+		self.stops_unit_alight_time.setValidator(validatorExpr('decimal'))
+		self.stops_unit_alight_time.textChanged.connect(self.check_state)
+
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_operator)
 		self.__load_fields()
 		self.__get_scenarios_data()
@@ -85,6 +133,17 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.operatorSelected:
 			self.load_default_data()
 
+	def check_state(self, *args, **kwargs):
+		sender = self.sender()
+		validator = sender.validator()
+		state = validator.validate(sender.text(), 0)[0]
+		if state == QtGui.QValidator.Acceptable:
+		    color = '#c4df9b' # green
+		elif state == QtGui.QValidator.Intermediate:
+		    color = '#E17E68' # orenge
+		elif state == QtGui.QValidator.Invalid:
+		    color = '#f6989d' # red
+		sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
 	def save_new_operator(self):
 
@@ -124,92 +183,91 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			return False
 		    
 		if self.basics_modal_constant is None or self.basics_modal_constant.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Transport Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Modal constant.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_path_asc is None or self.basics_path_asc.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Transport Route similarity.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Path ASC.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_occupency is None or self.basics_occupency.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Iterations.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Occupency.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_time_factor is None or self.basics_time_factor.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Convergence.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Time factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_fixed_wating_factor is None or self.basics_fixed_wating_factor.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the Fixed wating factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_boarding_tariff is None or self.basics_boarding_tariff.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Boarding tariff.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_distance_tariff is None or self.basics_distance_tariff.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Distance tariff.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.basics_time_tariff is None or self.basics_time_tariff.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Time tariff.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.energy_min is None or self.energy_min.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Energy min.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.energy_max is None or self.energy_max.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Energy Max.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.energy_slope is None or self.energy_slope.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Energy slope.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.energy_cost is None or self.energy_cost.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Energy cost.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.cost_time_operation is None or self.cost_time_operation.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Time operation.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.cost_porc_paid_by_user is None or self.cost_porc_paid_by_user.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Perc. paid by user.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.stops_min_stop_time is None or self.stops_min_stop_time.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Min stop time.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.stops_unit_boarding_time is None or self.stops_unit_boarding_time.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Unit boarding time.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.stops_unit_alight_time is None or self.stops_unit_alight_time.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Unit alight time.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
-
-		result = self.dataBaseSqlite.selectAll('mode', " where name = '"+self.cb_mode.currentText()+"'") 
-		id_mode = result[0][0]		
+		
+		id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
 
 		data = dict(id=self.id.text(), name=self.name.text(), description=self.description.text(), id_mode=id_mode, 
 			   type=id_type, basics_modal_constant=self.basics_modal_constant.text(), 
@@ -326,7 +384,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		for value in mode_result:
-			self.cb_mode.addItem(value[2])
+			self.cb_mode.addItem(value[1], value[0])
 
 		if self.operatorSelected:
 			sql =""" select a.name category, b.tariff_factor, b.penal_factor 

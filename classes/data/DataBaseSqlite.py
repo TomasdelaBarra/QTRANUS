@@ -19,6 +19,9 @@ class DataBaseSqlite():
 		"""
         @summary: Class Constructor
     	"""
+		if self.tranus_folder[-13:]=="""\W_TRANUS.CTL""":
+			self.tranus_folder = self.tranus_folder.replace('\W_TRANUS.CTL','')
+		
 		path = "{}/qtranus.db".format(self.tranus_folder)
 		
 		try:
@@ -522,7 +525,6 @@ class DataBaseSqlite():
 				sql= """insert into scenario_route (id_scenario, id_route) values (%s, %s);""" % (value[0], id)
 				cursor.execute(sql)
 				conn.commit()
-			
 			conn.close()
 			return True
 		except:
@@ -924,7 +926,7 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def removeMode(self, key):
+	def removeMode(self, id):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
@@ -1018,8 +1020,8 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def removeCategory(self, key):
-		sql = "delete from category where key = {}".format(key)
+	def removeCategory(self, id):
+		sql = "delete from category where id = {}".format(id)
 
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()

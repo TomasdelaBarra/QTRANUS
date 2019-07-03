@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import *
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_scenario.ui'))
@@ -37,7 +38,15 @@ class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
         self.previous = self.findChild(QtWidgets.QComboBox, 'cb_previous')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
-        
+
+        # Validations
+        self.code.setValidator(validatorExpr('alphaNum',limit=3))
+        self.code.textChanged.connect(self.check_state)
+        self.name.setValidator(validatorExpr('alphaNum'))
+        self.name.textChanged.connect(self.check_state)
+        self.description.setValidator(validatorExpr('alphaNum'))
+        self.description.textChanged.connect(self.check_state)
+
         # Control Actions
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
         
@@ -45,6 +54,20 @@ class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_scenarios_combobox()
         if self.codeScenario:
             self.__load_default_data()
+
+
+    def check_state(self, *args, **kwargs):
+        sender = self.sender()
+        validator = sender.validator()
+        state = validator.validate(sender.text(), 0)[0]
+        if state == QtGui.QValidator.Acceptable:
+            color = '#c4df9b' # green
+        elif state == QtGui.QValidator.Intermediate:
+            color = '#E17E68' # orenge
+        elif state == QtGui.QValidator.Invalid:
+            color = '#f6989d' # red
+        sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
+        
 
     def open_help(self):
         """

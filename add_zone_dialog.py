@@ -14,6 +14,8 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_zone.ui'))
@@ -45,11 +47,34 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         self.external.clicked.connect(self.evaluate_external)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_zone)
 
+
+        # Validations
+        self.id.setValidator(validatorExpr('integer'))
+        self.id.textChanged.connect(self.check_state)
+        self.name.setValidator(validatorExpr('alphaNum'))
+        self.name.textChanged.connect(self.check_state)
+        self.internal_cost_factor.setValidator(validatorExpr('decimal'))
+        self.internal_cost_factor.textChanged.connect(self.check_state)
+
+
         #Loads
         self.__get_scenarios_data()
         self.evaluate_external()
         if self.codeZone is not None:
             self.load_default_data()
+
+
+    def check_state(self, *args, **kwargs):
+        sender = self.sender()
+        validator = sender.validator()
+        state = validator.validate(sender.text(), 0)[0]
+        if state == QtGui.QValidator.Acceptable:
+            color = '#c4df9b' # green
+        elif state == QtGui.QValidator.Intermediate:
+            color = '#E17E68' # orenge
+        elif state == QtGui.QValidator.Invalid:
+            color = '#f6989d' # red
+        sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
 
     def open_help(self):
@@ -75,30 +100,26 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
     def save_new_zone(self):
 
         if self.id is None or self.id.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the sector's id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please write the zone id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's id.")
             return False
 
         if self.name is None or self.name.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the sector's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please write the zone name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's name.")
             return False
 
         external = 1 if self.external.isChecked() else 0
 
-        if self.internal_cost_factor is None and external == 0:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the Internal cost factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+        if self.internal_cost_factor.text().strip() == '' and external == 0:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please write the Internal cost factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's name.")
             return False
-
 
         if self.codeZone is None:
             newZone = self.dataBaseSqlite.addZone(self.id.text(), self.name.text(), external, self.internal_cost_factor.text())
             if not newZone:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("Please select other previous scenario code.")    
                 return False
@@ -109,7 +130,7 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
             self.parent().load_scenarios()
             self.accept()
         else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please Verify information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please Verify information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("Please write the sector's description.")
             return False

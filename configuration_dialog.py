@@ -17,6 +17,7 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .add_scenario_dialog import AddScenarioDialog
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'configuration.ui'))
@@ -34,7 +35,8 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.tranus_folder = tranus_folder
 		self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
 		objValidatorRange = QtGui.QDoubleValidator(self)
-		objValidatorRange.setRange(-10.0, 100.0, 5)
+		objValidatorRange.setRange(0, 1000.0, 2)
+
 		self.projectName = self.findChild(QtWidgets.QLineEdit, 'name')
 		self.projectDescription = self.findChild(QtWidgets.QLineEdit, 'description')
 		self.projectAuthor = self.findChild(QtWidgets.QLineEdit, 'author')
@@ -51,15 +53,45 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
 		self.load_deafult_data()
-	
-		self.projectLandUseIter.setValidator(objValidatorRange)
-		self.projectLandUseConver.setValidator(objValidatorRange)
-		self.projectLandUseSmoothingFact.setValidator(objValidatorRange)
+		
+		#Validations Alpha Numeric
+		self.projectName.setValidator(validatorExpr('alphaNum',limit=3))
+		self.projectName.textChanged.connect(self.check_state)
+		self.projectDescription.setValidator(validatorExpr('alphaNum'))
+		self.projectDescription.textChanged.connect(self.check_state)
+		self.projectAuthor.setValidator(validatorExpr('alphaNum'))
+		self.projectAuthor.textChanged.connect(self.check_state)
 
-		self.projectTransIter.setValidator(objValidatorRange)
-		self.projectTransConver.setValidator(objValidatorRange)
-		self.projectTransSmoothingFact.setValidator(objValidatorRange)
-		self.projectTransRouteSimil.setValidator(objValidatorRange)
+		# Validations Double Fields
+		self.projectTransIter.setValidator(validatorExpr('decimal'))
+		self.projectTransIter.textChanged.connect(self.check_state)
+		self.projectTransConver.setValidator(validatorExpr('decimal'))
+		self.projectTransConver.textChanged.connect(self.check_state)
+		self.projectTransSmoothingFact.setValidator(validatorExpr('decimal'))
+		self.projectTransSmoothingFact.textChanged.connect(self.check_state)
+		self.projectTransRouteSimil.setValidator(validatorExpr('decimal'))
+		self.projectTransRouteSimil.textChanged.connect(self.check_state)
+
+		# Validations Double Fields
+		self.projectLandUseIter.setValidator(validatorExpr('decimal'))
+		self.projectLandUseIter.textChanged.connect(self.check_state)
+		self.projectLandUseConver.setValidator(validatorExpr('decimal'))
+		self.projectLandUseConver.textChanged.connect(self.check_state)
+		self.projectLandUseSmoothingFact.setValidator(validatorExpr('decimal'))
+		self.projectLandUseSmoothingFact.textChanged.connect(self.check_state)
+
+
+	def check_state(self, *args, **kwargs):
+	    sender = self.sender()
+	    validator = sender.validator()
+	    state = validator.validate(sender.text(), 0)[0]
+	    if state == QtGui.QValidator.Acceptable:
+	        color = '#c4df9b' # green
+	    elif state == QtGui.QValidator.Intermediate:
+	        color = '#E17E68' # orenge
+	    elif state == QtGui.QValidator.Invalid:
+	        color = '#f6989d' # red
+	    sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
 
 	def save_new_scenario(self):

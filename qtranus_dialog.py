@@ -358,7 +358,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.project['network_nodes_shape_file_path']:
             self.network_nodes_shape.setText(self.project['network_nodes_shape_file_path'])
 
-        
         if self.project.tranus_project:
             self.tranus_folder.setText(self.project.tranus_project.path)
             

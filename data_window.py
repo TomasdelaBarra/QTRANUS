@@ -607,46 +607,50 @@ class DataWindow(QMainWindow, FORM_CLASS):
         filename = "W_{}{}.L2E".format(header[0][1],codeScenario)
         fh = None
         result = self.dataBaseSqlite.selectAll(" config_model ", " where type = 'transport'")
+
+        #1.1 
         global_increments_head = ["Sector","Production","Demand","MinRest","MaxRest"]
         qry_global_incre = """select 
-                                   id_sector sector, induced_production, 
+                                   id_sector sector, coalesce(induced_production,0) induced_production,
                                    coalesce(exogenous_demand, 0) exogenous_demand, 
                                    coalesce(min_production,0) min_production, 
                                    coalesce(max_production,0) max_production
                                 from 
                                  zonal_data a
-                                where a.id_zone = 0 and id_scenario = {}""".format(id_scenario)
+                                where a.id_zone = 0 and id_scenario = {} order by 1 asc""".format(id_scenario)
         result_global_incre = self.dataBaseSqlite.executeSql(qry_global_incre)
-        global_data =  [[valor[0],valor[1],valor[2],valor[3]] for valor in result_global_incre]
+        global_data =  [[valor[0],valor[1],valor[2],valor[3],valor[4]] for valor in result_global_incre]
 
+        #1.2 
         int_exog_prods_head = ["Sector","Zone","Increment"]
         qry_exog_prod_incre = """select id_sector sector, id_zone zone, 
                             coalesce(exogenous_production,0) exogenous_production
                             from zonal_data a
-                            where a.id_zone != 0 and id_scenario = {}""".format(id_scenario)
+                            where a.id_zone != 0 and id_scenario = {} order by 2,1""".format(id_scenario)
         result_int_exog_prod = self.dataBaseSqlite.executeSql(qry_exog_prod_incre)
         int_exog_prod_data =  [[valor[0],valor[1],valor[2]] for valor in result_int_exog_prod]
 
-
+        #1.3 
         int_exog_demand_head = ["Sector","Zone","Increment"]
         qry_exog_demand_incre = """select id_sector sector, id_zone zone, 
                             coalesce(exogenous_demand,0) exogenous_demand
                             from zonal_data a
-                            where a.id_zone != 0 and id_scenario = {}""".format(id_scenario)
+                            where a.id_zone != 0 and id_scenario = {}  order by 2,1""".format(id_scenario)
         result_int_demand_prod = self.dataBaseSqlite.executeSql(qry_exog_demand_incre)
         int_exog_demand_data =  [[valor[0],valor[1],valor[2]] for valor in result_int_demand_prod]
 
-
+        #2.1
         int_ext_zone_exp_head = ["Sector","Zone","Increment"]
         qry_ext_zone_exp = """select 
                                     id_sector sector, id_zone zone, 
                                     coalesce(exports, 0) exports
                                 from zonal_data a 
                                 join zone b on (a.id_zone = b.id)
-                                where b.external = 1 and id_scenario = {}""".format(id_scenario)
+                                where a.id_zone != 0 and b.external = 1 and id_scenario = {} order by 2,1""".format(id_scenario)
         result_ext_zone_prod = self.dataBaseSqlite.executeSql(qry_ext_zone_exp)
         int_ext_zone_data =  [[valor[0],valor[1],valor[2]] for valor in result_ext_zone_prod]
 
+        #2.2
         int_imp_zone_exp_head = ["Sector","Zone","Min Incr.", "Max Incr.", "Attractor"]
         qry_imp_zone_exp = """select 
                                     id_sector sector, id_zone zone, 
@@ -655,37 +659,40 @@ class DataWindow(QMainWindow, FORM_CLASS):
                                     coalesce(attractor,0) attractor
                                 from zonal_data a 
                                 join zone b on (a.id_zone = b.id)
-                                where b.external = 1 and id_scenario = {}""".format(id_scenario)
+                                where b.external = 1 and id_scenario = {}  order by 2,1 """.format(id_scenario)
         result_imp_zone_prod = self.dataBaseSqlite.executeSql(qry_imp_zone_exp)
         int_imp_zone_data =  [[valor[0],valor[1],valor[2],valor[3],valor[4]] for valor in result_imp_zone_prod]
 
+        #3.1
         int_endvar_head = ["Sector","Zone","Attractor"]
         qry_endvar = """select 
                                     id_sector sector, id_zone zone, 
                                     coalesce(attractor, 0) attractor
                                 from zonal_data a 
-                                join zone b on (a.id_zone = b.id) and a.id_scenario = {}""".format(id_scenario)
+                                join zone b on (a.id_zone = b.id) 
+                                where a.id_zone != 0 and a.id_scenario = {} order by 2,1""".format(id_scenario)
         result_endvar = self.dataBaseSqlite.executeSql(qry_endvar)
         int_endvar_data =  [[valor[0],valor[1],valor[2]] for valor in result_endvar]
 
-
+        #3.2
         int_prod_head = ["Sector","Zone","MinRest", "MaxRest"]
         qry_prod = """select 
                         id_sector sector, id_zone zone, 
                         coalesce(min_production,0) min_production, 
                         coalesce(max_production,0) max_production
                     from zonal_data 
-                    where id_scenario = {}""".format(id_scenario)
+                    where id_zone != 0 and id_scenario = {}  order by 2,1""".format(id_scenario)
         result_prod = self.dataBaseSqlite.executeSql(qry_prod)
         int_prod_data =  [[valor[0],valor[1],valor[2],valor[3]] for valor in result_prod]
 
+        #3.3
         int_value_add_head = ["Sector","Zone","ValueAdded"]
         qry_value_add = """select 
                         id_sector sector, id_zone zone, 
                         coalesce(min_production,0) min_production, 
                         coalesce(max_production,0) max_production
                     from zonal_data
-                    where id_scenario = {}""".format(id_scenario)
+                    where id_zone != 0 and id_scenario = {}  order by 2,1""".format(id_scenario)
         result_value_add = self.dataBaseSqlite.executeSql(qry_value_add)
         int_value_add_data =  [[valor[0],valor[1],valor[2]] for valor in result_value_add]
 
@@ -718,7 +725,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
             fh.write(tabulate(int_endvar_data, tablefmt='plain', headers=int_endvar_head)+"\n")
             fh.write("*------------------------------------------------------------------------- /\n")
             fh.write("    3.2 Increments in Production Restriction per Sector-Zone\n")
-            fh.write(tabulate(int_prod_data, tablefmt='plain', headers=int_endvar_head)+"\n")
+            fh.write(tabulate(int_prod_data, tablefmt='plain', headers=int_prod_head)+"\n")
             fh.write("*------------------------------------------------------------------------- /\n")
             fh.write("    3.3 Increments in Value Added by Sector-Zone (Zone=0 means All Zones)  \n")
             fh.write(tabulate(int_value_add_data, tablefmt='plain', headers=int_value_add_head)+"\n")
@@ -1117,10 +1124,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
         @summary: Opens data window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = ExogeousTripsDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
@@ -1139,10 +1142,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = SectorsDialog(self.tranus_folder, self.scenarioSelectedIndex, parent = self)
         dialog.show()
         result = dialog.exec_()
@@ -1152,10 +1151,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens intersectors window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = IntersectorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
@@ -1165,10 +1160,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens intersectors window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = ZonalDataDialog(self.tranus_folder,  self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
@@ -1214,10 +1205,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens modes window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = RoutesDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
@@ -1227,10 +1214,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens administrators window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = AdministratorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
@@ -1240,10 +1223,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens administrators window
         """
-        """if self.scenarioSelectedIndex is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:"""
         dialog = LinkTypeDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()

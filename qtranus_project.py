@@ -181,7 +181,6 @@ class QTranusProject(object):
             @type sectorsExpression: String
             @return: Boolean result of layer addition
         """
-        
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()

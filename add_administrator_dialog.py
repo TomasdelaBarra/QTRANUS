@@ -15,6 +15,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_administrator.ui'))
@@ -46,10 +47,31 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         # Control Actions
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_administrator)
 
+        # Validations
+        self.id.setValidator(validatorExpr('integer'))
+        self.id.textChanged.connect(self.check_state)
+        self.name.setValidator(validatorExpr('alphaNum'))
+        self.name.textChanged.connect(self.check_state)
+        self.description.setValidator(validatorExpr('alphaNum'))
+        self.description.textChanged.connect(self.check_state)
+
         #Loads
         self.__get_scenarios_data()
         if self.codeAdministrator is not None:
             self.load_default_data()
+
+
+    def check_state(self, *args, **kwargs):
+        sender = self.sender()
+        validator = sender.validator()
+        state = validator.validate(sender.text(), 0)[0]
+        if state == QtGui.QValidator.Acceptable:
+            color = '#c4df9b' # green
+        elif state == QtGui.QValidator.Intermediate:
+            color = '#E17E68' # orenge
+        elif state == QtGui.QValidator.Invalid:
+            color = '#f6989d' # red
+        sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
 
     def open_help(self):
@@ -69,9 +91,8 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         if self.id is None or self.id.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write the sector's id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's name.")
             return False
 
         if self.dataBaseSqlite.validateId('administrator', self.id.text()) is False and self.codeAdministrator is None:
@@ -80,15 +101,13 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         if self.name is None or self.name.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write the sector's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write the name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's name.")
             return False
             
         if self.description is None or self.description.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write the sector's description.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please write the description.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the administrator's description.")
             return False
 
         if self.codeAdministrator is None:
@@ -96,8 +115,7 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
             newAdministrator = self.dataBaseSqlite.addAdministrator(scenarios, self.id.text(), self.name.text(), self.description.text())
             if not newAdministrator:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-                print("Please select other previous scenario code.")    
+                messagebox.exec_() 
                 return False
         else:
             newAdministrator = self.dataBaseSqlite.updateAdministrator(self.id.text(), self.name.text(), self.description.text(), self.codeAdministrator)
@@ -108,7 +126,6 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Administrator", "Please Verify information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print("Please write the sector's description.")
             return False
         return True
 

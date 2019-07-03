@@ -15,6 +15,8 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .add_scenario_dialog import AddScenarioDialog
+from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_linktype.ui'))
@@ -55,7 +57,26 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		# Operator Data Section
 		self.operator_table = self.findChild(QtWidgets.QTableWidget, 'operator_table')
-		
+
+		# Validations 
+		self.id.setValidator(validatorExpr('integer'))
+		self.id.textChanged.connect(self.check_state)
+		self.name.setValidator(validatorExpr('alphaNum'))
+		self.name.textChanged.connect(self.check_state)
+		self.description.setValidator(validatorExpr('alphaNum'))
+		self.description.textChanged.connect(self.check_state)
+
+		self.capacity_factor.setValidator(validatorExpr('decimal'))
+		self.capacity_factor.textChanged.connect(self.check_state)
+		self.min_maintenance_cost.setValidator(validatorExpr('decimal'))
+		self.min_maintenance_cost.textChanged.connect(self.check_state)
+		self.porc_speed_reduction.setValidator(validatorExpr('decimal'))
+		self.porc_speed_reduction.textChanged.connect(self.check_state)
+		self.porc_max_speed_reduction.setValidator(validatorExpr('decimal'))
+		self.porc_max_speed_reduction.textChanged.connect(self.check_state)
+		self.vc_max_reduction.setValidator(validatorExpr('decimal'))
+		self.vc_max_reduction.textChanged.connect(self.check_state)
+
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 		self.operator_table.itemChanged.connect(self.__update_operator_linktype)
 		
@@ -67,58 +88,71 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.load_default_data()
 
 
+	def check_state(self, *args, **kwargs):
+		sender = self.sender()
+		validator = sender.validator()
+		state = validator.validate(sender.text(), 0)[0]
+		if state == QtGui.QValidator.Acceptable:
+			color = '#c4df9b' # green
+		elif state == QtGui.QValidator.Intermediate:
+			color = '#E17E68' # orenge
+		elif state == QtGui.QValidator.Invalid:
+			color = '#f6989d' # red
+		sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
+
+
 	def save_new_linktype(self):
 		id_scenario = self.idScenario
 		scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
 		scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 		if self.id is None or self.id.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 			
 		if self.linkTypeSelected is None:
 			if self.dataBaseSqlite.validateId('link_type', self.id.text()) is False:
-				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write an id valid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write an id valid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 				messagebox.exec_()
 				return False
 
 		if self.name is None or self.name.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write a name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 		    
 		if self.description is None or self.description.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's description.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write a description.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.id_administrator is None or self.id_administrator.currentText().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Author.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write the operator's Author.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.capacity_factor is None or self.capacity_factor.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Transport Convergence.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Capacity factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 		    
 		if self.min_maintenance_cost is None or self.min_maintenance_cost.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Transport Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Min. maintenance cost.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.porc_speed_reduction is None or self.porc_speed_reduction.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Transport Route similarity.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Speed reduction.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.porc_max_speed_reduction is None or self.porc_max_speed_reduction.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Iterations.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Max. Speed reduction.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
 		if self.vc_max_reduction is None or self.vc_max_reduction.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write the operator's Land use Convergence.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write VC max. reduction.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 

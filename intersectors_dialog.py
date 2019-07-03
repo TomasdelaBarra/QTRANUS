@@ -146,8 +146,8 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
     def sector_changed(self):
         sector = self.cb_sector.currentText()
         results = self.dataBaseSqlite.selectAll('sector', " where name = '{}'".format(sector))
-        self.sustitute.setText(str(results[0][9]))
-        #self.__load_intersector_data()
+        self.sustitute.setText(str(results[0][7]))
+        self.__load_intersector_data()
 
 
     def open_help(self):
@@ -181,21 +181,22 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
     def __load_sector_cb_data(self):
         sectors = self.dataBaseSqlite.selectAll('sector')
         for value in sectors:
-            self.cb_sector.addItem(value[2], value[0])
+            self.cb_sector.addItem(value[1], value[0])
 
     def __load_intersector_data(self):
         sectorId = self.cb_sector.itemData(self.cb_sector.currentIndex())
         
+        print("sectorId", sectorId)
         results = self.dataBaseSqlite.selectAll(' sector ', " where id = %s" % sectorId)
         self.sustitute.setText(str(results[0][7]))
-        print(self.idScenario)
+        
         if self.idScenario:
             # Default data of the table
             sql = """select a.id||" "||a.name sector, b.min_demand, max_demand, elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector) where id_scenario = %s """ % self.idScenario
+                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector) where id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
 
             sqlB = """select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) where id_scenario = %s """ % self.idScenario
+                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) where id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
 
             resultA = self.dataBaseSqlite.executeSql(sql)
             resultB = self.dataBaseSqlite.executeSql(sqlB)
