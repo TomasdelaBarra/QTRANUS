@@ -21,7 +21,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent = None):
+    def __init__(self, tranus_folder, scenarioSelectedIndex, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -30,10 +30,12 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         super(SectorsDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
-        self.copyScenarioSelected = None
+        self.scenarioSelectedIndex = scenarioSelectedIndex
+        self.idScenario = None
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
+
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -46,13 +48,11 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
-        self.add_sector_btn.clicked.connect(self.open_add_scenario_window)
-        self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.scenario_tree.customContextMenuRequested.connect(self.open_menu)
+        self.add_sector_btn.clicked.connect(self.open_add_sector_window)
         self.sectors_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.sectors_tree.customContextMenuRequested.connect(self.open_menu_sectors)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
-        
+
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
@@ -74,30 +74,6 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         webbrowser.open_new_tab(filename)
 
 
-    def open_menu(self, position):
-        menu = QMenu()
-
-        indexes = self.scenario_tree.selectedIndexes()
-        codeScenarioSelected = indexes[0].model().itemFromIndex(indexes[0]).text().split(" - ")[0]
-
-        copy = menu.addAction(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"),'Copy Scenario Changes')
-        paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Scenario Changes')
-        if self.copyScenarioSelected:
-            paste.setEnabled(True)
-        else:
-            paste.setEnabled(False)
-
-        opt = menu.exec_(self.scenario_tree.viewport().mapToGlobal(position))
-
-        if opt == copy:
-            paste.setEnabled(True)
-            self.copy_scenario(codeScenario=codeScenarioSelected)
-        if opt == paste:
-            paste.setEnabled(True)
-            self.paste_scenario(codeScenario=codeScenarioSelected)
-            self.__get_scenarios_data()
-
-
     def open_menu_sectors(self, position):
         menu = QMenu()
 
@@ -105,23 +81,19 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         sectorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Sector')
-        copy = menu.addAction(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"),'Copy Sector')
-        paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Sector')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Sector')
-        if self.copyScenarioSelected:
-            paste.setEnabled(True)
-        else:
-            paste.setEnabled(False)
+        """copy = menu.addAction(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"),'Copy Sector')
+        paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Sector')"""
 
         opt = menu.exec_(self.sectors_tree.viewport().mapToGlobal(position))
 
-        if opt == copy:
+        """if opt == copy:
             paste.setEnabled(True)
             self.copy_scenario(codeScenario=codeScenarioSelected)
         if opt == paste:
             paste.setEnabled(True)
             self.paste_scenario(codeScenario=codeScenarioSelected)
-            self.__get_scenarios_data()
+            self.__get_scenarios_data()"""
         if opt == edit:
             dialog = AddSectorDialog(self.tranus_folder, parent = self, codeSector=sectorSelected)
             dialog.show()
@@ -132,7 +104,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             
 
 
-    def open_add_scenario_window(self):
+    def open_add_sector_window(self):
         """
             @summary: Opens add scenario window
         """
@@ -154,15 +126,6 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_()
                 return False
     
-    def copy_scenario(self, codeScenario=None):
-        self.copyScenarioSelected = codeScenario
-
-    def paste_scenario(self, codeScenario=None):
-        self.copyScenarioSelected
-        data = self.dataBaseSqlite.selectAll('scenario', "where code = '{}'".format(self.copyScenarioSelected))        
-        #result = DataBaseSqlite().addScenario(data[0][1], data[0][2], data[0][3], codeScenario)
-        #if result:
-        return True
     
     def __load_scenarios_from_db_file(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
@@ -188,13 +151,14 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_sectors_data(self):
-        result = self.dataBaseSqlite.selectAll('sector')
+        result = self.dataBaseSqlite.selectAll('sector', columns=' id, name, description ', orderby='order by 1 asc')
+        
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['','Id','Name', 'Description'])
+        model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
         for x in range(0, len(result)):
             model.insertRow(x)
             z=0
-            for y in range(0,4):
+            for y in range(0,3):
                 model.setData(model.index(x, y), result[x][z])
                 z+=1
         self.sectors_tree.setModel(model)
@@ -213,7 +177,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 for item in np.nditer(previousScenariosMatrix):
                     self.previousScenarios.addItem(item.item(0)[0])
         
-            
+
     def ok_button(self):
         self.parent().load_scenarios()
         self.accept()

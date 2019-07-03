@@ -2,6 +2,8 @@
 import os, re, webbrowser, numpy as np
 from string import *
 
+from PyQt5 import QtGui
+from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
@@ -31,6 +33,8 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.dataProject = None
 		self.tranus_folder = tranus_folder
 		self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
+		objValidatorRange = QtGui.QDoubleValidator(self)
+		objValidatorRange.setRange(-10.0, 100.0, 5)
 		self.projectName = self.findChild(QtWidgets.QLineEdit, 'name')
 		self.projectDescription = self.findChild(QtWidgets.QLineEdit, 'description')
 		self.projectAuthor = self.findChild(QtWidgets.QLineEdit, 'author')
@@ -46,12 +50,27 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
-
 		self.load_deafult_data()
+	
+		self.projectLandUseIter.setValidator(objValidatorRange)
+		self.projectLandUseConver.setValidator(objValidatorRange)
+		self.projectLandUseSmoothingFact.setValidator(objValidatorRange)
+
+		self.projectTransIter.setValidator(objValidatorRange)
+		self.projectTransConver.setValidator(objValidatorRange)
+		self.projectTransSmoothingFact.setValidator(objValidatorRange)
+		self.projectTransRouteSimil.setValidator(objValidatorRange)
+
 
 	def save_new_scenario(self):
 
-		if self.projectName is None or self.projectName.text().strip() == '':
+		if len(self.projectName.text())>3:
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Project Configuration", "Please write the project's name with max three characters.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			print("Please write the project's code.")
+			return False
+
+		if self.projectName is None or self.projectName.text().strip() == '' or (len(self.projectName.text())>3):
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Project Configuration", "Please write the project's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			print("Please write the project's code.")

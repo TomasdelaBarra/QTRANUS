@@ -1,277 +1,300 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>817</width>
-    <height>388</height>
+    <width>728</width>
+    <height>355</height>
    </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>0</width>
-    <height>0</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>16777215</width>
-    <height>16777215</height>
-   </size>
   </property>
   <property name="windowTitle">
    <string>Data</string>
   </property>
-  <property name="sizeGripEnabled">
-   <bool>false</bool>
-  </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0">
-   <item row="2" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QTreeView" name="scenarios_tree"/>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QGroupBox" name="landUse">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Land Use</string>
+            </property>
+            <layout class="QFormLayout" name="formLayout">
+             <item row="0" column="0" colspan="2">
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="QPushButton" name="btn_sectors">
+                 <property name="text">
+                  <string>Sectors</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_intersectors">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>Intersectors</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_zonal_data">
+                 <property name="text">
+                  <string>Zonal data</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="transport">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Transport</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <item>
+              <widget class="QPushButton" name="btn_categories">
+               <property name="text">
+                <string>Categories</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_administrators">
+               <property name="text">
+                <string>Administrators</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_modes">
+               <property name="text">
+                <string>Modes</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_operators">
+               <property name="text">
+                <string>Operators</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_transfers">
+               <property name="text">
+                <string>Transfers</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_routes">
+               <property name="text">
+                <string>Routes</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_link_types">
+               <property name="text">
+                <string>Link types</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_exogenous_trips">
+               <property name="text">
+                <string>Exogenous trips</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QDialogButtonBox" name="buttonBox">
+          <property name="standardButtons">
+           <set>QDialogButtonBox::Close</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menu_bar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>728</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFiles">
+    <property name="title">
+     <string>Input Files</string>
+    </property>
+    <widget class="QMenu" name="menuGenerate_Single_File">
+     <property name="title">
+      <string>Generate Single File</string>
      </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save|QDialogButtonBox::SaveAll</set>
-     </property>
+     <addaction name="actionCTL_Scenario_Definitions"/>
+     <addaction name="actionZ1E_Zone_Definitions"/>
+     <addaction name="actionP0E_Transport_Parameters"/>
+     <addaction name="actionP1E_Network"/>
+     <addaction name="actionT1E_Assignment_Parameters"/>
+     <addaction name="actionF1E_Flow_Defenitions"/>
+     <addaction name="actionL1E_Economic_Sector_Definitions"/>
+     <addaction name="actionL0E_Base_Year_Activity"/>
+     <addaction name="actionL2E_Activity_Increments"/>
+     <addaction name="actionL3E_Activity_Increments_and_Decrements"/>
     </widget>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QTreeView" name="scenarios_tree"/>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <widget class="QGroupBox" name="project">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Project</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_2">
-          <item row="0" column="0" colspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <widget class="QPushButton" name="btn_scenarios">
-              <property name="text">
-               <string>Scenarios</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_options">
-              <property name="text">
-               <string>Options</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="landUse">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Land Use</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout">
-          <item row="0" column="0" colspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <widget class="QPushButton" name="btn_sectors">
-              <property name="text">
-               <string>Sectors</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_intersectors">
-              <property name="text">
-               <string>Intersectors</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_zonal_data">
-              <property name="text">
-               <string>Zonal data</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="transport">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Transport</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_3">
-          <item row="0" column="0" colspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <widget class="QPushButton" name="btn_categories">
-              <property name="text">
-               <string>Categories</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_administrators">
-              <property name="text">
-               <string>Administrators</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_modes">
-              <property name="text">
-               <string>Modes</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_operators">
-              <property name="text">
-               <string>Operators</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_transfers">
-              <property name="text">
-               <string>Transfers</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_routes">
-              <property name="text">
-               <string>Routes</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_link_types">
-              <property name="text">
-               <string>Link types</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_exogenous_trips">
-              <property name="text">
-               <string>Exogenous trips</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLabel" name="label_title">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Project Configuration: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;QTRANUS&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Data&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btn_help">
-       <property name="text">
-        <string notr="true">Help</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-  </layout>
+    <addaction name="actionGenerate_Input_Files"/>
+    <addaction name="actionGenerate_Single_Scenario"/>
+    <addaction name="menuGenerate_Single_File"/>
+   </widget>
+   <widget class="QMenu" name="menuProject">
+    <property name="title">
+     <string>Project</string>
+    </property>
+    <addaction name="actionOptions"/>
+    <addaction name="actionScenarios"/>
+    <addaction name="actionZones"/>
+   </widget>
+   <addaction name="menuProject"/>
+   <addaction name="menuFiles"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionasdasd">
+   <property name="text">
+    <string/>
+   </property>
+  </action>
+  <action name="actionGenerate_Input_Files">
+   <property name="text">
+    <string>Generate Input Files</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Single_Scenario">
+   <property name="text">
+    <string>Generate Single Scenario</string>
+   </property>
+  </action>
+  <action name="actionCTL_Scenario_Definitions">
+   <property name="text">
+    <string>CTL Scenario Definitions</string>
+   </property>
+  </action>
+  <action name="actionP0E_Transport_Parameters">
+   <property name="text">
+    <string>P0E Transport Parameters...</string>
+   </property>
+  </action>
+  <action name="actionP1E_Network">
+   <property name="text">
+    <string>P1E Network...</string>
+   </property>
+  </action>
+  <action name="actionT1E_Assignment_Parameters">
+   <property name="text">
+    <string>T1E Assignment Parameters...</string>
+   </property>
+  </action>
+  <action name="actionF1E_Flow_Defenitions">
+   <property name="text">
+    <string>F1E Flow Defenitions...</string>
+   </property>
+  </action>
+  <action name="actionL1E_Economic_Sector_Definitions">
+   <property name="text">
+    <string>L1E Economic Sector Definitions</string>
+   </property>
+  </action>
+  <action name="actionL0E_Base_Year_Activity">
+   <property name="text">
+    <string>L0E Base Year Activity</string>
+   </property>
+  </action>
+  <action name="actionL2E_Activity_Increments">
+   <property name="text">
+    <string>L2E Activity Increments...</string>
+   </property>
+  </action>
+  <action name="actionL3E_Activity_Increments_and_Decrements">
+   <property name="text">
+    <string>L3E Activity Increments and Decrements...</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>Options...</string>
+   </property>
+  </action>
+  <action name="actionScenarios">
+   <property name="text">
+    <string>Scenarios...</string>
+   </property>
+  </action>
+  <action name="actionZones">
+   <property name="text">
+    <string>Zones...</string>
+   </property>
+  </action>
+  <action name="actionZ1E_Zone_Definitions">
+   <property name="text">
+    <string>Z1E Zone Definitions</string>
+   </property>
+  </action>
  </widget>
- <tabstops>
-  <tabstop>btn_help</tabstop>
-  <tabstop>scenarios_tree</tabstop>
-  <tabstop>btn_scenarios</tabstop>
-  <tabstop>btn_options</tabstop>
-  <tabstop>btn_sectors</tabstop>
-  <tabstop>btn_intersectors</tabstop>
-  <tabstop>btn_zonal_data</tabstop>
-  <tabstop>btn_categories</tabstop>
-  <tabstop>btn_administrators</tabstop>
-  <tabstop>btn_modes</tabstop>
-  <tabstop>btn_operators</tabstop>
-  <tabstop>btn_transfers</tabstop>
-  <tabstop>btn_routes</tabstop>
-  <tabstop>btn_link_types</tabstop>
-  <tabstop>btn_exogenous_trips</tabstop>
-  <tabstop>buttonBox</tabstop>
- </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>317</x>
-     <y>496</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

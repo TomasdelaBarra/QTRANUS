@@ -59,7 +59,12 @@ class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             print("Please write the scenario's code.")
             return False
-        
+
+        if not self.__validate_scenario_code(self.code): 
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please write other the scenario's code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
         if self.name is None or self.name.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new scenario", "Please write the scenario's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -130,3 +135,11 @@ class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
         self.description.setText(data[0][3])
         indexPrevious = self.previous.findText(data[0][4], Qt.MatchFixedString)
         self.previous.setCurrentIndex(indexPrevious)
+
+
+    def __validate_scenario_code(self, code):
+        result = self.dataBaseSqlite.selectAll('scenario', " where code = '{}' ".format(code))
+        if len(result)==0:
+            return True
+        else:
+            return False

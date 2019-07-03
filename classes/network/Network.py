@@ -187,6 +187,23 @@ class Network(object):
 
                 it = memoryLayer.getFeatures( "LINKID  = '{0}'".format(str(rowItem['Id']).replace("b","").replace("'","")))
                 for id_feature in it:
+                    if rowItem['Result']=='Level A':
+                        rowItem['Result'] = 1
+                    elif rowItem['Result']=='Level B':
+                        rowItem['Result'] = 2
+                    elif rowItem['Result']=='Level C':
+                        rowItem['Result'] = 3
+                    elif rowItem['Result']=='Level D':
+                        rowItem['Result'] = 4
+                    elif rowItem['Result']=='Level E':
+                        rowItem['Result'] = 5
+                    elif rowItem['Result']=='Level F':
+                        rowItem['Result'] = 6
+                    elif rowItem['Result']=='Level G':
+                        rowItem['Result'] = 7
+                    elif rowItem['Result']=='Level H':
+                        rowItem['Result'] = 8
+
                     memoryLayer.changeAttributeValue(id_feature.id(), memory_data.fieldNameIndex(joinedFieldName), QVariant(round(float(rowItem['Result']),2)))
 
             memoryLayer.commitChanges()

@@ -20,7 +20,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent = None, codeSector=None):
+    def __init__(self, tranus_folder, parent=None, codeSector=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -31,7 +31,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.project = parent.project
         self.codeSector = codeSector
         self.tranus_folder = tranus_folder
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
+        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
@@ -42,6 +42,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.attractor_factor = self.findChild(QtWidgets.QLineEdit, 'attractor_factor')
         self.location_choice_elasticity = self.findChild(QtWidgets.QLineEdit, 'location_choice_elasticity')
         self.sustitute = self.findChild(QtWidgets.QLineEdit, 'sustitute')
+        self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
 
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
@@ -69,12 +70,14 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             if not self.codeSector:
                 self.location_choice_elasticity.setText('')
 
+
     def open_help(self):
         """
             @summary: Opens QTranus users help
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
+
 
     def save_new_sector(self):
 
@@ -83,6 +86,13 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             print("Please write the sector's name.")
             return False
+
+        if self.codeSector is None:
+            if not self.dataBaseSqlite.validateId(' sector ', self.id.text()):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write other sector id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                print("Please write the sector's name.")
+                return False
 
         if self.name is None or self.name.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the sector's name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -108,6 +118,12 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             print("Please write the sector's name.")
             return False
 
+        if self.sustitute is None or self.sustitute.text().strip() == '':
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the sector's price factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            print("Please write the sustite name.")
+            return False
+
         if  self.transportable.isChecked() and self.location_choice_elasticity=='':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write the sector's a choice elasticity.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -124,7 +140,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 print("Please select other previous scenario code.")    
                 return False
         else:
-            newSector = self.dataBaseSqlite.updateSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text(), self.sustitute.text(), self.codeSector)
+            newSector = self.dataBaseSqlite.updateSector(self.id.text(), self.name.text(), self.description.text(), transportable, self.location_choice_elasticity.text(), self.attractor_factor.text(), self.price_factor.text(), self.sustitute.text())
 
         if newSector is not None:
             self.parent().load_scenarios()
@@ -142,16 +158,16 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        data = self.dataBaseSqlite.selectAll('sector', ' where key = {}'.format(self.codeSector))
-        self.id.setText(str(data[0][1]))
-        self.name.setText(str(data[0][2]))
-        self.description.setText(str(data[0][3]))
-        transporableValue = True if data[0][4]==1 else False 
+        data = self.dataBaseSqlite.selectAll('sector', ' where id = {}'.format(self.codeSector))
+        self.id.setText(str(data[0][0]))
+        self.name.setText(str(data[0][1]))
+        self.description.setText(str(data[0][2]))
+        transporableValue = True if data[0][3]==1 else False 
         self.transportable.setChecked(transporableValue)
-        self.location_choice_elasticity.setText(str('' if data[0][5] is None else data[0][5]))
-        self.attractor_factor.setText(str(data[0][6]))
-        self.price_factor.setText(str(data[0][7]))
-        self.sustitute.setText(str(data[0][8]))
+        self.location_choice_elasticity.setText(str('' if data[0][4] is None else data[0][4]))
+        self.attractor_factor.setText(str(data[0][5]))
+        self.price_factor.setText(str(data[0][6]))
+        self.sustitute.setText(str(data[0][7]))
         self.evaluate_transportable()
 
 

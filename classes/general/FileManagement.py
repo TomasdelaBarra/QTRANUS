@@ -52,7 +52,7 @@ class FileManagement(object):
                 matrix_result.Id = scenario
                 matrix_result.Name = scenario
                 matrix_result.data_matrix = npMatrix
-
+        #print("matrix_result {}".format(matrix_result))
         return matrix_result
         
     @staticmethod

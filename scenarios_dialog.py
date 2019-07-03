@@ -34,7 +34,6 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBase = DataBase()
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
-
         
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -51,7 +50,7 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.scenario_tree.customContextMenuRequested.connect(self.open_menu)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
-        
+
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()

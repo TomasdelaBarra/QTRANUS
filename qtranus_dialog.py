@@ -36,7 +36,7 @@ from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 from .networklayer_dialog import NetworkLayerDialog
 from .results_dialog import ResultsDialog
-from .data_dialog import DataDialog
+from .data_window import DataWindow
 from .classes.general.FileManagement import FileManagement
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
@@ -296,9 +296,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens data window
         """
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
-            dialog = DataDialog(self.layers_group_name, self.tranus_folder.text(), parent = self)
-            dialog.show()
-            result = dialog.exec_()
+            window = DataWindow(self.layers_group_name, self.tranus_folder.text(), parent = self)
+            window.show()
+            #result = dialog.exec_()
         else:
             if(self.layers_group_name.text().strip() == ''):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)

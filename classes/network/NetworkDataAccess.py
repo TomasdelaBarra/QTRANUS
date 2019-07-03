@@ -254,7 +254,7 @@ class NetworkDataAccess(object):
                  
                 if variable == 'ServLev':
                     result = rowsData['ServLev'][0]
-                    resultType = rowsData[0]['ServLev'].dtype
+                    resultType =  rowsData[0]['ServLev'].dtype
                      
                 if variable == 'Dem/Cap':
                     sumDeman = rowsData['Demand'].sum(axis=0)
@@ -592,7 +592,7 @@ class NetworkDataAccess(object):
                     operand2 = self.__get_processed_network_rows(link['Orig'], link['Dest'], networkMatrixScenario2)
                     
                     rowData = self.__execute_network_expression(operand1, operand2, operator, variable, networkMatrixScenario1.dtype)
-                    
+
                     if rowData is not None:
                         if matrixData is None:
                             matrixData = rowData
@@ -680,7 +680,7 @@ class NetworkDataAccess(object):
 
         except Exception as inst:
             matrixData = None
-            print(inst)
+
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         except:
@@ -720,13 +720,30 @@ class NetworkDataAccess(object):
         if networkMatrixResult is None:
             messagebox = QMessageBox.warning(None, "Network matrix data", "There is not data to evaluate.")
             #messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", "", self, buttons = QtWidgets.QMessageBox.Ok)
-            #messagebox.exec_()
+            messagebox.exec_()
             print ("There is not data to evaluate.")
             return False, None, minValue, maxValue
         
         for value in networkMatrixResult:
-            maxValue = max(maxValue, value[1])
-            minValue = min(minValue, value[1])
+            if value[1]=='Level A':
+                value[1] = 1
+            elif value[1]=='Level B':
+                value[1] = 2
+            elif value[1]=='Level C':
+                value[1] = 3
+            elif value[1]=='Level D':
+                value[1] = 4
+            elif value[1]=='Level E':
+                value[1] = 5
+            elif value[1]=='Level F':
+                value[1] = 6
+            elif value[1]=='Level G':
+                value[1] = 7
+            elif value[1]=='Level H':
+                value[1] = 8
+    
+            maxValue = max(maxValue, float(value[1]))
+            minValue = min(minValue, float(value[1]))
 
         return True, networkMatrixResult, minValue, maxValue
 

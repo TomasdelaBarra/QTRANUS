@@ -14,7 +14,7 @@ class Sector(GeneralObject):
         """
             @summary: Destroys the object
         """
-        print (self.__class__.__name__, "destroyed")
+        #print (self.__class__.__name__, "destroyed")
  
     def add_zone(self, newZone):
         """
