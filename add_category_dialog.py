@@ -184,10 +184,13 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def load_default_data(self):
         #data = self.dataBaseSqlite.selectAll('category', ' where key = {}'.format(self.codeCategory))
+        id_category = self.codeCategory
+
         sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
                 a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
                 from category a
-                join mode b on (a.id_mode = b.id)"""
+                join mode b on (a.id_mode = b.id)
+                where a.id = {}""".format(id_category)
 
         data = self.dataBaseSqlite.executeSql(sql)
 
