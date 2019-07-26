@@ -88,13 +88,6 @@ class DataBaseSqlite():
 			);
 			""",
 			"""
-			CREATE TABLE IF NOT EXISTS scenario_mode (
-				id	        INTEGER PRIMARY KEY,
-				id_scenario INTEGER,
-				id_mode     INTEGER
-			);
-			""",
-			"""
 			CREATE TABLE IF NOT EXISTS administrator (
 				id           			   INTEGER PRIMARY KEY,
 				name         			   TEXT NOT NULL,
@@ -193,7 +186,6 @@ class DataBaseSqlite():
 				id_mode    			       INTEGER NOT NULL,
 				type        			   INTEGER NOT NULL,
 				basics_modal_constant       REAL NOT NULL,
-				basics_path_asc    			REAL NOT NULL,
 				basics_occupency    		REAL NOT NULL,
 				basics_time_factor    		REAL NOT NULL,
 				basics_fixed_wating_factor  REAL NOT NULL,
@@ -273,7 +265,7 @@ class DataBaseSqlite():
 			"""
 			CREATE TABLE IF NOT EXISTS link_type_operator (
 				id	              INTEGER PRIMARY KEY AUTOINCREMENT,
-				id_linktype       TEXT NOT NULL,
+				id_linktype       INTEGER NOT NULL,
 				id_operator       INTEGER,
 				speed   		  REAL,
 				charges 		  REAL,
@@ -292,8 +284,9 @@ class DataBaseSqlite():
 			);
 			""",
 			"""
-			CREATE TABLE IF NOT EXISTS network (
-				id	              INTEGER PRIMARY KEY AUTOINCREMENT,
+			CREATE TABLE IF NOT EXISTS link (
+				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
+				id_scenario     INTEGER,
 				linkid          TEXT NOT NULL, 
 				id_linktype     INTEGER,
 				node_from       INTEGER,
@@ -304,15 +297,14 @@ class DataBaseSqlite():
 			);
 			""",
 			"""
-			CREATE TABLE IF NOT EXISTS nodes (
+			CREATE TABLE IF NOT EXISTS node (
 				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
-				linkid          TEXT NOT NULL, 
-				id_linktype     INTEGER,
-				node_from       INTEGER,
-				node_to         INTEGER,
-				distance 		REAL,
-				capacity   	    REAL,
-				delay           REAL
+				id_scenario     INTEGER,
+				id_type         INTEGER, 
+				name            TEXT, 
+				description     TEXT, 
+				x               REAL,
+				y               REAL
 			);
 			""",
 			"""
@@ -573,9 +565,9 @@ class DataBaseSqlite():
 		conn.close()
 		return True	
 
-	def addNetwork(self, linkid, node_from, node_to):
+	def addLink(self, linkid, node_from, node_to):
 
-		sql = "insert into network (linkid, node_from, node_to) values ('{}',{},{});".format(linkid, node_from, node_to)
+		sql = "insert into link (linkid, node_from, node_to) values ('{}',{},{});".format(linkid, node_from, node_to)
 		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
@@ -583,6 +575,51 @@ class DataBaseSqlite():
 		conn.commit()
 		conn.close()
 		return True
+
+
+	def addNode(self, _id, id_type, name, description, x, y):
+		
+		column = 'id'
+		value = "%s " % _id
+		if id_type:
+			column += ", id_type"
+			value += ", %s" % id_type
+		if name:
+			column += ", name"
+			value += ", '%s'" % name
+		if description:
+			column += ", description"
+			value += ", '%s'" % description
+		if x:
+			column += ", x"
+			value += ", %s" % x
+		if y:
+			column += ", y"
+			value += ", %s" % y
+
+		sql = "insert into node ({}) values ({});".format(column, value)
+		
+		#print(sql)
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		cursor.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
+
+
+	def removeNode(self, _id):
+		
+		sql = "delete from node where id={};".format(_id)
+		
+		#print(sql)
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		cursor.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
+
 
 	def updateZone(self, id, name, external, internal_cost_factor):
 		if external==1:
@@ -619,7 +656,6 @@ class DataBaseSqlite():
 		_id_mode = int(data['id_mode'])
 		_type = data['type']
 		basics_modal_constant = float(data['basics_modal_constant'])
-		basics_path_asc = float(data['basics_path_asc'])
 		basics_occupency = float(data['basics_occupency'])
 		basics_time_factor = float(data['basics_time_factor'])
 		basics_fixed_wating_factor = float(data['basics_fixed_wating_factor'])
@@ -637,14 +673,14 @@ class DataBaseSqlite():
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
 
 		sql = "insert into operator (id, name, description, id_mode, type, \
-			   basics_modal_constant, basics_path_asc, basics_time_factor, basics_occupency, \
+			   basics_modal_constant, basics_time_factor, basics_occupency, \
 			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, \
 			   energy_min, energy_max, energy_slope, energy_cost, \
 			   cost_time_operation, cost_porc_paid_by_user,\
 			   stops_min_stop_time, stops_unit_boarding_time, \
 			   stops_unit_alight_time) values ({},'{}','{}',{},'{}',\
-			   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(_id, _name, _description, _id_mode, _type,
-			   basics_modal_constant, basics_path_asc, basics_time_factor, basics_occupency,
+			   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(_id, _name, _description, _id_mode, _type,
+			   basics_modal_constant, basics_time_factor, basics_occupency,
 			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
 			   energy_min, energy_max, energy_slope, energy_cost, 
 			   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
@@ -666,10 +702,9 @@ class DataBaseSqlite():
 		_id = int(data['id'])
 		_name = data['name']
 		_description = data['description']
-		_id_mode = int(data['id_mode'])
+		_id_mode = data['id_mode']
 		_type = data['type']
 		basics_modal_constant = float(data['basics_modal_constant'])
-		basics_path_asc = float(data['basics_path_asc'])
 		basics_occupency = float(data['basics_occupency'])
 		basics_time_factor = float(data['basics_time_factor'])
 		basics_fixed_wating_factor = float(data['basics_fixed_wating_factor'])
@@ -687,18 +722,18 @@ class DataBaseSqlite():
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
 
 		sql = """update operator set name='{}', description='{}', id_mode={}, type='{}', 
-			   basics_modal_constant={}, basics_path_asc={}, basics_time_factor={}, basics_occupency={}, 
+			   basics_modal_constant={}, basics_time_factor={}, basics_occupency={}, 
 			   basics_fixed_wating_factor={}, basics_boarding_tariff={}, basics_distance_tariff={}, basics_time_tariff={}, 
 			   energy_min={}, energy_max={}, energy_slope={}, energy_cost={}, 
 			   cost_time_operation={}, cost_porc_paid_by_user={},
 			   stops_min_stop_time={}, stops_unit_boarding_time={}, 
 			   stops_unit_alight_time={} where id = {};""".format(_name, _description, _id_mode, _type,
-			   basics_modal_constant, basics_path_asc, basics_time_factor, basics_occupency,
+			   basics_modal_constant, basics_time_factor, basics_occupency,
 			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
 			   energy_min, energy_max, energy_slope, energy_cost, 
 			   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
 			   stops_unit_boarding_time, stops_unit_alight_time, _id)
-
+		#print(sql)
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
@@ -743,9 +778,15 @@ class DataBaseSqlite():
 		cursor = conn.cursor()
 		
 		for valor in scenarios:
-			qry = """insert into transfer_operator_cost 
-				(id_scenario, id_operator_from, id_operator_to, cost) 
-				values ({0},{1},{2},{3});""".format(valor[0], id_from, id_to, cost)
+			result = self.selectAll(' transfer_operator_cost ', where=' where id_scenario = %s and id_operator_from = %s and id_operator_to = %s' % (valor[0], id_from, id_to))
+			if len(result) > 0:
+				qry = """update transfer_operator_cost set cost={3}
+					where id_scenario = {0} and id_operator_from = {1} and id_operator_to ={2};""".format(valor[0], id_from, id_to, cost)
+			else:
+				qry = """insert into transfer_operator_cost 
+					(id_scenario, id_operator_from, id_operator_to, cost) 
+					values ({0},{1},{2},{3});""".format(valor[0], id_from, id_to, cost)
+			
 			cursor.execute(qry)
 			conn.commit()	
 		conn.close()
@@ -890,7 +931,7 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def addMode(self, scenarios, id, name, description, path_overlapping_factor, maximum_number_paths):
+	def addMode(self, id, name, description, path_overlapping_factor, maximum_number_paths):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
@@ -902,12 +943,6 @@ class DataBaseSqlite():
 		
 		cursor.execute(sql)
 		conn.commit()
-
-		for value in scenarios:
-			sql= """insert into scenario_mode (id_scenario, id_mode) values (%s, %s);""" % (value[0], id)
-			cursor.execute(sql)
-			conn.commit()
-
 		conn.close()
 		return True
 
@@ -1179,6 +1214,11 @@ class DataBaseSqlite():
 			columns += ', exogenous_demand'
 			values += ', '+str(exogenous_demand)
 			update += ', exogenous_demand = %s' % exogenous_demand 
+
+		if base_price!='':
+			columns += ', base_price'
+			values += ', '+str(base_price)
+			update += ', base_price = %s' % base_price
 
 		if value_added!='':
 			columns += ', value_added'

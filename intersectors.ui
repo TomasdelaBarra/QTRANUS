@@ -93,7 +93,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QTabWidget" name="tabWidget">
+          <widget class="QTabWidget" name="nan">
            <property name="currentIndex">
             <number>0</number>
            </property>
@@ -125,6 +125,13 @@
                <item>
                 <widget class="QTableWidget" name="intersectors_table"/>
                </item>
+               <item>
+                <widget class="QLabel" name="total_items_input">
+                 <property name="text">
+                  <string>TextLabel</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </item>
             </layout>
@@ -135,9 +142,16 @@
             </attribute>
             <layout class="QHBoxLayout" name="horizontalLayout_9">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_8">
+              <layout class="QVBoxLayout" name="verticalLayout_5">
                <item>
                 <widget class="QTableWidget" name="intersectors_table_trans"/>
+               </item>
+               <item>
+                <widget class="QLabel" name="total_items_trans">
+                 <property name="text">
+                  <string>TextLabel</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>

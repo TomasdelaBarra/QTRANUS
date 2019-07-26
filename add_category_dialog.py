@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.Qt import QDialogButtonBox
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
+from PyQt5.QtGui import QIcon
 
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -15,6 +16,7 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+from .add_mode_dialog import AddModeDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_category.ui'))
@@ -33,11 +35,14 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.codeCategory = codeCategory
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
+        self.plugin_dir = os.path.dirname(__file__)
+        self.idScenario = None
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
+        self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
         self.volumen_travel_time = self.findChild(QtWidgets.QLineEdit, 'volumen_travel_time')
         self.value_of_waiting_time = self.findChild(QtWidgets.QLineEdit, 'value_of_waiting_time')
         self.min_trip_gener = self.findChild(QtWidgets.QLineEdit, 'min_trip_gener')
@@ -45,7 +50,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.elasticity_trip_gener = self.findChild(QtWidgets.QLineEdit, 'elasticity_trip_gener')
         self.choice_elasticity = self.findChild(QtWidgets.QLineEdit, 'choice_elasticity')
         self.mode_cb = self.findChild(QtWidgets.QComboBox, 'mode_cb')
-
+        self.add_mode_btn = self.findChild(QtWidgets.QPushButton, 'add_mode')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
         # Control Actions
@@ -54,10 +59,10 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
-        self.name.setValidator(validatorExpr('alphaNum'))
-        self.name.textChanged.connect(self.check_state)
-        self.description.setValidator(validatorExpr('alphaNum'))
-        self.description.textChanged.connect(self.check_state)
+        #self.name.setValidator(validatorExpr('alphaNum'))
+        #self.name.textChanged.connect(self.check_state)
+        #self.description.setValidator(validatorExpr('alphaNum'))
+        #self.description.textChanged.connect(self.check_state)
         self.volumen_travel_time.setValidator(validatorExpr('decimal'))
         self.volumen_travel_time.textChanged.connect(self.check_state)
         self.value_of_waiting_time.setValidator(validatorExpr('decimal'))
@@ -70,12 +75,36 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.elasticity_trip_gener.textChanged.connect(self.check_state)
         self.choice_elasticity.setValidator(validatorExpr('decimal'))
         self.choice_elasticity.textChanged.connect(self.check_state)
+        self.add_mode_btn.clicked.connect(self.open_add_mode)
+
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
 
         #Loads
         self.__get_scenarios_data()
         self.__get_modes_data()
+        self.__validateSave()
         if self.codeCategory is not None:
+            self.setWindowTitle("Edit Category")
             self.load_default_data()
+
+        self.add_mode_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+
+
+    def __validateSave(self):
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
+        if self.dataBaseSqlite.selectAll('mode'):
+            self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
+    
+
+    def open_add_mode(self):
+        
+        dialog = AddModeDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+        if result:
+            self.__get_modes_data()
+            self.__validateSave()
 
 
     def check_state(self, *args, **kwargs):
@@ -194,7 +223,6 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
 
         data = self.dataBaseSqlite.executeSql(sql)
 
-        
         indexMode = self.mode_cb.findText(data[0][9], Qt.MatchFixedString)
         self.mode_cb.setCurrentIndex(indexMode)
 
@@ -218,6 +246,6 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_modes_data(self):
         result = self.dataBaseSqlite.selectAll("mode")
-
+        self.mode_cb.clear()
         for value in result:
             self.mode_cb.addItem(str(value[1]), value[0])

@@ -8,6 +8,7 @@ from PyQt5.Qt import QDialogButtonBox
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -22,7 +23,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, idScenario=None, parent = None, codeMode=None):
+    def __init__(self, tranus_folder, parent = None, codeMode=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -34,7 +35,8 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.codeMode = codeMode
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
-        self.idScenario = idScenario
+        resolution_dict = Helpers.screenResolution(40)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
@@ -51,19 +53,24 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
         #Loads
         self.__get_scenarios_data()
         if self.codeMode is not None:
+            self.setWindowTitle("Edit Mode")
             self.load_default_data()
 
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
+        """
         self.name.setValidator(validatorExpr('alphaNum'))
         self.name.textChanged.connect(self.check_state)
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
+        """
         self.paht_overlapping_factor.setValidator(validatorExpr('decimal'))
         self.paht_overlapping_factor.textChanged.connect(self.check_state)
         self.maximum_numbers_paths.setValidator(validatorExpr('decimal'))
         self.maximum_numbers_paths.textChanged.connect(self.check_state)
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
 
 
     def check_state(self, *args, **kwargs):
@@ -87,9 +94,6 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
         webbrowser.open_new_tab(filename)
 
     def save_new_mode(self):
-        id_scenario = self.idScenario
-        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
-        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         if self.id is None or self.id.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new mode", "Please write the mode id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -117,7 +121,7 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         if self.codeMode is None:
-            newMode = self.dataBaseSqlite.addMode(scenarios, self.id.text(), self.name.text(), self.description.text(), self.paht_overlapping_factor.text(), self.maximum_numbers_paths.text())
+            newMode = self.dataBaseSqlite.addMode(self.id.text(), self.name.text(), self.description.text(), self.paht_overlapping_factor.text(), self.maximum_numbers_paths.text())
             if not newMode:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new mode", "Please select other mode code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()   

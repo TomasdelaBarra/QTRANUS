@@ -101,6 +101,13 @@
            <item>
             <widget class="QTreeView" name="linktype_tree"/>
            </item>
+           <item>
+            <widget class="QLabel" name="total_items_linktypes">
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

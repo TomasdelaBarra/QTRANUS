@@ -88,7 +88,7 @@
        <item>
         <widget class="QTabWidget" name="stops">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
@@ -103,19 +103,6 @@
              <layout class="QVBoxLayout" name="verticalLayout_3">
               <item>
                <layout class="QFormLayout" name="formLayout_3">
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="basics_modal_constant"/>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLineEdit" name="basics_path_asc"/>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_4">
-                  <property name="text">
-                   <string>Path ASC:</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_5">
                   <property name="text">
@@ -123,64 +110,67 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="basics_occupency"/>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="basics_modal_constant"/>
                 </item>
-                <item row="2" column="0">
+                <item row="1" column="0">
                  <widget class="QLabel" name="label_6">
                   <property name="text">
                    <string>Occupancy:</string>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="basics_time_factor"/>
+                <item row="1" column="1">
+                 <widget class="QLineEdit" name="basics_occupency"/>
                 </item>
-                <item row="3" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_7">
                   <property name="text">
                    <string>Time Factor:</string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="2" column="1">
+                 <widget class="QLineEdit" name="basics_time_factor"/>
+                </item>
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_10">
                   <property name="text">
                    <string>Fixed Waiting Time</string>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="basics_fixed_wating_factor"/>
+                </item>
+                <item row="4" column="0">
                  <widget class="QLabel" name="label_11">
                   <property name="text">
                    <string>Boarding tariff</string>
                   </property>
                  </widget>
                 </item>
-                <item row="6" column="0">
+                <item row="4" column="1">
+                 <widget class="QLineEdit" name="basics_boarding_tariff"/>
+                </item>
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_15">
                   <property name="text">
                    <string>Distance tariff</string>
                   </property>
                  </widget>
                 </item>
-                <item row="7" column="0">
+                <item row="5" column="1">
+                 <widget class="QLineEdit" name="basics_distance_tariff"/>
+                </item>
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_16">
                   <property name="text">
                    <string>Time Tariff</string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
-                 <widget class="QLineEdit" name="basics_fixed_wating_factor"/>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QLineEdit" name="basics_boarding_tariff"/>
-                </item>
                 <item row="6" column="1">
-                 <widget class="QLineEdit" name="basics_distance_tariff"/>
-                </item>
-                <item row="7" column="1">
                  <widget class="QLineEdit" name="basics_time_tariff"/>
                 </item>
                </layout>

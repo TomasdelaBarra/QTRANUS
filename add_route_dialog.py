@@ -56,10 +56,14 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
+        """
         self.name.setValidator(validatorExpr('alphaNum'))
         self.name.textChanged.connect(self.check_state)
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
+        """
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
 
         self.frequency_from.setValidator(validatorExpr('decimal'))
         self.frequency_from.textChanged.connect(self.check_state)
@@ -75,6 +79,7 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__get_operators_data()
         
         if self.codeRoute is not None:
+            self.setWindowTitle("Edit Route")
             self.load_default_data()
 
 

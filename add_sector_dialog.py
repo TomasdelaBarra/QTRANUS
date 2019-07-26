@@ -55,10 +55,12 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
+        """
         self.name.setValidator(validatorExpr('alphaNum'))
         self.name.textChanged.connect(self.check_state)
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
+        """
         self.price_factor.setValidator(validatorExpr('decimal'))
         self.price_factor.textChanged.connect(self.check_state)
         self.attractor_factor.setValidator(validatorExpr('decimal'))
@@ -68,10 +70,14 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.sustitute.setValidator(validatorExpr('decimal'))
         self.sustitute.textChanged.connect(self.check_state)
 
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
+
         #Loads
         self.__get_scenarios_data()
         self.evaluate_transportable()
         if self.codeSector is not None:
+            self.setWindowTitle("Edit Sector")
             self.load_default_data()
  
 

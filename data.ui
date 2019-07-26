@@ -7,15 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>728</width>
-    <height>355</height>
+    <height>422</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Data</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_4">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -35,8 +35,8 @@
             <property name="title">
              <string>Land Use</string>
             </property>
-            <layout class="QFormLayout" name="formLayout">
-             <item row="0" column="0" colspan="2">
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
               <layout class="QVBoxLayout" name="verticalLayout_3">
                <item>
                 <widget class="QPushButton" name="btn_sectors">
@@ -62,6 +62,19 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <spacer name="verticalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
               </layout>
              </item>
             </layout>
@@ -78,62 +91,93 @@
             <property name="title">
              <string>Transport</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout">
-             <item>
-              <widget class="QPushButton" name="btn_categories">
-               <property name="text">
-                <string>Categories</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_administrators">
-               <property name="text">
-                <string>Administrators</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_modes">
-               <property name="text">
-                <string>Modes</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_operators">
-               <property name="text">
-                <string>Operators</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_transfers">
-               <property name="text">
-                <string>Transfers</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_routes">
-               <property name="text">
-                <string>Routes</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_link_types">
-               <property name="text">
-                <string>Link types</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_exogenous_trips">
-               <property name="text">
-                <string>Exogenous trips</string>
-               </property>
-              </widget>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="0">
+              <layout class="QVBoxLayout" name="verticalLayout">
+               <item>
+                <widget class="QPushButton" name="btn_categories">
+                 <property name="text">
+                  <string>Categories</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_administrators">
+                 <property name="text">
+                  <string>Administrators</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_modes">
+                 <property name="text">
+                  <string>Modes</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_operators">
+                 <property name="text">
+                  <string>Operators</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_transfers">
+                 <property name="text">
+                  <string>Transfers</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_routes">
+                 <property name="text">
+                  <string>Routes</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_nodes">
+                 <property name="text">
+                  <string>Nodes</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_link_types">
+                 <property name="text">
+                  <string>Link types</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_links">
+                 <property name="text">
+                  <string>Links</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_exogenous_trips">
+                 <property name="text">
+                  <string>Exogenous trips</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -292,6 +336,16 @@
   <action name="actionZ1E_Zone_Definitions">
    <property name="text">
     <string>Z1E Zone Definitions</string>
+   </property>
+  </action>
+  <action name="actionImport_Transfers">
+   <property name="text">
+    <string>Import Transfers</string>
+   </property>
+  </action>
+  <action name="actionImport_Exogenous_Trips">
+   <property name="text">
+    <string>Import Exogenous Trips</string>
    </property>
   </action>
  </widget>

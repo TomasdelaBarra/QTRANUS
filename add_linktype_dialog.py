@@ -16,7 +16,7 @@ from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
-
+from .classes.general.Validators import validatorRegex
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_linktype.ui'))
@@ -61,10 +61,14 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		# Validations 
 		self.id.setValidator(validatorExpr('integer'))
 		self.id.textChanged.connect(self.check_state)
+		"""
 		self.name.setValidator(validatorExpr('alphaNum'))
 		self.name.textChanged.connect(self.check_state)
 		self.description.setValidator(validatorExpr('alphaNum'))
 		self.description.textChanged.connect(self.check_state)
+		"""
+		self.name.setMaxLength(10)
+		self.description.setMaxLength(55)
 
 		self.capacity_factor.setValidator(validatorExpr('decimal'))
 		self.capacity_factor.textChanged.connect(self.check_state)
@@ -78,14 +82,32 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.vc_max_reduction.textChanged.connect(self.check_state)
 
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
-		self.operator_table.itemChanged.connect(self.__update_operator_linktype)
+		#self.operator_table.itemChanged.connect(self.__update_operator_linktype)
 		
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_linktype)
 		self.__load_fields()
 		self.__get_scenarios_data()
 
 		if self.linkTypeSelected:
+			self.setWindowTitle("Edit Link Type")
 			self.load_default_data()
+
+		self.operator_table.itemChanged.connect(self.__validate_operators)
+
+
+	def __validate_operators(self, item):
+		if item.text()!=None and item.text()!='':
+			column = item.column()
+			item_value = item.text()
+			row = item.row()
+			result = validatorRegex(item_value, 'real')
+			if not result:
+				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+				messagebox.exec_()
+				self.operator_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+			else:
+				self.__update_operator_linktype
+
 
 
 	def check_state(self, *args, **kwargs):
@@ -182,8 +204,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			id_linktype = self.id.text()
 			dataColumn = self.columnLinkTypeDb[column]
 			operator_name = self.vertical_header_operator[row]
-			id_operator = self.dataBaseSqlite.selectAll('operator', " where name = '"+str(operator_name)+"'")
-			id_operator = id_operator[0][0]
+			id_operator = operator_name.split(" ")[0]
 			id_scenario = self.idScenario
 			ifExist = self.dataBaseSqlite.selectAll('link_type_operator', " where id_linktype = {} and id_operator = {} ".format(id_linktype, id_operator))
 			
@@ -223,7 +244,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		# Table data
 		if self.linkTypeSelected:
-			sql = """select a.name, b.speed, b.charges, b.penaliz, b.distance_cost,
+			sql = """select a.id||' '||a.name, b.speed, b.charges, b.penaliz, b.distance_cost,
 					  b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost 
 				 	from 
 					operator a
@@ -234,14 +255,26 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			existOperatorLinkType = []	
 
 		if self.linkTypeSelected and len(existOperatorLinkType) > 0:
-			sql = """select a.name, b.speed, b.charges, b.penaliz, b.distance_cost,
-					  b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost 
-				 	from 
+			sql = """
+				WITH operator_base as (
+					SELECT id, name from operator
+					),
+					link_type_data as (
+					select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
+					b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost 
+					from 
 					operator a
 					left join link_type_operator b on a.id = b.id_operator
-					where b.id_linktype = {} """.format(self.linkTypeSelected)
+					where b.id_linktype = {}
+					)
+					select case WHEN b.name is null then a.id||' '||a.name else b.name end name, b.speed, b.charges, b.penaliz, 
+					b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
+					from 
+					operator_base a
+					left join link_type_data b on a.id = b.id
+				""".format(self.linkTypeSelected)
 		else:
-			sql = """select a.name, '' speed, '' charges, '' penaliz, '' distance_cost,
+			sql = """select a.id||' '||a.name, '' speed, '' charges, '' penaliz, '' distance_cost,
 					 '' equiv_vahicules, '' overlap_factor, '' margin_maint_cost 
 				 	from
 				 		operator a 
@@ -262,8 +295,6 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.operator_table.setVerticalHeaderItem(index,headerItem)
 
 		# Set columns size
-		#for x in range(0,columsCount):
-		#	self.header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
 		for indice,valor in enumerate(result_ope):
 			x = 0
 			for z in range(1,len(valor)):

@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -34,11 +35,14 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
         self.categories_tree = self.findChild(QtWidgets.QTreeView, 'categories_tree')
+        self.lb_total_items_categories = self.findChild(QtWidgets.QLabel, 'total_items_categories')
         self.categories_tree.setRootIsDecorated(False)
         self.add_category_btn = self.findChild(QtWidgets.QPushButton, 'add_category')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
@@ -114,10 +118,14 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_categories_data(self):
-        sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
-                a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
-                from category a
-                join mode b on (a.id_mode = b.id)"""
+        #sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
+        #        a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
+        #        from category a
+        #        join mode b on (a.id_mode = b.id) order by a.id asc"""
+
+        sql = """select a.id, a.name, a.description
+                from category a"""
+                
         result = self.dataBaseSqlite.executeSql(sql)
 
         model = QtGui.QStandardItemModel()
@@ -130,6 +138,8 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
                 z+=1
         self.categories_tree.setModel(model)
         self.categories_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
+
+        self.lb_total_items_categories.setText("%s Items " % len(result))
 
 
     def load_scenarios(self):

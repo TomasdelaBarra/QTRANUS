@@ -15,8 +15,10 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.Helpers import Helpers
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Validators import validatorRegex
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_sector_dialog import AddSectorDialog
+from .add_excel_data_dialog import AddExcelDataDialog
 #import pandas
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'transfers.ui'))
@@ -51,6 +53,8 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.add_tariff = self.findChild(QtWidgets.QPushButton, 'add_tariff')
+        self.import_btn = self.findChild(QtWidgets.QPushButton, 'import_btn')
+        self.lb_total_items_transfers = self.findChild(QtWidgets.QLabel, 'total_items_transfers')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.transfers_table = self.findChild(QtWidgets.QTableWidget, 'transfers_table')
@@ -62,6 +66,7 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.add_tariff.clicked.connect(self.save_tariff)
+        self.import_btn.clicked.connect(self.import_data)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
         self.add_tariff.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
@@ -75,9 +80,33 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.scenarioCode:
             self.__find_scenario_data(self.scenarioCode)
 
-        self.tariff.setValidator(self.doubleValidator)
+        #self.tariff.setValidator(self.doubleValidator)
         #self.transfers_table.itemChanged.connect(self.__update_operators)
-        
+        self.transfers_table.itemChanged.connect(self.__validate_transers)
+
+
+    def __validate_transers(self, item):
+        if item.text()!=None and item.text()!='' and item.column() > 1 :
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+            result = validatorRegex(item_value, 'real-negative')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.transfers_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+    
+    def import_data(self):
+        """
+            @summary: Set Scenario selected
+        """
+        dialog = AddExcelDataDialog(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='transfers')
+        dialog.show()
+        result = dialog.exec_()
+        print("Cierre ventana ",result)
+        self.__load_operators_tb_data()
+
     
     def select_scenario(self, selectedIndex):
         """
@@ -117,12 +146,18 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         self.close()
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+
+        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenario_tree.setModel(self.scenarios_model)
+        self.scenario_tree.expandAll()"""
 
 
     def __load_operators_cb_data(self):        
@@ -160,6 +195,8 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                     data = result[indice][z] if result[indice][z] is not None else ''
                     self.transfers_table.setItem(indice, x, QTableWidgetItem(str(data)))
                     x+=1
+                    
+            self.lb_total_items_transfers.setText(" %s Items " % len(result))
 
 
     def save_tariff(self):
@@ -175,22 +212,29 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                 id_from = self.cb_operator_origin.itemData(self.cb_operator_origin.currentIndex())
                 id_to = self.cb_operator_destination.itemData(self.cb_operator_destination.currentIndex())
                 tariff = self.tariff.text()
-                
+                result_validate = validatorRegex(tariff,'real-negative')
+
+                if not result_validate:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add", "Only Numbers.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    return False
 
                 qry = """select * from transfer_operator_cost
-                where id_operator_from={} and id_operator_to={}""".format(id_from, id_to)
+                where id_operator_from={} and id_operator_to={} and id_scenario={}""".format(id_from, id_to, id_scenario)
                 
                 result = self.dataBaseSqlite.executeSql(qry)
                 if result:
                     self.tariff.setText('')
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add", "Duplicate values ​​are not allowed.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                     messagebox.exec_()
+                    return False
                 else:
                     self.dataBaseSqlite.addTransferOperator(scenarios, id_from, id_to, tariff)
                     self.__load_operators_tb_data()
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Transfers", "Please Select one value", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Transfers", "Please Select value", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
+                return False
 
 
     def load_scenarios(self):

@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -37,10 +38,13 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.plugin_dir = os.path.dirname(__file__)
         self.scenarioCode = scenarioCode
         self.idScenario = None
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+        self.lb_total_items_operators = self.findChild(QtWidgets.QLabel, 'total_items_operators')
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.operators_tree = self.findChild(QtWidgets.QTreeView, 'operators_tree')
         self.operators_tree.setRootIsDecorated(False)
@@ -144,12 +148,18 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
               
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+
+        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenario_tree.setModel(self.scenarios_model)
+        self.scenario_tree.expandAll()"""
 
 
     def __get_operators_data(self):
@@ -172,6 +182,8 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 z+=1
         self.operators_tree.setModel(model)
         self.operators_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
+
+        self.lb_total_items_operators.setText(" %s Items" % len(result))
 
 
     def load_scenarios(self):

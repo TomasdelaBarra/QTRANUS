@@ -7,7 +7,8 @@ from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.Qt import QApplication, QClipboard
+from PyQt5 import QtCore, QtGui
 
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -15,6 +16,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.Helpers import Helpers
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Validators import validatorRegex
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_sector_dialog import AddSectorDialog
 
@@ -31,11 +33,18 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(ZonalDataDialog, self).__init__(parent)
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(70)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
+
         self.zonaldata_model = QtGui.QStandardItemModel()
         self.modelTrans = QtGui.QStandardItemModel()
+        self.shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
         self.vertical_header = []
         self.vertical_header_imp = []
         self.vertical_header_exp = []
+        self._row = 0
+        self._column = 0
+        self.table_type = None
         self.header = ['Exog. Production','Induced Production', 'Min. Prod','Max. Prod', 'Exog. Demand','Base Price', 'Value Added', 'Attractor']
         self.header_import = ['Max. Imp.','Min Imp', 'Base Price','Attractor']
         self.header_export = ['Exports']
@@ -58,6 +67,9 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+        self.lb_total_items_internal = self.findChild(QtWidgets.QLabel, 'total_items_internal')
+        self.lb_total_items_imports = self.findChild(QtWidgets.QLabel, 'total_items_imports')
+        self.lb_total_items_exports = self.findChild(QtWidgets.QLabel, 'total_items_exports')
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.internal_data_table = self.findChild(QtWidgets.QTableWidget, 'internal_data_table')
         self.imports_data_table = self.findChild(QtWidgets.QTableWidget, 'imports_data_table')
@@ -71,22 +83,106 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_sector_detail.clicked.connect(self.open_sector_detail)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
-        #self.zonaldata_table.cellClicked.connect(updateCell)
+        self.shortcut.activated.connect(self.paste_event)
+        self.internal_data_table.cellClicked.connect(self.set_row_colum_internal)
+        self.imports_data_table.cellClicked.connect(self.set_row_colum_imports)
+        self.exports_data_table.cellClicked.connect(self.set_row_colum_exports)
 
-        """if self.scenarioSelectedIndex:
-            self.__find_scenario_data(self.scenarioSelectedIndex)"""
+        self.internal_data_table.itemChanged.connect(self.__validate_internal)
+        self.imports_data_table.itemChanged.connect(self.__validate_imports)
+        self.exports_data_table.itemChanged.connect(self.__validate_exports)
+        
+        #self.zonaldata_table.cellClicked.connect(updateCell)
 
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
-        self.__get_scenarios_data()
         self.__load_sector_data()
         self.__load_zonal_data()
+        self.__get_scenarios_data()
 
         #Conections to signals
         self.cb_sector.currentIndexChanged[int].connect(self.sector_changed)
-        #self.internal_data_table.itemChanged.connect(self.__update_internal)
-        #self.imports_data_table.itemChanged.connect(self.__update_import)
-        #self.exports_data_table.itemChanged.connect(self.__update_export)
+        
+        
+
+    def __validate_internal(self, item):
+
+        if item.text()!=None and item.text()!='':
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+
+            result = validatorRegex(item_value, 'real')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.internal_data_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
+    def __validate_imports(self, item):
+
+        if item.text()!=None and item.text()!='':
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+
+            result = validatorRegex(item_value, 'real')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.imports_data_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
+
+    def __validate_exports(self, item):
+
+        if item.text()!=None and item.text()!='':
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+
+            result = validatorRegex(item_value, 'real')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.exports_data_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
+
+
+
+    def set_row_colum_internal(self, row, column):
+        self._row = row
+        self._column = column
+        self.table_type = 'internal'
+
+    def set_row_colum_imports(self, row, column):
+        self._row = row
+        self._column = column
+        self.table_type = 'imports'
+
+    def set_row_colum_exports(self, row, column):
+        self._row = row
+        self._column = column
+        self.table_type = 'exports'
+
+
+    # For Paste Text to Table
+    def paste_event(self):
+        text = QApplication.clipboard().text()
+        rows = text.split('\n')
+        row = self._row
+        column = self._column
+        for rowIndex, cells in enumerate(rows):
+            cells = cells.split('\t')
+            for cellIndex, cell in enumerate(cells):
+                if self.table_type == 'internal':
+                    self.internal_data_table.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+                if self.table_type == 'imports':
+                    self.imports_data_table.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+                if self.table_type == 'exports':
+                    self.exports_data_table.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+                
 
     def select_scenario(self, selectedIndex):
         """
@@ -179,12 +275,18 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+        
+        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenario_tree.setModel(self.scenarios_model)
+        self.scenario_tree.expandAll()"""
 
     def __load_sector_data(self):
         sectors = self.dataBaseSqlite.selectAll('sector')
@@ -357,6 +459,10 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             header_a = self.internal_data_table.horizontalHeader()       
             header_a.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
             header_a.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+
+            self.lb_total_items_internal.setText("%s Items " % len(result))
+            self.lb_total_items_imports.setText("%s Items " % len(result_imp))
+            self.lb_total_items_exports.setText("%s Items " % len(result_exp))
 
 
     def load_scenarios(self):

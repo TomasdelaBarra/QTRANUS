@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -29,6 +30,9 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(SectorsDialog, self).__init__(parent)
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
+
         self.project = parent.project
         self.scenarioSelectedIndex = scenarioSelectedIndex
         self.idScenario = None
@@ -45,6 +49,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_sector_btn = self.findChild(QtWidgets.QPushButton, 'add_sector')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
+        self.lb_total_items = self.findChild(QtWidgets.QLabel, 'total_items')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -87,13 +92,6 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
         opt = menu.exec_(self.sectors_tree.viewport().mapToGlobal(position))
 
-        """if opt == copy:
-            paste.setEnabled(True)
-            self.copy_scenario(codeScenario=codeScenarioSelected)
-        if opt == paste:
-            paste.setEnabled(True)
-            self.paste_scenario(codeScenario=codeScenarioSelected)
-            self.__get_scenarios_data()"""
         if opt == edit:
             dialog = AddSectorDialog(self.tranus_folder, parent = self, codeSector=sectorSelected)
             dialog.show()
@@ -163,7 +161,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 z+=1
         self.sectors_tree.setModel(model)
         self.sectors_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
-
+        self.lb_total_items.setText("%s Items" % len(result))
 
     def load_scenarios(self):
         self.__get_scenarios_data()

@@ -9,6 +9,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import *
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -35,6 +36,9 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
         self.idScenario = idScenario
+        resolution_dict = Helpers.screenResolution(40)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
+
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
@@ -50,14 +54,19 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
+        """
         self.name.setValidator(validatorExpr('alphaNum'))
         self.name.textChanged.connect(self.check_state)
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
+        """
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
 
         #Loads
         self.__get_scenarios_data()
         if self.codeAdministrator is not None:
+            self.setWindowTitle("Edit Administrator")
             self.load_default_data()
 
 

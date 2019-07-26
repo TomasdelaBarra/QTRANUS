@@ -15,7 +15,8 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .add_scenario_dialog import AddScenarioDialog
-from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+from .classes.general.Validators import validatorExpr  # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+from .classes.general.Validators import validatorRegex
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -51,7 +52,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		# Basics Section
 		self.basics_modal_constant = self.findChild(QtWidgets.QLineEdit, 'basics_modal_constant')
-		self.basics_path_asc = self.findChild(QtWidgets.QLineEdit, 'basics_path_asc')
+		#self.basics_path_asc = self.findChild(QtWidgets.QLineEdit, 'basics_path_asc')
 		self.basics_occupency = self.findChild(QtWidgets.QLineEdit, 'basics_occupency')
 		self.basics_time_factor = self.findChild(QtWidgets.QLineEdit, 'basics_time_factor')
 		self.basics_fixed_wating_factor = self.findChild(QtWidgets.QLineEdit, 'basics_fixed_wating_factor')
@@ -83,15 +84,19 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		# Validations
 		self.id.setValidator(validatorExpr('integer'))
 		self.id.textChanged.connect(self.check_state)
+		"""
 		self.name.setValidator(validatorExpr('alphaNum'))
 		self.name.textChanged.connect(self.check_state)
 		self.description.setValidator(validatorExpr('alphaNum'))
 		self.description.textChanged.connect(self.check_state)
+		"""
+		self.name.setMaxLength(10)
+		self.description.setMaxLength(55)
 
 		self.basics_modal_constant.setValidator(validatorExpr('decimal'))
 		self.basics_modal_constant.textChanged.connect(self.check_state)
-		self.basics_path_asc.setValidator(validatorExpr('decimal'))
-		self.basics_path_asc.textChanged.connect(self.check_state)
+		"""self.basics_path_asc.setValidator(validatorExpr('decimal'))
+		self.basics_path_asc.textChanged.connect(self.check_state)"""
 		self.basics_occupency.setValidator(validatorExpr('decimal'))
 		self.basics_occupency.textChanged.connect(self.check_state)
 		self.basics_time_factor.setValidator(validatorExpr('decimal'))
@@ -131,7 +136,23 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.__get_scenarios_data()
 
 		if self.operatorSelected:
+			self.setWindowTitle("Edit Operator")
 			self.load_default_data()
+		self.by_category_tbl.itemChanged.connect(self.__validate_category)	
+
+
+	def __validate_category(self, item):
+		if item.text()!=None and item.text()!='':
+			column = item.column()
+			item_value = item.text()
+			row = item.row()
+			result = validatorRegex(item_value, 'real')
+			if not result:
+				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+				messagebox.exec_()
+				self.by_category_tbl.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
 
 	def check_state(self, *args, **kwargs):
 		sender = self.sender()
@@ -187,13 +208,8 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 
-		if self.basics_path_asc is None or self.basics_path_asc.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Path ASC.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-			messagebox.exec_()
-			return False
-
 		if self.basics_occupency is None or self.basics_occupency.text().strip() == '':
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Occupency.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Operator", "Please write Occupancy.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
@@ -270,8 +286,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
 
 		data = dict(id=self.id.text(), name=self.name.text(), description=self.description.text(), id_mode=id_mode, 
-			   type=id_type, basics_modal_constant=self.basics_modal_constant.text(), 
-			   basics_path_asc=self.basics_path_asc.text(),  basics_occupency=self.basics_occupency.text(),
+			   type=id_type, basics_modal_constant=self.basics_modal_constant.text(), basics_occupency=self.basics_occupency.text(),
 			   basics_time_factor=self.basics_time_factor.text(), basics_fixed_wating_factor=self.basics_fixed_wating_factor.text(), 
 			   basics_boarding_tariff=self.basics_boarding_tariff.text(),  basics_distance_tariff=self.basics_distance_tariff.text(), 
 			   basics_time_tariff=self.basics_time_tariff.text(), energy_min = self.energy_min.text(), 
@@ -324,12 +339,14 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {}".format(self.operatorSelected))
 		
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
+		self.cb_type.clear()
 		for index, valor in enumerate(types):
 			self.cb_type.addItem(valor, index+1)
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
+		self.cb_mode.clear()
 		for value in mode_result:
-			self.cb_mode.addItem(value[2])
+			self.cb_mode.addItem(value[1], value[0])
 
 		sql = """ select a.name category, b.tariff_factor, b.penal_factor 
 				from category a 
@@ -349,32 +366,31 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.id.setText(str(operator_result[0][0]))
 		self.name.setText(str(operator_result[0][1]))
 		self.description.setText(str(operator_result[0][2]))
-
-		indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][3]))[0][2], Qt.MatchFixedString)
+		indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][3]))[0][1], Qt.MatchFixedString)
 		self.cb_mode.setCurrentIndex(indexMode)
 
 		self.cb_type.itemData(operator_result[0][4])
 
 		self.basics_modal_constant.setText(str(operator_result[0][5]))
-		self.basics_path_asc.setText(str(operator_result[0][6]))
-		self.basics_occupency.setText(str(operator_result[0][7]))
-		self.basics_time_factor.setText(str(operator_result[0][8]))
-		self.basics_fixed_wating_factor.setText(str(operator_result[0][9]))
-		self.basics_boarding_tariff.setText(str(operator_result[0][10]))
-		self.basics_distance_tariff.setText(str(operator_result[0][11]))
-		self.basics_time_tariff.setText(str(operator_result[0][12]))
+		self.basics_occupency.setText(str(operator_result[0][6]))
+		self.basics_time_factor.setText(str(operator_result[0][7]))
+		self.basics_fixed_wating_factor.setText(str(operator_result[0][8]))
+		self.basics_boarding_tariff.setText(str(operator_result[0][9]))
+		self.basics_distance_tariff.setText(str(operator_result[0][10]))
+		self.basics_time_tariff.setText(str(operator_result[0][11]))
 		
-		self.energy_min.setText(str(operator_result[0][13]))
-		self.energy_max.setText(str(operator_result[0][14]))
-		self.energy_slope.setText(str(operator_result[0][15]))
-		self.energy_cost.setText(str(operator_result[0][16]))
+		self.energy_min.setText(str(operator_result[0][12]))
+		self.energy_max.setText(str(operator_result[0][13]))
+		self.energy_slope.setText(str(operator_result[0][14]))
+		self.energy_cost.setText(str(operator_result[0][15]))
 
-		self.cost_time_operation.setText(str(operator_result[0][17]))
-		self.cost_porc_paid_by_user.setText(str(operator_result[0][18]))
+		self.cost_time_operation.setText(str(operator_result[0][16]))
+		self.cost_porc_paid_by_user.setText(str(operator_result[0][17]))
 
-		self.stops_min_stop_time.setText(str(operator_result[0][19]))
-		self.stops_unit_boarding_time.setText(str(operator_result[0][20]))
-		self.stops_unit_alight_time.setText(str(operator_result[0][21]))
+		self.stops_min_stop_time.setText(str(operator_result[0][18]))
+		self.stops_unit_boarding_time.setText(str(operator_result[0][19]))
+		self.stops_unit_alight_time.setText(str(operator_result[0][20]))
+
 
 	def __load_fields(self):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']

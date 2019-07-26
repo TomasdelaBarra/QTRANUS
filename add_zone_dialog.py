@@ -51,16 +51,18 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
-        self.name.setValidator(validatorExpr('alphaNum'))
-        self.name.textChanged.connect(self.check_state)
+        """self.name.setValidator(validatorExpr('alphaNum'))
+        self.name.textChanged.connect(self.check_state)"""
         self.internal_cost_factor.setValidator(validatorExpr('decimal'))
         self.internal_cost_factor.textChanged.connect(self.check_state)
+        self.name.setMaxLength(10)
 
 
         #Loads
         self.__get_scenarios_data()
         self.evaluate_external()
         if self.codeZone is not None:
+            self.setWindowTitle("Edit Zone")
             self.load_default_data()
 
 

@@ -101,6 +101,13 @@
            <item>
             <widget class="QTreeView" name="operators_tree"/>
            </item>
+           <item>
+            <widget class="QLabel" name="total_items_operators">
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

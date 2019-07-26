@@ -42,17 +42,23 @@ class AddScenarioDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.code.setValidator(validatorExpr('alphaNum',limit=3))
         self.code.textChanged.connect(self.check_state)
-        self.name.setValidator(validatorExpr('alphaNum'))
+        """self.name.setValidator(validatorExpr('any',limit=4))
         self.name.textChanged.connect(self.check_state)
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
+        """
+        self.name.setMaxLength(10)
+        self.description.setMaxLength(55)
+        
 
         # Control Actions
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
         
+
         #Loads
         self.__load_scenarios_combobox()
         if self.codeScenario:
+            self.setWindowTitle("Edit Scenario")
             self.__load_default_data()
 
 

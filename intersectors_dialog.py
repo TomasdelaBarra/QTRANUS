@@ -2,20 +2,25 @@
 import os, re, webbrowser, numpy as np
 from string import *
 
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import *
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.Qt import QApplication, QClipboard
+from PyQt5 import QtCore, QtGui
+
 
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.Helpers import Helpers
+from .classes.general.Validators import validatorRegex
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_sector_dialog import AddSectorDialog
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'intersectors.ui'))
@@ -30,14 +35,19 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(IntersectorsDialog, self).__init__(parent)
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
+
         self.model = QtGui.QStandardItemModel()
         self.modelTrans = QtGui.QStandardItemModel()
-        self.header = ['Input Sector','Min. Demand','Max. Demand', 'Elasticity','Substitutes', 'Exog. Prod. Attractors', 'Ind. Prod. Attractors']
+        self.shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
+        self.header = ['Min. Demand','Max. Demand', 'Elasticity','Substitutes', 'Exog. Prod. Attractors', 'Ind. Prod. Attractors']
         self.columnIntersectorsDb = ["id_input_sector","min_demand","max_demand","elasticity","substitute","exog_prod_attractors","ind_prod_attractors"]
-        self.headerTrans = ['Category','Type','Time Factor', 'Volume Factor','Flow to Product', 'Flow to Consumer']
+        self.headerTrans = ['Type','Time Factor', 'Volume Factor','Flow to Product', 'Flow to Consumer']
         self.columnIntersectorsTransDb = ["id_category","type","time_factor","volume_factor","flow_to_product","flow_to_consumer"]
         self.scenarioCode = scenarioCode
         self.idScenario = None
+        self.table_type = None
 
         # Resize Dialog for high resolution monitor
         resolution_dict = Helpers.screenResolution(70)
@@ -51,6 +61,8 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.lb_total_items_input = self.findChild(QtWidgets.QLabel, 'total_items_input')
+        self.lb_total_items_trans = self.findChild(QtWidgets.QLabel, 'total_items_trans')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.intersectors_table = self.findChild(QtWidgets.QTableWidget, 'intersectors_table')
@@ -58,32 +70,88 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cb_sector = self.findChild(QtWidgets.QComboBox, 'cb_sector')
         self.sustitute = self.findChild(QtWidgets.QLabel, 'sustitute')
         self.btn_sector_detail = self.findChild(QtWidgets.QPushButton, 'btn_sector_detail')
-
+        self.shortcut.activated.connect(self.paste_event)
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.btn_sector_detail.clicked.connect(self.open_sector_detail)
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
+        self.intersectors_table.cellClicked.connect(self.set_row_colum_inputs)
+        self.intersectors_table_trans.cellClicked.connect(self.set_row_colum_trans)
 
         # Set scenarioIndex
         #if self.scenarioSelectedIndex:
         #    self.__find_scenario_data(self.scenarioSelectedIndex)
 
-        
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
-        self.__get_scenarios_data()
         self.__load_sector_cb_data()
         self.__load_intersector_data()
+        self.__get_scenarios_data()
 
         #Conections to signals
         self.cb_sector.currentIndexChanged[int].connect(self.sector_changed)
-        #self.model.itemChanged.connect(self.__update_intersectors_sector_input)
-        #self.modelTrans.itemChanged.connect(self.__update_intersectors_trans)
+        self.intersectors_table.itemChanged.connect(self.__validate_intersectors_sector_input)
+        self.intersectors_table_trans.itemChanged.connect(self.__validate_update_intersectors_trans)
         
-    
 
+    def __validate_intersectors_sector_input(self, item):
+        
+        if item.text()!=None and item.text()!='':
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+
+            result = validatorRegex(item_value, 'real')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Intersectors", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.intersectors_table.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
+    def __validate_update_intersectors_trans(self, item):
+        
+        if item.text()!=None and item.text()!='':
+            column = item.column()
+            item_value = item.text()
+            row = item.row()
+
+            result = validatorRegex(item_value, 'real')
+            if not result:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                self.intersectors_table_trans.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
+
+
+            
+
+    def set_row_colum_inputs(self, row, column):
+        self._row = row
+        self._column = column
+        self.table_type = 'inputs'
+
+
+    def set_row_colum_trans(self, row, column):
+        self._row = row
+        self._column = column
+        self.table_type = 'trans'
+
+
+    # For Paste Text to Table
+    def paste_event(self):
+        text = QApplication.clipboard().text()
+        rows = text.split('\n')
+        row = self._row
+        column = self._column
+        for rowIndex, cells in enumerate(rows):
+            cells = cells.split('\t')
+            for cellIndex, cell in enumerate(cells):
+                if self.table_type == 'inputs':
+                    self.intersectors_table.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+                if self.table_type == 'trans':
+                    self.intersectors_table_trans.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+                
 
     def select_scenario(self, selectedIndex):
         """
@@ -112,22 +180,24 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex()) 
             
             for index in range(0,rowsInputs):
-                id_input_sector = self.intersectors_table.item(index, 0).text().split(" ")[0]
-                min_demand = self.intersectors_table.item(index, 1).text()
-                max_demand = self.intersectors_table.item(index, 2).text()
-                elasticity = self.intersectors_table.item(index, 3).text()
-                substitute = self.intersectors_table.item(index, 4).text()
-                exog_prod_attractors = self.intersectors_table.item(index, 5).text()
-                ind_prod_attractors = self.intersectors_table.item(index, 6).text()
-                self.dataBaseSqlite.addIntersectorSectorInput(scenarios, id_sector, id_input_sector, min_demand, max_demand, elasticity, substitute, exog_prod_attractors, ind_prod_attractors )
+                id_input_sector = self.intersectors_table.verticalHeaderItem(index).text().split(" ")[0]
+                min_demand = self.intersectors_table.item(index, 0).text()
+                max_demand = self.intersectors_table.item(index, 1).text()
+                elasticity = self.intersectors_table.item(index, 2).text()
+                substitute = self.intersectors_table.item(index, 3).text()
+                exog_prod_attractors = self.intersectors_table.item(index, 4).text()
+                ind_prod_attractors = self.intersectors_table.item(index, 5).text()
+                print(min_demand)
+                #self.dataBaseSqlite.addIntersectorSectorInput(scenarios, id_sector, id_input_sector, min_demand, max_demand, elasticity, substitute, exog_prod_attractors, ind_prod_attractors )
             
             for index in range(0,rowsTrans):
-                id_category = self.intersectors_table_trans.item(index, 0).text().split(" ")[0]
-                _type = self.intersectors_table_trans.item(index, 1).text()
-                time_factor = self.intersectors_table_trans.item(index, 2).text()
-                volume_factor = self.intersectors_table_trans.item(index, 3).text()
-                flow_to_product = self.intersectors_table_trans.item(index, 4).text()
-                flow_to_consumer = self.intersectors_table_trans.item(index, 5).text()
+                #print("asd")
+                id_category = self.intersectors_table_trans.verticalHeaderItem(index).text().split(" ")[0]
+                _type = self.intersectors_table_trans.item(index, 0).text()
+                time_factor = self.intersectors_table_trans.item(index, 1).text()
+                volume_factor = self.intersectors_table_trans.item(index, 2).text()
+                flow_to_product = self.intersectors_table_trans.item(index, 3).text()
+                flow_to_consumer = self.intersectors_table_trans.item(index, 4).text()
                 self.dataBaseSqlite.addIntersectorTrans(scenarios, id_sector, id_category, _type, time_factor, volume_factor, flow_to_product, flow_to_consumer)
             
 
@@ -170,13 +240,13 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
-
+        self.scenario_tree.setSelectionModel(modelSelection)
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
     def __load_sector_cb_data(self):
         sectors = self.dataBaseSqlite.selectAll('sector')
@@ -185,8 +255,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __load_intersector_data(self):
         sectorId = self.cb_sector.itemData(self.cb_sector.currentIndex())
-        
-        print("sectorId", sectorId)
         results = self.dataBaseSqlite.selectAll(' sector ', " where id = %s" % sectorId)
         self.sustitute.setText(str(results[0][7]))
         
@@ -212,39 +280,49 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 resultB = self.dataBaseSqlite.executeSql(sql)
 
             self.intersectors_table.setRowCount(len(resultA))
-            self.intersectors_table.setColumnCount(7)
+            self.intersectors_table.setColumnCount(6)
             self.intersectors_table.setHorizontalHeaderLabels(self.header)
             self.intersectors_table.horizontalHeader().setStretchLastSection(True)
             
             self.intersectors_table_trans.setRowCount(len(resultB))
-            self.intersectors_table_trans.setColumnCount(6)
+            self.intersectors_table_trans.setColumnCount(5)
             self.intersectors_table_trans.setHorizontalHeaderLabels(self.headerTrans)
             self.intersectors_table_trans.horizontalHeader().setStretchLastSection(True)
 
             for indice,valor in enumerate(resultA):
                 x = 0
-                for z in range(0,7):
+                self.intersectors_table.setVerticalHeaderItem(indice, QTableWidgetItem(str(resultA[indice][0])))
+                for z in range(1,7):
                     data = resultA[indice][z] if resultA[indice][z] is not None else ''
+                    """lineEdit = QLineEdit(self)
+                    lineEdit.setValidator(QDoubleValidator())
+                    self.intersectors_table.setCellWidget(indice, x, lineEdit)"""
                     self.intersectors_table.setItem(indice, x, QTableWidgetItem(str(data)))
                     x+=1
 
             for indice,valor in enumerate(resultB):
                 x = 0
-                for z in range(0,6):
+                self.intersectors_table_trans.setVerticalHeaderItem(indice, QTableWidgetItem(str(resultB[indice][0])))
+                for z in range(1,6):
                     data = resultB[indice][z] if resultB[indice][z] is not None else ''
+                    """lineEdit = QLineEdit(self)
+                    lineEdit.setValidator(QDoubleValidator())
+                    self.intersectors_table_trans.setCellWidget(indice, x, lineEdit.setText(str(data)))"""
                     self.intersectors_table_trans.setItem(indice, x, QTableWidgetItem(str(data)))
                     x+=1
 
             header_a = self.intersectors_table.horizontalHeader()       
             header_a.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
             header_a.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
-            header_a.setSectionResizeMode(6, QtWidgets.QHeaderView.ResizeToContents)
+            #header_a.setSectionResizeMode(6, QtWidgets.QHeaderView.ResizeToContents)
             #header_a.setSectionResizeMode(7, QtWidgets.QHeaderView.ResizeToContents)
 
             header_b = self.intersectors_table_trans.horizontalHeader()       
             header_b.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
-            header_b.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
-            header_b.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
+            #header_b.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
+            #header_b.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
+            self.lb_total_items_input.setText("%s Items " % len(resultA))
+            self.lb_total_items_trans.setText("%s Items " % len(resultB))
             
 
     def load_scenarios(self):

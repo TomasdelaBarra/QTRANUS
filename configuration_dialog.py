@@ -57,10 +57,14 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		#Validations Alpha Numeric
 		self.projectName.setValidator(validatorExpr('alphaNum',limit=3))
 		self.projectName.textChanged.connect(self.check_state)
+		"""
 		self.projectDescription.setValidator(validatorExpr('alphaNum'))
 		self.projectDescription.textChanged.connect(self.check_state)
 		self.projectAuthor.setValidator(validatorExpr('alphaNum'))
 		self.projectAuthor.textChanged.connect(self.check_state)
+		"""
+		self.projectDescription.setMaxLength(55)
+		self.projectAuthor.setMaxLength(10)
 
 		# Validations Double Fields
 		self.projectTransIter.setValidator(validatorExpr('decimal'))

@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -36,12 +37,14 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.plugin_dir = os.path.dirname(__file__)
         self.scenarioCode = scenarioCode
         self.idScenario = None
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
-        self.scenario_tree.clicked.connect(self.select_scenario)
         self.modes_tree = self.findChild(QtWidgets.QTreeView, 'modes_tree')
+        self.lb_total_items_modes = self.findChild(QtWidgets.QLabel, 'total_items_modes')
         self.modes_tree.setRootIsDecorated(False)
         self.add_mode_btn = self.findChild(QtWidgets.QPushButton, 'add_mode_btn')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
@@ -65,17 +68,6 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.show_changed_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
         self.show_changed_btn.setToolTip("Show Changed Only")
         self.add_mode_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
-      
-
-    def select_scenario(self, selectedIndex):
-        """
-            @summary: Set Scenario selected
-        """
-        self.scenarioSelectedIndex = selectedIndex
-        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
-        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
-        self.idScenario = scenarioData[0][0]
-        self.__get_modes_data()  
 
     def open_help(self):
         """
@@ -115,15 +107,11 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
     def open_add_mode_window(self):
         """
             @summary: Opens add scenario window
-        """
-        if not self.idScenario:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        else:
-            dialog = AddModeDialog(self.tranus_folder,  idScenario=self.idScenario, parent = self)
-            dialog.show()
-            result = dialog.exec_()
-            self.__get_modes_data()
+        """    
+        dialog = AddModeDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+        self.__get_modes_data()
         
 
     def remove_scenario(self, codeScenario=None):
@@ -149,14 +137,7 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_modes_data(self):
-        if self.idScenario:
-            qry = """select a.id, a.name, a.description 
-                     from mode a
-                     join scenario_mode b on (a.id = b.id_mode)
-                     where b.id_scenario = %s""" % (self.idScenario)
-            result = self.dataBaseSqlite.executeSql(qry)
-        else:
-            result = self.dataBaseSqlite.selectAll('mode', columns=' id, name, description')
+        result = self.dataBaseSqlite.selectAll('mode', columns=' id, name, description', orderby=' order by 1 ')
 
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
@@ -168,6 +149,8 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
                 z+=1
         self.modes_tree.setModel(model)
         self.modes_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
+
+        self.lb_total_items_modes.setText("%s Items" % len(result))
 
 
     def load_scenarios(self):

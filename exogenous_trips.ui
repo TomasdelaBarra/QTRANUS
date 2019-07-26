@@ -156,6 +156,13 @@
                  <item>
                   <widget class="QTableWidget" name="trips_tbl"/>
                  </item>
+                 <item>
+                  <widget class="QLabel" name="total_items_exotrips">
+                   <property name="text">
+                    <string>TextLabel</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </item>
               </layout>

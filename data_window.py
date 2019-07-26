@@ -6,9 +6,11 @@ from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem, QMainWindow, QToolBar, QHBoxLayout
+from PyQt5.QtCore import *
 
 from qgis.core import QgsVectorLayer
 
+from .classes.general.Helpers import Helpers
 from .classes.libraries.tabulate import tabulate
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.data.DBFiles import DBFiles
@@ -29,10 +31,13 @@ from .transfers_dialog import TransfersDialog
 from .zones_dialog import ZonesDialog
 from .routes_dialog import RoutesDialog
 from .link_type_dialog import LinkTypeDialog
+from .links_dialog import LinksDialog
+from .nodes_dialog import NodesDialog
 from .exogenous_trips_dialog import ExogeousTripsDialog
 from .administrators_dialog import AdministratorsDialog
 from .scenarios_select_dialog import ScenariosSelectDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .add_excel_data_dialog import AddExcelDataDialog
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -49,9 +54,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         super(DataWindow, self).__init__(parent)
         self.plugin_dir = os.path.dirname(__file__)
         self.setupUi(self)
+        resolution_dict = Helpers.screenResolution(60)
+        self.resize(resolution_dict['width'], 0)
         self.project = parent.project
         self.zone_shape = parent.zone_shape
         self.network_links_shape = parent.network_links_shape
+        self.network_nodes_shape = parent.network_nodes_shape
         self.layers_group_name = layers_group_name
         self.tranus_folder = tranus_folder
         self.dataBase = DataBase()
@@ -61,6 +69,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.scenariosMatrixBackUp = None
         self.scenarioSelectedIndex = None
         self.scenarioCode = None
+        
         
         self.mainWindow = QMainWindow()
         self.myToolBar = QToolBar()
@@ -79,6 +88,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.btn_sectors = self.findChild(QtWidgets.QPushButton, 'btn_sectors')
         self.btn_intersectors = self.findChild(QtWidgets.QPushButton, 'btn_intersectors')
         self.btn_categories = self.findChild(QtWidgets.QPushButton, 'btn_categories')
+        self.btn_links = self.findChild(QtWidgets.QPushButton, 'btn_links')
+        self.btn_nodes = self.findChild(QtWidgets.QPushButton, 'btn_nodes')
         self.btn_modes = self.findChild(QtWidgets.QPushButton, 'btn_modes')
         self.btn_operators = self.findChild(QtWidgets.QPushButton, 'btn_operators')
         self.btn_transfers = self.findChild(QtWidgets.QPushButton, 'btn_transfers')
@@ -90,6 +101,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_scenarios = self.findChild(QtWidgets.QAction, 'actionScenarios')
         self.actn_options = self.findChild(QtWidgets.QAction, 'actionOptions')
         self.actn_zones = self.findChild(QtWidgets.QAction, 'actionZones')
+        #self.actn_import_transfers = self.findChild(QtWidgets.QAction, 'actionImport_Transfers')
+        #self.actn_import_exogenous_trips = self.findChild(QtWidgets.QAction, 'actionImport_Exogenous_Trips')
         self.actn_generate_input_files = self.findChild(QtWidgets.QAction, 'actionGenerate_Input_Files')
         self.actn_generate_single_scenario = self.findChild(QtWidgets.QAction, 'actionGenerate_Single_Scenario')
         self.actn_ctl_scenario_definitions = self.findChild(QtWidgets.QAction, 'actionCTL_Scenario_Definitions')
@@ -116,10 +129,14 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.btn_routes.clicked.connect(self.open_routes_window)
         self.btn_administrators.clicked.connect(self.open_administrators_window)
         self.btn_link_types.clicked.connect(self.open_linktype_window)
+        self.btn_links.clicked.connect(self.open_links_window)
+        self.btn_nodes.clicked.connect(self.open_nodes_window)
         self.btn_exogenous_trips.clicked.connect(self.open_exgogenoustrips_window)
 
         self.actn_scenarios.triggered.connect(self.open_scenarios_window)
         self.actn_zones.triggered.connect(self.open_zones_window)
+        #self.actn_import_transfers.triggered.connect(self.open_import_transfers)
+        #self.actn_import_exogenous_trips.triggered.connect(self.open_import_exogenous_trips)
         self.actn_options.triggered.connect(self.open_configuration_window)
         self.actn_generate_input_files.triggered.connect(self.generate_input_files)
         self.actn_generate_single_scenario.triggered.connect(self.generate_single_scenario)
@@ -139,6 +156,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
 
         #self.scenario_tree.selectionChanged(item)
+        if self.tranus_folder[-13:]=="""\W_TRANUS.CTL""":
+            self.tranus_folder = self.tranus_folder.replace('\W_TRANUS.CTL','')
 
         #Loads
         #self.__extract_db_files()
@@ -231,11 +250,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
         header = self.dataBaseSqlite.selectAll(" project ")
         filename = "W_{}.Z1E".format(header[0][1])
         fh = None
-        zones_first = self.dataBaseSqlite.selectAll(" zone ", " where external is NULL")
-        zones_external = self.dataBaseSqlite.selectAll(" zone ", " where external == 1")
+        zones_first = self.dataBaseSqlite.selectAll(" zone ", columns=" id, name ", where=" where id > 0 and external is NULL", orderby=" order by 1 asc ")
+        zones_external = self.dataBaseSqlite.selectAll(" zone ", columns=" id, name ", where=" where id > 0 and external == 1", orderby=" order by 1 asc ")
         zones_header = ["Zone", "'Name'"]
-        zones_data = [[valor[1],"'"+str(valor[2])+"'"] for valor in zones_first]
-        zones_data_ext = [[valor[1],"'"+str(valor[2])+"'"] for valor in zones_external]
+        zones_data = [[valor[0],"'"+str(valor[1])+"'"] for valor in zones_first]
+        zones_data_ext = [[valor[0],"'"+str(valor[1])+"'"] for valor in zones_external]
         
         try:
             fh = open("{}/{}".format(self.tranus_folder, filename), "w", encoding="utf8")
@@ -788,17 +807,15 @@ class DataWindow(QMainWindow, FORM_CLASS):
         trans_mode_head =["No.","'Name'","Paths","Overlapp","ASC"]
         qry_trans_mode = """select a.id, name, coalesce(maximum_number_paths,0), 
                             coalesce(path_overlapping_factor,0), 0 asc
-                        from mode a
-                        join scenario_mode b on (a.id = b.id_mode)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        from mode a"""
         result_trans_mode = self.dataBaseSqlite.executeSql(qry_trans_mode) 
-        trans_mode_data = [[valor[0],"'"+valor[1]+"'",valor[2], str(valor[3])+" /"] for valor in result_trans_mode] 
+        trans_mode_data = [[valor[0],"'"+valor[1]+"'",valor[2], valor[3], "%s /" % valor[4]  ] for valor in result_trans_mode] 
 
         # 2.2
         trans_ope_head =["No","'Name'","Mode","Type","OccRate","Penaliz","MinWait","MaxWait","PathASC"]
         qry_ope = """select a.id, a.name, a.id_mode mode, a.type, coalesce(a.basics_occupency,0) occupency, 
                             coalesce(a.basics_modal_constant,0) penaliz, 
-                            coalesce(a.basics_fixed_wating_factor,0)  minwait,  0 maxwait, coalesce(a.basics_path_asc,0)
+                            coalesce(a.basics_fixed_wating_factor,0)  minwait,  0 maxwait, 0 path_asc 
                             from operator a
                             join scenario_operator b on (a.id = b.id_operator)
                             where b.id_scenario = {}""".format(id_scenario)
@@ -808,10 +825,10 @@ class DataWindow(QMainWindow, FORM_CLASS):
         # 2.3
         trans_route_head =["No","'Name'","Oper","MinFreq","MaxFreq","Tartet Occ","MaxFleet","Scheduled"]
         qry_route = """select a.id, a.name, a.id_operator, a.frequency_from, 
-                    a.frequency_to, a.target_occ, a.max_fleet, a.follows_schedule
+                    a.frequency_to, a.target_occ/100, a.max_fleet, a.follows_schedule
                     from route a
                     join scenario_route b on (a.id = b.id_route)
-                    where b.id_scenario = {}""".format(id_scenario)
+                    where b.id_scenario = {} and used = 1""".format(id_scenario)
         result_route = self.dataBaseSqlite.executeSql(qry_route) 
         route_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3],valor[4],valor[5],valor[6],str(valor[7])+" /"] for valor in result_route] 
 
@@ -820,16 +837,16 @@ class DataWindow(QMainWindow, FORM_CLASS):
         qry_adm = """select a.id, name  
                      from administrator a
                      join scenario_administrator b on (a.id = b.id_administrator)
-                     where id_scenario = {}""".format(id_scenario)
+                     where id_scenario = {} """.format(id_scenario)
         result_adm = self.dataBaseSqlite.executeSql(qry_adm) 
         adm_data = [[valor[0],"'"+str(valor[1])+"'"] for valor in result_adm] 
 
         # 2.5
         trans_lynkt_head =["No","'Name'","Admin","MinMaintCo"]
         qry_lynkt = """select a.id, name, id_administrator, min_maintenance_cost 
-                    from link_type a
-                    join scenario_route b on (a.id = b.id_route)
-                    where b.id_scenario = {}""".format(id_scenario)
+                        from link_type a
+                        join scenario_linktype b on (a.id = b.id_linktype)
+                        where b.id_scenario = {}""".format(id_scenario)
         result_lynkt = self.dataBaseSqlite.executeSql(qry_lynkt) 
         lynkt_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3]] for valor in result_lynkt] 
 
@@ -854,10 +871,10 @@ class DataWindow(QMainWindow, FORM_CLASS):
         # 4.2
         cost_header =["Type", "Oper", "Speed","EqVeh","DistCost","Toll","Maint","Penal"]
         qry_cond = """select 
-                        a.id_linktype, a.id_operator, coalesce(speed,0), coalesce(equiv_vahicules,0), coalesce(distance_cost,0), 
+                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(speed,0), coalesce(equiv_vahicules,0), coalesce(distance_cost,0), 
                         coalesce(charges,0) toll, coalesce(margin_maint_cost,0), coalesce(penaliz,0)
                         from link_type_operator a
-                        join scenario_operator b on (a.id = b.id_operator)
+                        join scenario_operator b on (a.id_operator = b.id_operator)
                         where b.id_scenario = {}
                         order by 1,2 """.format(id_scenario)
         result_cond = self.dataBaseSqlite.executeSql(qry_cond) 
@@ -866,9 +883,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
         # 4.3
         overlap_head =["Type", "Oper", "Overlap"]
         qry_overlap = """select 
-                        a.id_linktype, a.id_operator, coalesce(overlap_factor,0) overlap_factor
+                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(overlap_factor,0) overlap_factor
                         from link_type_operator a
-                        join scenario_operator b on (a.id = b.id_operator)
+                        join scenario_operator b on (a.id_operator = b.id_operator)
                         where b.id_scenario = {}
                         order by 1,2 """.format(id_scenario)
         result_overlap = self.dataBaseSqlite.executeSql(qry_overlap) 
@@ -908,6 +925,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
             fh.write("------------------------------------------------------------------------- /\n")
             fh.write("1.0 GLOBAL PARAMETERS \n")
             fh.write("    For TRANUS Internal Use \n")
+            fh.write("    60 \n")
             fh.write("*------------------------------------------------------------------------- /\n")
             fh.write("2.0 TRANSPORT DEMAND CATEGORIES\n")
             fh.write("    2.1 Transport Modes \n")
@@ -1110,6 +1128,16 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
+    
+    """def open_import_transfers(self):
+        dialog = AddExcelDataDialog(self.tranus_folder, parent = self, _type='transfers')
+        dialog.show()
+        result = dialog.exec_()
+    
+    def open_import_exogenous_trips(self):
+        dialog = AddExcelDataDialog(self.tranus_folder, parent = self, _type='exogenous_trips')
+        dialog.show()
+        result = dialog.exec_()"""
         
         
     def open_scenarios_window(self):
@@ -1117,6 +1145,22 @@ class DataWindow(QMainWindow, FORM_CLASS):
             @summary: Opens data window
         """
         dialog = ScenariosDialog(self.tranus_folder, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+    def open_links_window(self):
+        """
+            @summary: Opens data window
+        """
+        dialog = LinksDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+    def open_nodes_window(self):
+        """
+            @summary: Opens data window
+        """
+        dialog = NodesDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
     
@@ -1214,9 +1258,10 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens administrators window
         """
-        dialog = AdministratorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        #print(self.scenarioSelectedIndex)
+        dialog = AdministratorsDialog(self.tranus_folder, self.scenarioCode, self.scenarioSelectedIndex, parent = self)
         dialog.show()
-        #result = dialog.exec_()
+        result = dialog.exec_()
         self.__validate_buttons()
 
     def open_linktype_window(self):
@@ -1270,9 +1315,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
     def __load_scenarios(self):
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        #self.scenarios_model.itemChanged.connect(self.select_scenario)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenario_tree.setSelectionModel(modelSelection)
+
         
 
     def load_data(self):
@@ -1282,6 +1330,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
             self.btn_zonal_data.setEnabled(False)
 
         if self.__load_network_data():
+            self.btn_link_types.setEnabled(True)
+        else:
+            self.btn_link_types.setEnabled(False)
+
+        if self.__load_nodes_data():
             self.btn_link_types.setEnabled(True)
         else:
             self.btn_link_types.setEnabled(False)
@@ -1324,9 +1377,34 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 linkId = feature.attribute('LinkId')
                 Or_node = feature.attribute('Or_node')
                 Des_node = feature.attribute('Des_node')
-                result = self.dataBaseSqlite.selectAll('network', " where linkid = '{}'".format(linkId))
+                result = self.dataBaseSqlite.selectAll(' link ', " where linkid = '{}'".format(linkId))
                 if len(result) == 0:
-                    self.dataBaseSqlite.addNetwork(linkId, Or_node, Des_node)
+                    self.dataBaseSqlite.addLink(linkId, Or_node, Des_node)
+
+            return True
+
+    def __load_nodes_data(self):
+        shape = self.network_nodes_shape.text()
+        layer = QgsVectorLayer(shape, 'Network_Nodes', 'ogr')
+        if not layer.isValid():
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Layers is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+        else:
+            network_shape_fields = [field.name() for field in layer.fields()]
+            features = layer.getFeatures()
+            #print(features)
+            
+            for feature in features:
+                _id = feature.attribute('Id')
+                id_type = feature.attribute('Zone') if feature.attribute('Zone') else None
+                name = feature.attribute('name') if feature.attribute('name') else None
+                description = feature.attribute('descriptio') if feature.attribute('descriptio') else None
+                x = feature.attribute('X') if feature.attribute('X') else None
+                y = feature.attribute('Y') if feature.attribute('Y') else None
+                result = self.dataBaseSqlite.selectAll(' node ', " where id = {}".format(_id))
+                if len(result) == 0:
+                    self.dataBaseSqlite.addNode(_id, id_type, name, description, x, y)
 
             return True
         

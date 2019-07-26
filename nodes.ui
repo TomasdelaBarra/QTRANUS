@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Data | Modes</string>
+   <string>Data | Links</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
@@ -21,7 +21,7 @@
        <item>
         <widget class="QLabel" name="label_title">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Data: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Modes&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Scenarios&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Data: &lt;/span&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Nodes&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Scenarios&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -86,9 +86,9 @@
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="add_mode_btn">
+              <widget class="QPushButton" name="add_node_btn">
                <property name="text">
-                <string>Add Mode</string>
+                <string>Add Node</string>
                </property>
                <property name="icon">
                 <iconset>
@@ -99,10 +99,10 @@
             </layout>
            </item>
            <item>
-            <widget class="QTreeView" name="modes_tree"/>
+            <widget class="QTreeView" name="node_tree"/>
            </item>
            <item>
-            <widget class="QLabel" name="total_items_modes">
+            <widget class="QLabel" name="total_items_nodes">
              <property name="text">
               <string>TextLabel</string>
              </property>

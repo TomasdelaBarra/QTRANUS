@@ -15,12 +15,12 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model_sqlite import ScenariosModelSqlite
-from .add_administrator_dialog import AddAdministratorDialog
+from .add_node_dialog import AddNodeDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'administrators.ui'))
+    os.path.dirname(__file__), 'nodes.ui'))
 
-class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
+class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None):
         """
@@ -28,7 +28,7 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
             @param parent: Class that contains project information
             @type parent: QTranusProject class 
         """
-        super(AdministratorsDialog, self).__init__(parent)
+        super(NodesDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
         self.copyAdministratorSelected = None
@@ -44,27 +44,27 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
-        self.administrators_tree = self.findChild(QtWidgets.QTreeView, 'administrators_tree')
-        self.lb_total_items_administrators = self.findChild(QtWidgets.QLabel, 'total_items_administrators')
-        self.administrators_tree.setRootIsDecorated(False)
-        self.add_administrator_btn = self.findChild(QtWidgets.QPushButton, 'add_administrator_btn')
+        self.nodes_tree = self.findChild(QtWidgets.QTreeView, 'node_tree')
+        self.nodes_tree.setRootIsDecorated(False)
+        self.lb_total_items_nodes = self.findChild(QtWidgets.QLabel, 'total_items_nodes')
+        self.add_node_btn = self.findChild(QtWidgets.QPushButton, 'add_node_btn')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
-        self.add_administrator_btn.clicked.connect(self.open_add_administrator_window)
+        self.add_node_btn.clicked.connect(self.open_add_node_window)
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.scenario_tree.clicked.connect(self.select_scenario)
-        self.administrators_tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.administrators_tree.customContextMenuRequested.connect(self.open_menu_administrators)
+        self.nodes_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.nodes_tree.customContextMenuRequested.connect(self.open_menu_nodes)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         
         
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
-        self.__get_administrators_data()
+        self.__get_nodes_data()
 
         # Set scenarioIndex
         if self.scenarioCode:
@@ -75,7 +75,7 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.show_used_btn.setToolTip("Show Used Only")
         self.show_changed_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
         self.show_changed_btn.setToolTip("Show Changed Only")
-        self.add_administrator_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+        self.add_node_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
 
         
     def select_scenario(self, selectedIndex):
@@ -86,7 +86,7 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
-        self.__get_administrators_data()
+        self.__get_nodes_data()
 
 
     def open_help(self):
@@ -98,33 +98,33 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
 
-    def open_menu_administrators(self, position):
+    def open_menu_nodes(self, position):
         menu = QMenu()
 
-        indexes = self.administrators_tree.selectedIndexes()
-        administratorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
+        indexes = self.nodes_tree.selectedIndexes()
+        nodeSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
-        edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Administrator')
-        remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Administrator')
+        edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Node')
+        remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Node')
 
-        opt = menu.exec_(self.administrators_tree.viewport().mapToGlobal(position))
+        opt = menu.exec_(self.nodes_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
             if not self.idScenario:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             else:
-                dialog = AddAdministratorDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeAdministrator=administratorSelected)
+                dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeNode=nodeSelected)
                 dialog.show()
                 result = dialog.exec_()
-                self.__get_administrators_data()
+                self.__get_nodes_data()
         if opt == remove:
-            self.dataBaseSqlite.removeAdministrator(administratorSelected)
-            self.__get_administrators_data()
+            self.dataBaseSqlite.removeNode(nodeSelected)
+            self.__get_nodes_data()
             
 
 
-    def open_add_administrator_window(self):
+    def open_add_node_window(self):
         """
             @summary: Opens add scenario window
         """
@@ -132,10 +132,10 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            dialog = AddAdministratorDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
+            dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
             dialog.show()
             result = dialog.exec_()
-            self.__get_administrators_data()
+            self.__get_nodes_data()
         
 
     def remove_scenario(self, codeScenario=None):
@@ -162,17 +162,6 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_scenarios_data(self):
 
-        """#index = self.scenarios_model.findItems('00A - Test')
-        #if self.scenarioSelectedIndex is None:
-        #self.scenarioSelectedIndex = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        #print(self.scenarioSelectedIndex)
-        print(self.scenarioSelectedIndex.isValid())
-        print(self.scenarioSelectedIndex.parent())
-        print(self.scenarioSelectedIndex.column(), self.scenarioSelectedIndex.row())
-        print(self.scenarioSelectedIndex.model().itemFromIndex(self.scenarioSelectedIndex).text().split(" - ")[0])
-        testItem = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        print(testItem.model().itemFromIndex(testItem).text().split(" - "))"""
-        #modelSelection.setCurrentIndex(self.scenarioSelectedIndex, QItemSelectionModel.Select)"""
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
         modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
@@ -183,28 +172,26 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
                
 
-    def __get_administrators_data(self):
+    def __get_nodes_data(self):
         
-        if self.idScenario:
-            qry = """select a.id, a.name, a.description 
-                     from administrator a
-                     join scenario_administrator b on (a.id = b.id_administrator)
-                     where b.id_scenario = %s""" % (self.idScenario)
-            result = self.dataBaseSqlite.executeSql(qry)
-        else:
-            result = self.dataBaseSqlite.selectAll('administrator', columns='id, name, description')
+        qry = """select id, name, 
+                 case WHEN id_type = 1 then 'Internal' 
+                      WHEN id_type = 2 then 'External'
+                      WHEN id_type is NULL then 'Node'  end type    
+                 from node order by 1 asc """ 
+        result = self.dataBaseSqlite.executeSql(qry)
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
+        model.setHorizontalHeaderLabels(['Id','Name', 'Type'])
         for x in range(0, len(result)):
             model.insertRow(x)
             z=0
             for y in range(0,3):
                 model.setData(model.index(x, y), result[x][z])
                 z+=1
-        self.administrators_tree.setModel(model)
-        self.administrators_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
+        self.nodes_tree.setModel(model)
+        self.nodes_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
 
-        self.lb_total_items_administrators.setText(" %s Items" % len(result))
+        self.lb_total_items_nodes.setText(" %s Items" % len(result))
 
 
     def load_scenarios(self):
