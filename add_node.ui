@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Add new administrator</string>
+   <string>Add new Node</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>

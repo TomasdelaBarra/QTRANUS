@@ -84,6 +84,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.centroid_shape_btn = self.findChild(QtWidgets.QToolButton, 'centroid_shape_btn')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_fields')
+        self.pg_loading = self.findChild(QtWidgets.QProgressBar, 'pg_loading')
+        self.lbl_loading = self.findChild(QtWidgets.QLabel, 'lbl_load')
+
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -102,7 +105,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
         #self.projectInst.cleared(self.clear_project)  
         #self.proj.removeAll.connect(self.clearObjects)
-
+        self.pg_loading.setVisible(False)
+        self.lbl_loading.setVisible(False)
         # Loads
         self.reload_scenarios()
         if self.project['zones_id_field_name']:
@@ -127,7 +131,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.results_btn.setEnabled(False)
 
 
-	
     def open_help(self):
         """
             @summary: Opens QTranus users help

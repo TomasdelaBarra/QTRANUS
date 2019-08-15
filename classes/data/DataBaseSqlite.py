@@ -285,14 +285,36 @@ class DataBaseSqlite():
 			""",
 			"""
 			CREATE TABLE IF NOT EXISTS link (
-				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
-				id_scenario     INTEGER,
+				id	            INTEGER,
 				linkid          TEXT NOT NULL, 
+				id_scenario     INTEGER,
 				id_linktype     INTEGER,
+				two_away        INTEGER,
+				used_in_scenario INTEGER,
 				node_from       INTEGER,
 				node_to         INTEGER,
-				distance 		REAL,
+				name            TEXT,
+				description     TEXT,
+				length   		REAL,
 				capacity   	    REAL,
+				delay           REAL
+			);
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS link_route (
+				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
+				id_scenario     INTEGER,
+				id_link         INTEGER,
+				id_route        INTEGER, 
+				type_route      INTEGER
+			);
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS intersection_delay (
+				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
+				id_scenario     INTEGER,
+				id_link         INTEGER,
+				id_node         INTEGER, 
 				delay           REAL
 			);
 			""",
@@ -320,7 +342,7 @@ class DataBaseSqlite():
 			);
 			"""
 			]
-
+		# Types of the routes: 1 Passes and Stops (passes_stops); 2 Passes Only (passes_only), 3 Can not Pass (cannot_pass)
 		try:
 			for value in tables:
 				cursor.execute(value)
@@ -376,6 +398,7 @@ class DataBaseSqlite():
 	def addExogenousData(self, scenarios, id_zone_from, id_zone_to, id_mode, id_category, column=None, value=None):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
+
 		for valor in scenarios:
 			sql = "insert into exogenous_trips \
 				(id_scenario, id_zone_from, id_zone_to, id_category, id_mode,  {5}) \
@@ -386,7 +409,153 @@ class DataBaseSqlite():
 
 		conn.close()
 		return True
+
+
+	def addLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, _id, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		two_away = 1 if two_away else 0
+		used_in_scenario = 1 if used_in_scenario else 0
+		columns = ''
+		values = ''
+		if name:
+			columns += ", name"
+			values +=  f", '{name}'"
+		if description:
+			columns += ", description"
+			values +=  f", '{description}'"
+		if delay:
+			columns += ", delay"
+			values +=  f", {delay}"
+
+		for id_scenario in scenarios:
+			if two_away:
+				sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
+			        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+			        	values ({id_scenario[0]}, {_id}, '{id_origin}-{id_destination}', {id_linktype}, {two_away}, {used_in_scenario},
+			        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
+				cursor.execute(sql)
+				conn.commit()    
+
+				result = self.selectAll(' link ', where= f" where linkid='{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}" )
+
+				if not result:
+					id_tmp =int(_id)+1
+					sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
+				        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+				        	values ({id_scenario[0]}, {id_tmp}, '{id_destination}-{id_origin}', {id_linktype}, {two_away}, {used_in_scenario},
+				        	{id_destination}, {id_origin}, {length}, {capacity} {values})"""
+					cursor.execute(sql)
+					conn.commit()    
+			else:
+				sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
+			        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+			        	values ({id_scenario[0]}, {_id}, '{id_origin}-{id_destination}', {id_linktype}, {two_away}, {used_in_scenario},
+			        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
+
+				cursor.execute(sql)
+				conn.commit()
+
+		for id_scenario in scenarios:
+			for id_route in id_routes_arr_selected:
+				sql = f"""insert into  link_route (id_scenario, id_link, id_route, type_route) 
+					values ({id_scenario[0]}, {_id}, {int(id_route[0])}, {int(id_route[1])})"""
+				cursor.execute(sql)
+				conn.commit()	
+
+			for turn in turns_delays_arr:
+				if turn[1]:
+					sql = f"""insert into intersection_delay (id_scenario, id_link, id_node, delay) 
+						values ({id_scenario[0]}, {_id}, {turn[0]}, {turn[1]})"""
+					cursor.execute(sql)
+					conn.commit()
 		
+		conn.close()
+		return True
+
+
+	def updateLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, _id, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		columns_values = ''
+
+		if name:
+			columns_values += f", name = '{name}'"
+		if description:
+			columns_values += f", description = '{description}'"
+		if delay:
+			columns_values += f', delay = {delay}'
+
+		for id_scenario in scenarios:
+			sql = f"""update link  set id_linktype = {id_linktype}, two_away = {two_away}, 
+					 used_in_scenario = {used_in_scenario}, length = {length}, capacity = {capacity} {columns_values}
+					 where id = {_id} and id_scenario = {id_scenario[0]}"""
+			cursor.execute(sql)
+			conn.commit()
+			
+			if two_away:
+				result = self.selectAll(" link ", where = " where linkid = '{id_destination}-{id_origin}' ")
+				if not result:
+					self.addLinkFDialog(scenarios, id_destination, id_origin, id_linktype, int(_id)+1, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr)
+
+				sql = f"""update link  set id_linktype = {id_linktype}, two_away = {two_away}, 
+					length = {length}, capacity = {capacity}
+					where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
+				cursor.execute(sql)
+				conn.commit()
+				
+			elif int(two_away) == 0:
+				sql = f"""update link  set two_away = ''
+					where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
+				
+				cursor.execute(sql)
+				conn.commit()
+					
+
+		if id_routes_arr_selected:
+			for id_scenario in scenarios:
+				for id_route in id_routes_arr_selected:
+					result = self.selectAll(' link_route ', 
+						where=f' where id_scenario={id_scenario[0]} and id_link={_id} and id_route={int(id_route[0])}')
+
+					if result:
+						sql = f"""update link_route set type_route = {int(id_route[1])} where id_scenario = {id_scenario[0]} and id_link = {_id} and id_route = {int(id_route[0])}"""
+					else:
+						sql = f"""insert into link_route (id_scenario, id_link, id_route, type_route) values ({id_scenario[0]}, {_id}, {int(id_route[0])}, {int(id_route[1])})"""
+					
+					cursor.execute(sql)
+					conn.commit()	
+
+		if turns_delays_arr:
+			for id_scenario in scenarios:
+				for turn in turns_delays_arr:
+					if turn[1]:
+						sql = f""" update intersection_delay set delay = {turn[1]} where id_scenario={id_scenario[0]} and id_link={_id} and id_node={turn[0]} """
+						cursor.execute(sql)
+						conn.commit()
+
+		return True
+		
+	def removeLink(self, scenarios, linkid):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		id_link = self.selectAll(' link ', where=f" where linkid = '{linkid}'")[0][0]
+		for scenario in scenarios:
+			sql = f""" delete from link where linkid = '{linkid}' and id_scenario = {scenario[0]}"""
+			cursor.execute(sql)
+			conn.commit()
+
+		for scenario in scenarios:
+			sql = f""" delete from link_route where id_link = {id_link} and id_scenario = {scenario[0]}"""
+			cursor.execute(sql)
+			conn.commit()
+
+		for scenario in scenarios:
+			sql = f""" delete from intersection_delay where id_link = {id_link} and id_scenario = {scenario[0]}"""
+			cursor.execute(sql)
+			conn.commit()
+		return True
 
 
 	def updateExogenousData(self, id_scenario, id_zone_from, id_zone_to, id_mode, id_category, column=None, value=None):
@@ -565,14 +734,17 @@ class DataBaseSqlite():
 		conn.close()
 		return True	
 
-	def addLink(self, linkid, node_from, node_to):
 
-		sql = "insert into link (linkid, node_from, node_to) values ('{}',{},{});".format(linkid, node_from, node_to)
+	def addLink(self, scenarios, linkid, node_from, node_to):
 		
+		_id = int(linkid.replace('-',''))
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+		for id_scenario in scenarios:
+			sql = "insert into link (id_scenario, id, linkid, node_from, node_to) values ({}, {},'{}',{},{});".format(id_scenario[0], _id, linkid, node_from, node_to)
+		
+			cursor.execute(sql)
+			conn.commit()
 		conn.close()
 		return True
 
@@ -599,7 +771,7 @@ class DataBaseSqlite():
 
 		sql = "insert into node ({}) values ({});".format(column, value)
 		
-		#print(sql)
+		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
@@ -612,7 +784,7 @@ class DataBaseSqlite():
 		
 		sql = "delete from node where id={};".format(_id)
 		
-		#print(sql)
+		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
@@ -733,7 +905,7 @@ class DataBaseSqlite():
 			   energy_min, energy_max, energy_slope, energy_cost, 
 			   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
 			   stops_unit_boarding_time, stops_unit_alight_time, _id)
-		#print(sql)
+		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
@@ -1348,7 +1520,7 @@ class DataBaseSqlite():
 
 	def selectAll(self, table, where='', columns='*', orderby=''):
 		sql = "select {} from {} {} {}".format(columns,table, where, orderby)
-		
+
 		conn = self.connectionSqlite()
 		try:
 			data = conn.execute(sql)

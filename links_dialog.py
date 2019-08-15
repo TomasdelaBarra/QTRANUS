@@ -15,7 +15,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model_sqlite import ScenariosModelSqlite
-from .add_administrator_dialog import AddAdministratorDialog
+from .add_link_dialog import AddLinkDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'links.ui'))
@@ -31,7 +31,6 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         super(LinksDialog, self).__init__(parent)
         self.setupUi(self)
         self.project = parent.project
-        self.copyAdministratorSelected = None
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
@@ -101,25 +100,29 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
     def open_menu_links(self, position):
         menu = QMenu()
 
-        indexes = self.administrators_tree.selectedIndexes()
-        administratorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
+        indexes = self.links_tree.selectedIndexes()
+        linkSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Link')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Link')
 
-        opt = menu.exec_(self.administrators_tree.viewport().mapToGlobal(position))
+        opt = menu.exec_(self.links_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
             if not self.idScenario:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             else:
-                dialog = AddAdministratorDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeAdministrator=administratorSelected)
+                dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeLink=linkSelected)
                 dialog.show()
                 result = dialog.exec_()
                 self.__get_links_data()
         if opt == remove:
-            self.dataBaseSqlite.removeAdministrator(administratorSelected)
+            id_scenario = self.idScenario
+            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+            
+            self.dataBaseSqlite.removeLink(scenarios, linkSelected)
             self.__get_links_data()
             
 
@@ -132,7 +135,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            dialog = AddAdministratorDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
+            dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
             dialog.show()
             result = dialog.exec_()
             self.__get_links_data()
@@ -162,17 +165,6 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_scenarios_data(self):
 
-        """#index = self.scenarios_model.findItems('00A - Test')
-        #if self.scenarioSelectedIndex is None:
-        #self.scenarioSelectedIndex = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        #print(self.scenarioSelectedIndex)
-        print(self.scenarioSelectedIndex.isValid())
-        print(self.scenarioSelectedIndex.parent())
-        print(self.scenarioSelectedIndex.column(), self.scenarioSelectedIndex.row())
-        print(self.scenarioSelectedIndex.model().itemFromIndex(self.scenarioSelectedIndex).text().split(" - ")[0])
-        testItem = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        print(testItem.model().itemFromIndex(testItem).text().split(" - "))"""
-        #modelSelection.setCurrentIndex(self.scenarioSelectedIndex, QItemSelectionModel.Select)"""
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
         modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
@@ -185,10 +177,11 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_links_data(self):
         
-        qry = """select linkid, '' name,  b.name linktype
+        qry = """select distinct linkid, a.name,  b.name linktype
                 from link a
-                left join link_type b on (a.id_linktype = b.id) 
-                order by node_from, node_to ASC """ 
+                left join link_type b on (a.id_linktype = b.id)
+                WHERE id_scenario = {}
+                order by node_from, node_to ASC""".format(self.idScenario) 
         result = self.dataBaseSqlite.executeSql(qry)
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Link Type'])

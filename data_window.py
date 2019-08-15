@@ -1366,6 +1366,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
     def __load_network_data(self):
         shape = self.network_links_shape.text()
         layer = QgsVectorLayer(shape, 'Network_Links', 'ogr')
+        result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
+        scenarios_arr = self.dataBaseSqlite.selectAllScenarios(result[0][0])
+
         if not layer.isValid():
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Layers is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -1373,15 +1376,50 @@ class DataWindow(QMainWindow, FORM_CLASS):
         else:
             network_shape_fields = [field.name() for field in layer.fields()]
             features = layer.getFeatures()
-            for feature in features:
-                linkId = feature.attribute('LinkId')
-                Or_node = feature.attribute('Or_node')
-                Des_node = feature.attribute('Des_node')
-                result = self.dataBaseSqlite.selectAll(' link ', " where linkid = '{}'".format(linkId))
-                if len(result) == 0:
-                    self.dataBaseSqlite.addLink(linkId, Or_node, Des_node)
+            result = self.dataBaseSqlite.executeSql("select count(*) from link")
+            parent = self.parent()
+            parent.pg_loading.setVisible(True)
+            parent.pg_loading.setEnabled(True)
+            parent.lbl_loading.setEnabled(True)
+            pg_increment = 0
+            total_link = len([feature for feature in features])
+            pg_increment = 100/total_link
+            print(f"Result LINK {result[0][0]}, total {total_link}, increment {pg_increment}")
+            parent.pg_loading.setValue(pg_increment)
+            if result[0][0] != 0:
+                parent.lbl_loading.setText("Varifing Network")
+                parent.pg_loading.setValue(pg_increment)
+                print("Dentro del IF")
+                for feature in layer.getFeatures():
+                    linkId = feature.attribute('LinkId')
+                    Or_node = feature.attribute('Or_node')
+                    Des_node = feature.attribute('Des_node')
+
+                    result = self.dataBaseSqlite.selectAll(' link ', " where linkid = '{}'".format(linkId))
+                    if len(result) == 0:
+                        self.dataBaseSqlite.addLink(scenarios_arr, linkId, Or_node, Des_node)
+                    pg_increment+=pg_increment
+                    if (int(pg_increment) % 5) == 0:
+                        parent.pg_loading.setValue(pg_increment)
+            else:
+                parent.lbl_loading.setText("Loading Network")
+                
+                for feature in layer.getFeatures():
+                    linkId = feature.attribute('LinkId')
+                    Or_node = feature.attribute('Or_node')
+                    Des_node = feature.attribute('Des_node')
+                    
+                    self.dataBaseSqlite.addLink(scenarios_arr, linkId, Or_node, Des_node)
+                    pg_increment+=pg_increment
+
+                    if (int(pg_increment) % 5) == 0:
+                        parent.pg_loading.setValue(pg_increment)
+
+            parent.pg_loading.setVisible(False)
+            parent.lbl_loading.setVisible(False)
 
             return True
+
 
     def __load_nodes_data(self):
         shape = self.network_nodes_shape.text()
