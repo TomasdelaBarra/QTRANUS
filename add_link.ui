@@ -91,7 +91,7 @@
          <item>
           <widget class="QTabWidget" name="btn_delete_route">
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="tab_5">
             <attribute name="title">
@@ -110,7 +110,7 @@
                <item row="0" column="0">
                 <widget class="QCheckBox" name="two_away">
                  <property name="text">
-                  <string>Two Away</string>
+                  <string>Two Way</string>
                  </property>
                 </widget>
                </item>
