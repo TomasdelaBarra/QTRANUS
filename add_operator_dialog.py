@@ -292,6 +292,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			   )
 		
 		if self.operatorSelected:
+			data.update(scenarios=scenarios)
 			result = self.dataBaseSqlite.updateOperator(data)
 		else:
 			data.update(scenarios=scenarios)
@@ -306,6 +307,9 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
 	def __update_category(self,item):
+		id_scenario = self.idScenario
+		scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+		scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 		
 		if item.text()!=None and item.text()!='' and self.id.text()!='':
 			column = item.column()
@@ -321,11 +325,11 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			ifExist = self.dataBaseSqlite.selectAll('operator_category', " where id_operator = {} and id_category = {} ".format(id_operator, id_category))
 			
 			if len(ifExist) == 0:
-				if not self.dataBaseSqlite.addOperatorCategory(id_operator, id_category, column=dataColumn, value=item_value):
+				if not self.dataBaseSqlite.addOperatorCategory(scenarios, id_operator, id_category, column=dataColumn, value=item_value):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
 			else: 
-				if not self.dataBaseSqlite.updateOperatorCategory(id_operator, id_category, column=dataColumn, value=item_value):
+				if not self.dataBaseSqlite.updateOperatorCategory(scenarios, id_operator, id_category, column=dataColumn, value=item_value):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
 
@@ -346,7 +350,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		sql = """ select a.name category, b.tariff_factor, b.penal_factor 
 				from category a 
 				left join operator_category b on (a.id = b.id)
-				where b.id_operator = %s """ % (self.operatorSelected)
+				where b.id_operator = %s and id_scenario = %s """ % (self.operatorSelected, self.idScenario)
 		
 		result = self.dataBaseSqlite.executeSql(sql)
 
@@ -400,19 +404,21 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.operatorSelected:
 			sql =""" select a.name category, b.tariff_factor, b.penal_factor 
 					from category a left join operator_category b on (a.id = b.id_category)
-					where b.id_operator = %s """ % self.operatorSelected
+					where b.id_operator = %s and id_scenario = %s """ % (self.operatorSelected, self.idScenario)
 			existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
 		else:
 			existOperatorCategory = []
+			
 		# Table data
 		if self.operatorSelected and len(existOperatorCategory)>0:
-			sql = """ select a.name category, b.tariff_factor, b.penal_factor 
-			from category a left join operator_category b on (a.id = b.id_category)
-			where b.id_operator = {} """.format(self.operatorSelected)
+			sql = """ select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
+			from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+			where b.id_operator = {} and a.id_scenario = {}  """.format(self.operatorSelected, self.idScenario)
 		else:	
-			sql= """select name category, '' tariff_factor, '' penal_factor 
-				from category """
+			sql= """select id||' '||name category, '' tariff_factor, '' penal_factor 
+				from category where id_scenario = {}""".format(self.idScenario)
 
+		print(f"{sql}")
 		result_cat = self.dataBaseSqlite.executeSql(sql)
 		
 		rowsCount = len(result_cat)
@@ -424,7 +430,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		for index, valor in enumerate(result_cat):
 			self.vertical_header_cat.append(valor[0])
 			headerItem = QTableWidgetItem(valor[0])
-			headerItem.setIcon(QIcon(self.plugin_dir+"/icons/category.jpg"))
+			headerItem.setIcon(QIcon(self.plugin_dir+"/icons/category.png"))
 			self.by_category_tbl.setVerticalHeaderItem(index,headerItem)
 
 		# Set columns size

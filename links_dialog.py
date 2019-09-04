@@ -59,7 +59,6 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_tree.customContextMenuRequested.connect(self.open_menu_links)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         
-        
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
@@ -69,7 +68,9 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.scenarioCode:
             self.__find_scenario_data(self.scenarioCode)
 
-        #Add Iconss
+        #Add Icons
+        self.ic_one_way = QIcon(self.plugin_dir+"/icons/one-way-road.png")
+        self.ic_two_way_road = QIcon(self.plugin_dir+"/icons/two-way-road.png")
         self.show_used_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-gray.png"))
         self.show_used_btn.setToolTip("Show Used Only")
         self.show_changed_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
@@ -175,26 +176,64 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
                
 
-    def __get_links_data(self):
-        
-        qry = """select distinct linkid, a.name,  b.name linktype
-                from link a
-                left join link_type b on (a.id_linktype = b.id)
-                WHERE id_scenario = {}
-                order by node_from, node_to ASC""".format(self.idScenario) 
+    def __get_links_data(self): 
+
+        qry = """with base as (
+                    select distinct case when (a.two_way is null or a.two_way == '') 
+                                    then '0' else a.two_way end ||' '||linkid linkid, a.name,  b.id||' '||b.name linktype, 
+                                    node_from, node_to
+                    from link a
+                    left join link_type b on (a.id_linktype = b.id)
+                    WHERE id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0)
+                    group  by 1,2,3,4,5
+                ), two_way as (
+                select  
+                        case when 
+                            cast(substr(linkid, 0, instr(linkid, '-')) as integer) < cast(substr(linkid, instr(linkid, '-')+1) as INTEGER) 
+                            then '1'||' '||substr(linkid, 0, instr(linkid, '-'))||'-'||substr(linkid, instr(linkid, '-')+1)
+                            else '1'||' '||substr(linkid, instr(linkid, '-')+1)||'-'||substr(linkid, 0, instr(linkid, '-')) 
+                            end linkid,
+                        a.name,
+                        b.id||' '||b.name linktype,
+                        a.node_from,
+                        a.node_to
+                    from link a
+                    left join link_type b on a.id_linktype = b.id
+                    where two_way = 1 and id_scenario = {0}
+                    group by 1)
+                select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
+                from (
+                    select linkid, name, linktype, node_from, node_to
+                    from base
+                    UNION
+                    select linkid, name, linktype, node_from, node_to
+                    from two_way 
+                ) order by node_from, node_to asc""".format(self.idScenario)
+
         result = self.dataBaseSqlite.executeSql(qry)
+        
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Link Type'])
         for x in range(0, len(result)):
             model.insertRow(x)
-            z=0
+            z = 0
             for y in range(0,3):
-                model.setData(model.index(x, y), result[x][z])
+                item = QtGui.QStandardItem()
+                item.setText(result[x][z])
+                if z == 0:
+                    if result[x][z].split(" ")[0] != '0' and result[x][z].split(" ")[0] != '':
+                        item.setIcon(QIcon(self.plugin_dir+"/icons/two-way-road.png"))
+                    else:
+                        item.setIcon(QIcon(self.plugin_dir+"/icons/one-way-road.png"))
+                    item.setText(result[x][z].split(" ")[1])
+                
+                
+                model.setItem( x, z, item)
                 z+=1
         self.links_tree.setModel(model)
-        self.links_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
-
+        self.links_tree.setColumnWidth(0, 100)
         self.lb_total_items_links.setText(" %s Items" % len(result))
+        
 
 
     def load_scenarios(self):

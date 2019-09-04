@@ -95,9 +95,9 @@
              <item row="0" column="0">
               <layout class="QVBoxLayout" name="verticalLayout">
                <item>
-                <widget class="QPushButton" name="btn_categories">
+                <widget class="QPushButton" name="btn_modes">
                  <property name="text">
-                  <string>Categories</string>
+                  <string>Modes</string>
                  </property>
                 </widget>
                </item>
@@ -109,9 +109,9 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="btn_modes">
+                <widget class="QPushButton" name="btn_categories">
                  <property name="text">
-                  <string>Modes</string>
+                  <string>Categories</string>
                  </property>
                 </widget>
                </item>
@@ -253,6 +253,7 @@
     <addaction name="actionOptions"/>
     <addaction name="actionScenarios"/>
     <addaction name="actionZones"/>
+    <addaction name="actionImportNetwork"/>
    </widget>
    <addaction name="menuProject"/>
    <addaction name="menuFiles"/>
@@ -346,6 +347,11 @@
   <action name="actionImport_Exogenous_Trips">
    <property name="text">
     <string>Import Exogenous Trips</string>
+   </property>
+  </action>
+  <action name="actionImportNetwork">
+   <property name="text">
+    <string>Import Network...</string>
    </property>
   </action>
  </widget>

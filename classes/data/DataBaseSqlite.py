@@ -69,6 +69,7 @@ class DataBaseSqlite():
 			"""
 			CREATE TABLE IF NOT EXISTS sector (
 				id           			   INTEGER,
+				id_scenario                INTEGER NOT NULL,
 				name         			   TEXT NOT NULL,
 				description    			   TEXT NOT NULL,
 				transportable 			   INTEGER NOT NULL,
@@ -104,6 +105,7 @@ class DataBaseSqlite():
 			"""
 			CREATE TABLE IF NOT EXISTS category (
 				id           			   INTEGER,
+				id_scenario                INTEGER,
 				id_mode           		   INTEGER,
 				name         			   TEXT NOT NULL,
 				description    			   TEXT,
@@ -181,6 +183,7 @@ class DataBaseSqlite():
 			"""
 			CREATE TABLE IF NOT EXISTS operator (
 				id           			   INTEGER,
+				id_scenario                INTEGER,
 				name         			   TEXT NOT NULL,
 				description    			   TEXT NOT NULL,
 				id_mode    			       INTEGER NOT NULL,
@@ -206,17 +209,11 @@ class DataBaseSqlite():
 			"""
 			CREATE TABLE IF NOT EXISTS operator_category (
 				id		      INTEGER PRIMARY KEY AUTOINCREMENT,
+				id_scenario   INTEGER,
 				id_operator   INTEGER,
 				id_category   INTEGER,
 				tariff_factor REAL,
 				penal_factor  REAL
-			);
-			""",
-			"""
-			CREATE TABLE IF NOT EXISTS scenario_operator (
-				id	        INTEGER PRIMARY KEY,
-				id_scenario INTEGER,
-				id_operator INTEGER
 			);
 			""",
 			"""
@@ -285,11 +282,11 @@ class DataBaseSqlite():
 			""",
 			"""
 			CREATE TABLE IF NOT EXISTS link (
-				id	            INTEGER,
+				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
 				linkid          TEXT NOT NULL, 
 				id_scenario     INTEGER,
 				id_linktype     INTEGER,
-				two_away        INTEGER,
+				two_way         INTEGER,
 				used_in_scenario INTEGER,
 				node_from       INTEGER,
 				node_to         INTEGER,
@@ -304,7 +301,7 @@ class DataBaseSqlite():
 			CREATE TABLE IF NOT EXISTS link_route (
 				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
 				id_scenario     INTEGER,
-				id_link         INTEGER,
+				id_link         TEXT,
 				id_route        INTEGER, 
 				type_route      INTEGER
 			);
@@ -313,7 +310,7 @@ class DataBaseSqlite():
 			CREATE TABLE IF NOT EXISTS intersection_delay (
 				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
 				id_scenario     INTEGER,
-				id_link         INTEGER,
+				id_link         TEXT,
 				id_node         INTEGER, 
 				delay           REAL
 			);
@@ -342,7 +339,8 @@ class DataBaseSqlite():
 			);
 			"""
 			]
-		# Types of the routes: 1 Passes and Stops (passes_stops); 2 Passes Only (passes_only), 3 Can not Pass (cannot_pass)
+		# Types of routes: 1 Passes and Stops (passes_stops); 2 Passes Only (passes_only), 3 Can not Pass (cannot_pass)
+		# Types of Nodes: 1 Zone Centroid, 2 External, 0 Node
 		try:
 			for value in tables:
 				cursor.execute(value)
@@ -395,6 +393,37 @@ class DataBaseSqlite():
 		else: 
 			return False
 
+	def insertLoteTest(self):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql = ''
+		sql_arr = []
+		for valor in range(10000):
+			for id_scenario in range(1,10):
+				sql_arr.append((valor, id_scenario))
+		cursor.executemany("INSERT OR REPLACE INTO test (id, nombre, distance, id_tipo, capacity, id_scenario) values (?, 'luis asdasdasdasdasd', 1, 1, 1, ?);", sql_arr)
+		conn.commit()
+		conn.close()
+		return True
+
+
+	def updateLoteTest(self):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql = ''
+		sql_arr = []
+		for valor in range(10000):
+			for id_scenario in range(1,10):
+				sql_arr.append((valor, id_scenario))
+		print(sql_arr)
+		cursor.executemany("insert into test (id, nombre, distance, id_tipo, capacity, id_scenario) VALUES (?, 'luis asdasdasdasdasd', 9.0, 4, 10.8090, ?);", sql_arr)
+		conn.commit()
+		conn.close()
+		return True
+
+
 	def addExogenousData(self, scenarios, id_zone_from, id_zone_to, id_mode, id_category, column=None, value=None):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
@@ -411,12 +440,12 @@ class DataBaseSqlite():
 		return True
 
 
-	def addLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, _id, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
+	def addLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, name, description, two_way, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
-		two_away = 1 if two_away else 0
-		used_in_scenario = 1 if used_in_scenario else 0
+		two_way = 1 if two_way else 'null'
+		used_in_scenario = 1 if used_in_scenario else 'null'
 		columns = ''
 		values = ''
 		if name:
@@ -430,10 +459,10 @@ class DataBaseSqlite():
 			values +=  f", {delay}"
 
 		for id_scenario in scenarios:
-			if two_away:
-				sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
-			        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
-			        	values ({id_scenario[0]}, {_id}, '{id_origin}-{id_destination}', {id_linktype}, {two_away}, {used_in_scenario},
+			if two_way:
+				sql = f"""insert into link (id_scenario, linkid, id_linktype,
+			        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+			        	values ({id_scenario[0]}, '{id_origin}-{id_destination}', {id_linktype}, {two_way}, {used_in_scenario},
 			        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
 				cursor.execute(sql)
 				conn.commit()    
@@ -441,17 +470,16 @@ class DataBaseSqlite():
 				result = self.selectAll(' link ', where= f" where linkid='{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}" )
 
 				if not result:
-					id_tmp =int(_id)+1
-					sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
-				        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
-				        	values ({id_scenario[0]}, {id_tmp}, '{id_destination}-{id_origin}', {id_linktype}, {two_away}, {used_in_scenario},
+					sql = f"""insert into link (id_scenario, linkid, id_linktype,
+				        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+				        	values ({id_scenario[0]}, {id_tmp}, '{id_destination}-{id_origin}', {id_linktype}, {two_way}, {used_in_scenario},
 				        	{id_destination}, {id_origin}, {length}, {capacity} {values})"""
 					cursor.execute(sql)
 					conn.commit()    
 			else:
-				sql = f"""insert into link (id_scenario, id, linkid, id_linktype,
-			        	two_away, used_in_scenario, node_from, node_to, length, capacity {columns}) 
-			        	values ({id_scenario[0]}, {_id}, '{id_origin}-{id_destination}', {id_linktype}, {two_away}, {used_in_scenario},
+				sql = f"""insert into link (id_scenario, linkid, id_linktype,
+			        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+			        	values ({id_scenario[0]}, '{id_origin}-{id_destination}', {id_linktype}, {two_way}, {used_in_scenario},
 			        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
 
 				cursor.execute(sql)
@@ -460,25 +488,29 @@ class DataBaseSqlite():
 		for id_scenario in scenarios:
 			for id_route in id_routes_arr_selected:
 				sql = f"""insert into  link_route (id_scenario, id_link, id_route, type_route) 
-					values ({id_scenario[0]}, {_id}, {int(id_route[0])}, {int(id_route[1])})"""
+					values ({id_scenario[0]}, '{id_origin}-{id_destination}', {int(id_route[0])}, {int(id_route[1])})"""
 				cursor.execute(sql)
 				conn.commit()	
 
 			for turn in turns_delays_arr:
 				if turn[1]:
 					sql = f"""insert into intersection_delay (id_scenario, id_link, id_node, delay) 
-						values ({id_scenario[0]}, {_id}, {turn[0]}, {turn[1]})"""
+						values ({id_scenario[0]}, '{id_origin}-{id_destination}', {turn[0]}, {turn[1]})"""
+					print(f"intersection {sql}")
 					cursor.execute(sql)
 					conn.commit()
 		
 		conn.close()
 		return True
 
-
-	def updateLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, _id, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
+	
+	def updateLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, name, description, two_way, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		columns_values = ''
+
+		used_in_scenario = 1 if used_in_scenario else 'null'
+		two_way = 1 if two_way else 'null'
 
 		if name:
 			columns_values += f", name = '{name}'"
@@ -488,73 +520,96 @@ class DataBaseSqlite():
 			columns_values += f', delay = {delay}'
 
 		for id_scenario in scenarios:
-			sql = f"""update link  set id_linktype = {id_linktype}, two_away = {two_away}, 
+			sql = f"""update link set id_linktype = {id_linktype}, two_way = {two_way}, 
 					 used_in_scenario = {used_in_scenario}, length = {length}, capacity = {capacity} {columns_values}
-					 where id = {_id} and id_scenario = {id_scenario[0]}"""
+					 where linkid = '{id_origin}-{id_destination}' and id_scenario = {id_scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 			
-			if two_away:
-				result = self.selectAll(" link ", where = " where linkid = '{id_destination}-{id_origin}' ")
+			if two_way:
+				result = self.selectAll(" link ", where = f" where linkid = '{id_destination}-{id_origin}' ")
 				if not result:
-					self.addLinkFDialog(scenarios, id_destination, id_origin, id_linktype, int(_id)+1, name, description, two_away, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr)
+					self.addLinkFDialog(scenarios, id_destination, id_origin, id_linktype, name, description, two_way, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr)
 
-				sql = f"""update link  set id_linktype = {id_linktype}, two_away = {two_away}, 
-					length = {length}, capacity = {capacity}
+				sql = f"""update link  set id_linktype = {id_linktype}, two_way = {two_way}, 
+					length = {length}, capacity = {capacity}, used_in_scenario = {used_in_scenario}
 					where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
 				cursor.execute(sql)
 				conn.commit()
 				
-			elif int(two_away) == 0:
-				sql = f"""update link  set two_away = ''
+			elif two_way == 'null':
+				sql = f"""update link  set two_way = null
 					where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
 				
 				cursor.execute(sql)
 				conn.commit()
-					
 
 		if id_routes_arr_selected:
 			for id_scenario in scenarios:
+				# Update or Insert Routes
 				for id_route in id_routes_arr_selected:
 					result = self.selectAll(' link_route ', 
-						where=f' where id_scenario={id_scenario[0]} and id_link={_id} and id_route={int(id_route[0])}')
+						where=f""" where id_scenario={id_scenario[0]} and id_link='{id_origin}-{id_destination}' and id_route={int(id_route[0])}""")
 
 					if result:
-						sql = f"""update link_route set type_route = {int(id_route[1])} where id_scenario = {id_scenario[0]} and id_link = {_id} and id_route = {int(id_route[0])}"""
+						sql = f"""update link_route set type_route = {int(id_route[1])} where id_scenario = {id_scenario[0]} and id_link = '{id_origin}-{id_destination}' and id_route = {int(id_route[0])}"""
 					else:
-						sql = f"""insert into link_route (id_scenario, id_link, id_route, type_route) values ({id_scenario[0]}, {_id}, {int(id_route[0])}, {int(id_route[1])})"""
+						sql = f"""insert into link_route (id_scenario, id_link, id_route, type_route) values ({id_scenario[0]}, '{id_origin}-{id_destination}', {int(id_route[0])}, {int(id_route[1])})"""
 					
 					cursor.execute(sql)
-					conn.commit()	
+					conn.commit()
+
 
 		if turns_delays_arr:
 			for id_scenario in scenarios:
 				for turn in turns_delays_arr:
 					if turn[1]:
-						sql = f""" update intersection_delay set delay = {turn[1]} where id_scenario={id_scenario[0]} and id_link={_id} and id_node={turn[0]} """
-						cursor.execute(sql)
-						conn.commit()
+						result = self.selectAll(' intersection_delay ', 
+							where=f""" where id_scenario={id_scenario[0]} and id_link='{id_origin}-{id_destination}' and id_node={int(turn[0])}""")
+						if result:
+							sql = f""" update intersection_delay set delay = {turn[1]} where id_scenario={id_scenario[0]} and id_link='{id_origin}-{id_destination}' and id_node={turn[0]} """
+							cursor.execute(sql)
+							conn.commit()
+						else:
+							sql = f""" insert into intersection_delay (id_scenario, id_link, id_node, delay) values ({id_scenario[0]}, '{id_origin}-{id_destination}', {turn[0]},  {turn[1]}) """
+							cursor.execute(sql)
+							conn.commit()
 
 		return True
 		
 	def removeLink(self, scenarios, linkid):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		id_link = self.selectAll(' link ', where=f" where linkid = '{linkid}'")[0][0]
 		for scenario in scenarios:
 			sql = f""" delete from link where linkid = '{linkid}' and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 
 		for scenario in scenarios:
-			sql = f""" delete from link_route where id_link = {id_link} and id_scenario = {scenario[0]}"""
+			sql = f""" delete from link_route where id_link = '{linkid}' and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 
 		for scenario in scenarios:
-			sql = f""" delete from intersection_delay where id_link = {id_link} and id_scenario = {scenario[0]}"""
+			sql = f""" delete from intersection_delay where id_link = '{linkid}' and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
+		return True
+
+
+	def deleteRouteFLink(self, scenarios, id_link, route):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+
+		for scenario in scenarios:
+			sql = """delete from link_route where id_link = '{0}'
+				and id_scenario = {1} and id_route = {2};""".format(id_link, scenario[0], route)
+			
+			cursor.execute(sql)
+			conn.commit()
+		
+		conn.close()
 		return True
 
 
@@ -594,6 +649,7 @@ class DataBaseSqlite():
 			conn.close()
 			return True
 
+
 	def addLinkType(self, scenarios, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
@@ -608,7 +664,6 @@ class DataBaseSqlite():
 			sql= """insert into scenario_linktype (id_scenario, id_linktype) values (%s, %s);""" % (value[0], id)
 			cursor.execute(sql)
 			conn.commit()
-
 		conn.close()
 		
 		return True
@@ -639,8 +694,67 @@ class DataBaseSqlite():
 		return True
 
 
-	def addLinkTypeOperator(self, id_linktype, id_operator, column=None, value=None):
+	def addLinkTypeOperator(self, id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost ):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		columns = ''
+		values = ''
+		update = ''
+
+		if speed!='':
+			columns += ', speed'
+			values += ', '+str(speed)
+			update += ', speed = %s' % (speed if speed != '0' else 'null')
+
+		if charges!='':
+			columns += ', charges'
+			values += ', '+str(charges)
+			update += ', charges = %s' % (charges if charges != '0' else 'null') 
+
+		if penaliz!='':
+			columns += ', penaliz'
+			values += ', '+str(penaliz)
+			update += ', penaliz = %s' % (penaliz if penaliz != '0' else 'null') 
+
+		if distance_cost!='':
+			columns += ', distance_cost'
+			values += ', '+str(distance_cost)
+			update += ', distance_cost = %s' % (distance_cost if distance_cost != '0' else 'null') 
+			
+		if equiv_vahicules!='':
+			columns += ', equiv_vahicules'
+			values += ', '+str(equiv_vahicules)
+			update += ', equiv_vahicules = %s' % (equiv_vahicules if equiv_vahicules != '0' else 'null') 
+
+		if overlap_factor!='':
+			columns += ', overlap_factor'
+			values += ', '+str(overlap_factor)
+			update += ', overlap_factor = %s' % (overlap_factor if overlap_factor != '0' else 'null')
+
+		if margin_maint_cost!='':
+			columns += ', margin_maint_cost'
+			values += ', '+str(margin_maint_cost)
+			update += ', margin_maint_cost = %s' % (margin_maint_cost if margin_maint_cost != '0' else 'null')
 		
+		where_sql = " where id_operator = %s and id_linktype = %s" % (id_operator, id_linktype)
+		result = self.selectAll(" link_type_operator ", where=where_sql)
+		
+		if result and len(result)>0:
+			sql = """update link_type_operator set id_operator = {0} {2}
+				where id_operator = {0} and id_linktype = {1} 
+				""".format(id_operator, id_linktype, update)
+		else:
+			sql = """insert into link_type_operator (id_operator, id_linktype {2}) values ( {0}, {1} {3} )""".format(id_operator, id_linktype, columns, values)
+		
+		print(f"{sql}")
+		
+		cursor.execute(sql)
+		conn.commit()
+		
+		
+		conn.close()
+		return True
+		"""
 		sql = "insert into link_type_operator \
 		(id_linktype, id_operator, {2}) \
 		values ({0},{1},{3});".format(id_linktype, id_operator, column, value)
@@ -651,6 +765,7 @@ class DataBaseSqlite():
 		conn.commit()
 		conn.close()
 		return True
+		"""
 
 	def removeLinkType(self, id):
 		conn = self.connectionSqlite()
@@ -737,17 +852,45 @@ class DataBaseSqlite():
 
 	def addLink(self, scenarios, linkid, node_from, node_to):
 		
-		_id = int(linkid.replace('-',''))
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		for id_scenario in scenarios:
-			sql = "insert into link (id_scenario, id, linkid, node_from, node_to) values ({}, {},'{}',{},{});".format(id_scenario[0], _id, linkid, node_from, node_to)
+			sql = "insert into link (id_scenario, linkid, node_from, node_to) values ({},'{}',{},{});".format(id_scenario[0], linkid, node_from, node_to)
 		
 			cursor.execute(sql)
 			conn.commit()
 		conn.close()
 		return True
 
+
+	def addFFileLink(self, scenarios, linkid, node_from, node_to, id_linktype, name, description, distance, capacity):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		for id_scenario in scenarios:
+			result = self.selectAll(' link ', where=f" where id_scenario = {id_scenario[0]} and linkid = '{linkid}' ")
+			if len(result) == 0:
+				sql = """insert into link (id_scenario, linkid, node_from, node_to, id_linktype, name, description, length, capacity) 
+					values ({}, '{}', {}, {}, {}, '{}', '{}', {}, {});""".format(id_scenario[0], linkid, node_from, node_to, id_linktype, name, description, distance, capacity)
+			else:
+				sql = """update link set node_from = {}, node_to = {}, id_linktype={}, name = '{}', description='{}', length={}, capacity={}
+					where id_scenario = {} and linkid='{}';""".format(node_from, node_to, id_linktype, name, description, distance, capacity, id_scenario[0], linkid)
+			cursor.execute(sql)
+			conn.commit()
+
+		conn.close()
+		return True
+
+	def truncateLinkTable(self):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql = "delete from link;"
+
+		cursor.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
 
 	def addNode(self, _id, id_type, name, description, x, y):
 		
@@ -774,6 +917,34 @@ class DataBaseSqlite():
 		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
+		cursor.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
+
+
+	def updateNode(self, _id, id_type, name, description, x, y):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		column = 'id'
+		value = "%s " % _id
+		update = '' 
+		if id_type:
+			update += ', id_type = %s' % (id_type if id_type != '0' else 'null')
+		if name:
+			update += ", name = '%s'" % (name if name != '' else 'null')
+		if description:
+			update += ", description = '%s'" % (description if description != '' else 'null')
+		if x:
+			update += ', x = %s' % (x if x != '0' else 'null')
+		if y:
+			update += ', y = %s' % (y if y != '0' else 'null')
+
+		sql = """update node set id = {0} {1}
+				where id = {0}
+				""".format(_id, update)
+		
 		cursor.execute(sql)
 		conn.commit()
 		conn.close()
@@ -844,25 +1015,21 @@ class DataBaseSqlite():
 		stops_unit_boarding_time = float(data['stops_unit_boarding_time'])
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
 
-		sql = "insert into operator (id, name, description, id_mode, type, \
-			   basics_modal_constant, basics_time_factor, basics_occupency, \
-			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, \
-			   energy_min, energy_max, energy_slope, energy_cost, \
-			   cost_time_operation, cost_porc_paid_by_user,\
-			   stops_min_stop_time, stops_unit_boarding_time, \
-			   stops_unit_alight_time) values ({},'{}','{}',{},'{}',\
-			   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(_id, _name, _description, _id_mode, _type,
-			   basics_modal_constant, basics_time_factor, basics_occupency,
-			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
-			   energy_min, energy_max, energy_slope, energy_cost, 
-			   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
-			   stops_unit_boarding_time, stops_unit_alight_time)
+		for id_scenario in scenarios:
+			sql = "insert into operator (id_scenario, id, name, description, id_mode, type, \
+				   basics_modal_constant, basics_time_factor, basics_occupency, \
+				   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, \
+				   energy_min, energy_max, energy_slope, energy_cost, \
+				   cost_time_operation, cost_porc_paid_by_user,\
+				   stops_min_stop_time, stops_unit_boarding_time, \
+				   stops_unit_alight_time) values ({},{},'{}','{}',{},'{}',\
+				   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(id_scenario[0], _id, _name, _description, _id_mode, _type,
+				   basics_modal_constant, basics_time_factor, basics_occupency,
+				   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
+				   energy_min, energy_max, energy_slope, energy_cost, 
+				   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
+				   stops_unit_boarding_time, stops_unit_alight_time)
 
-		cursor.execute(sql)
-		conn.commit()
-
-		for value in scenarios:
-			sql= """insert into scenario_operator (id_scenario, id_operator) values (%s, %s);""" % (value[0], _id)
 			cursor.execute(sql)
 			conn.commit()
 		
@@ -871,6 +1038,9 @@ class DataBaseSqlite():
 
 
 	def updateOperator(self, data):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
 		_id = int(data['id'])
 		_name = data['name']
 		_description = data['description']
@@ -893,56 +1063,51 @@ class DataBaseSqlite():
 		stops_unit_boarding_time = float(data['stops_unit_boarding_time'])
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
 
-		sql = """update operator set name='{}', description='{}', id_mode={}, type='{}', 
-			   basics_modal_constant={}, basics_time_factor={}, basics_occupency={}, 
-			   basics_fixed_wating_factor={}, basics_boarding_tariff={}, basics_distance_tariff={}, basics_time_tariff={}, 
-			   energy_min={}, energy_max={}, energy_slope={}, energy_cost={}, 
-			   cost_time_operation={}, cost_porc_paid_by_user={},
-			   stops_min_stop_time={}, stops_unit_boarding_time={}, 
-			   stops_unit_alight_time={} where id = {};""".format(_name, _description, _id_mode, _type,
-			   basics_modal_constant, basics_time_factor, basics_occupency,
-			   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
-			   energy_min, energy_max, energy_slope, energy_cost, 
-			   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
-			   stops_unit_boarding_time, stops_unit_alight_time, _id)
+		for id_scenario in scenarios:
+			sql = """update operator set name='{}', description='{}', id_mode={}, type='{}', 
+				   basics_modal_constant={}, basics_time_factor={}, basics_occupency={}, 
+				   basics_fixed_wating_factor={}, basics_boarding_tariff={}, basics_distance_tariff={}, basics_time_tariff={}, 
+				   energy_min={}, energy_max={}, energy_slope={}, energy_cost={}, 
+				   cost_time_operation={}, cost_porc_paid_by_user={},
+				   stops_min_stop_time={}, stops_unit_boarding_time={}, 
+				   stops_unit_alight_time={} where id = {} and id_scenario = {};""".format(_name, _description, _id_mode, _type,
+				   basics_modal_constant, basics_time_factor, basics_occupency,
+				   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
+				   energy_min, energy_max, energy_slope, energy_cost, 
+				   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
+				   stops_unit_boarding_time, stops_unit_alight_time, _id, id_scenario[0])
+			
+			cursor.execute(sql)
+			conn.commit()
 		
-		conn = self.connectionSqlite()
-		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
 		conn.close()
 		return True
 
 
-	def addOperatorCategory(self, id_operator, id_category, column=None, value=None):
-		
-		sql = "insert into operator_category \
-			(id_operator, id_category, {2}) \
-			values ({0},{1},{3});".format(id_operator, id_category, column, value)
-		try:
-			conn = self.connectionSqlite()
-			cursor = conn.cursor()
+	def addOperatorCategory(self, scenarios, id_operator, id_category, column=None, value=None):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		for id_scenario in scenarios:
+			sql = "insert into operator_category \
+				(id_scenario, id_operator, id_category, {3}) \
+				values ({0},{1},{2},{4});".format(id_scenario[0], id_operator, id_category, column, value)
+			
 			cursor.execute(sql)
 			conn.commit()
-			conn.close()
-			return True
-		except Exception as e:
-			return False
-
-
-
-	def updateOperatorCategory(self, id_operator, id_category, column=None, value=None):
-		sql = "update operator_category set {0} = {1} where id_operator = {2} and id_category = {3}".format(column, value, id_operator, id_category)
+		conn.close()
+		return True
 		
-		try:
-			conn = self.connectionSqlite()
-			cursor = conn.cursor()
+
+	def updateOperatorCategory(self, scenarios, id_operator, id_category, column=None, value=None):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		for id_scenario in scenarios:
+			sql = "update operator_category set {0} = {1} where id_operator = {2} and id_category = {3} and id_scenario = {4}".format(column, value, id_operator, id_category, id_scenario[0])
+		
 			cursor.execute(sql)
 			conn.commit()
-			conn.close()
-			return True
-		except Exception as e:
-			return False
+		conn.close()
+		return True
 
 
 	def addTransferOperator(self, scenarios, id_from, id_to, cost):
@@ -993,9 +1158,6 @@ class DataBaseSqlite():
 		cursor.execute(qry)
 		conn.commit()
 
-		qry = """delete from scenario_operator where id_operator = %s;""" % (id)
-		cursor.execute(qry)
-		conn.commit()
 		conn.close()
 		return True		   		
 
@@ -1068,38 +1230,42 @@ class DataBaseSqlite():
 		except Exception as e:
 			return False
 
-	def addSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute):
-		if transportable == '0':
-			sql = "insert into sector \
-				(id, name, description, transportable, atractor_factor, price_factor, substitute) \
-				values ('{}','{}','{}','{}','{}','{}','{}');".format(
-					ident, name, description, transportable, atractor_factor, price_factor, sustitute
-				)
-		else:
-			sql = "insert into sector \
-				(id, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, substitute) \
-				values ('{}','{}','{}','{}','{}','{}','{}','{}');".format(
-					ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute
-				)
-
+	def addSector(self, scenarios, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+
+		for id_scenario in scenarios:
+			if transportable == '0':
+				sql = "insert into sector \
+					(id_scenario, id, name, description, transportable, atractor_factor, price_factor, substitute) \
+					values ({},'{}','{}','{}','{}','{}','{}','{}');".format(
+						id_scenario[0], ident, name, description, transportable, atractor_factor, price_factor, sustitute
+					)
+			else:
+				sql = "insert into sector \
+					(id_scenario, id, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, substitute) \
+					values ({}, '{}','{}','{}','{}','{}','{}','{}','{}');".format(
+						id_scenario[0], ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute
+					)
+
+			cursor.execute(sql)
+			conn.commit()
+
 		conn.close()
 		return True
 
-	def updateSector(self, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute):
-		location_choice_elasticity_value =  location_choice_elasticity  if transportable > 0 else 'null'
-		sql = "update sector set  \
-			 id={}, name='{}', description='{}', transportable={}, location_choice_elasticity={}, atractor_factor={}, price_factor={}, substitute={}  \
-			 where id = {};".format(
-				ident, name, description, transportable, location_choice_elasticity_value, atractor_factor, price_factor, sustitute, ident
-			)
+	def updateSector(self, scenarios, ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+		location_choice_elasticity_value =  location_choice_elasticity  if transportable > 0 else 'null'
+		for id_scenario in scenarios:
+			sql = "update sector set  \
+				 id={}, name='{}', description='{}', transportable={}, location_choice_elasticity={}, atractor_factor={}, price_factor={}, substitute={}  \
+				 where id = {} and id_scenario = {};".format(
+					ident, name, description, transportable, location_choice_elasticity_value, atractor_factor, price_factor, sustitute, ident, id_scenario[0]
+				)
+			cursor.execute(sql)
+			conn.commit()
 		conn.close()
 		return True
 
@@ -1198,42 +1364,52 @@ class DataBaseSqlite():
 		return True
 
 	
-	def addCategory(self, ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity):
-		sql = "insert into category \
-			(id, id_mode, name, description, volumen_travel_time, value_of_waiting_time, \
-			min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity) \
-			values ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}');".format(
-				ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity
-			)
-
+	def addCategory(self, scenarios, ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+
+		for id_scenario in scenarios:
+			sql = "insert into category \
+				(id_scenario, id, id_mode, name, description, volumen_travel_time, value_of_waiting_time, \
+				min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity) \
+				values ({},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}');".format(
+					id_scenario[0], ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity
+				)
+		
+			cursor.execute(sql)
+			conn.commit()
+
 		conn.close()
 		return True
 
-	def updateCategory(self, ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity):
-		sql = "update category set  \
-			 id={}, id_mode={}, name='{}', description='{}', volumen_travel_time={},  value_of_waiting_time={}, \
-			 min_trip_gener={}, max_trip_gener={}, elasticity_trip_gener={}, choice_elasticity={}\
-			 where id = {};".format(
-				ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity, ident
-			)
+
+	def updateCategory(self, scenarios, ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+
+		for id_scenario in scenarios:		
+			sql = "update category set  \
+				 id={}, id_mode={}, name='{}', description='{}', volumen_travel_time={},  value_of_waiting_time={}, \
+				 min_trip_gener={}, max_trip_gener={}, elasticity_trip_gener={}, choice_elasticity={}\
+				 where id = {} and id_scenario = {};".format(
+					 ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity, ident, id_scenario[0]
+				)
+			
+			cursor.execute(sql)
+			conn.commit()
+
 		conn.close()
 		return True
 
-	def removeCategory(self, id):
-		sql = "delete from category where id = {}".format(id)
-
+	def removeCategory(self, scenarios,  id):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
-		cursor.execute(sql)
-		conn.commit()
+
+		for id_scenario in scenarios:
+			sql = "delete from category where id = {}".format(id)
+			cursor.execute(sql)
+			conn.commit()
+
 		conn.close()
 		return True
 
@@ -1518,9 +1694,10 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
+
 	def selectAll(self, table, where='', columns='*', orderby=''):
 		sql = "select {} from {} {} {}".format(columns,table, where, orderby)
-
+		
 		conn = self.connectionSqlite()
 		try:
 			data = conn.execute(sql)

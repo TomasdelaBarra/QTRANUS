@@ -33,12 +33,18 @@
              </property>
             </widget>
            </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="cb_origin"/>
+           </item>
            <item row="1" column="0">
             <widget class="QLabel" name="label_2">
              <property name="text">
               <string>Destination</string>
              </property>
             </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cb_destination"/>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_3">
@@ -47,23 +53,20 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="cb_origin"/>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="cb_destination"/>
-           </item>
            <item row="2" column="1">
             <widget class="QComboBox" name="cb_type"/>
            </item>
-           <item row="4" column="0">
+           <item row="3" column="0">
             <widget class="QLabel" name="label_4">
              <property name="text">
               <string>Name</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="name"/>
+           </item>
+           <item row="4" column="0">
             <widget class="QLabel" name="label_5">
              <property name="text">
               <string>Description</string>
@@ -71,20 +74,7 @@
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QLineEdit" name="name"/>
-           </item>
-           <item row="5" column="1">
             <widget class="QLineEdit" name="description"/>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>Id</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="id"/>
            </item>
           </layout>
          </item>
@@ -108,7 +98,7 @@
                 </widget>
                </item>
                <item row="0" column="0">
-                <widget class="QCheckBox" name="two_away">
+                <widget class="QCheckBox" name="two_way">
                  <property name="text">
                   <string>Two Way</string>
                  </property>
@@ -232,9 +222,44 @@
             <attribute name="title">
              <string>Turns</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
+            <layout class="QVBoxLayout" name="verticalLayout_8">
              <item>
-              <widget class="QTableWidget" name="tbl_turns"/>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="QTableWidget" name="tbl_turns"/>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <item>
+                  <widget class="QPushButton" name="btn_turn_ok">
+                   <property name="text">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btn_cannot_turn">
+                   <property name="text">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -246,6 +271,13 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QPushButton" name="btn_linktype">
+         <property name="text">
+          <string>Link Type</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QPushButton" name="btn_reverse">
          <property name="text">

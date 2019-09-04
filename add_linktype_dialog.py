@@ -185,6 +185,20 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			result = self.dataBaseSqlite.addLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
 		else:
 			result = self.dataBaseSqlite.updateLinkType(self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
+		# Save Operator Data Table
+		operatorTable = self.operator_table.rowCount()
+	
+		for index in range(0, operatorTable):
+			id_operator = self.operator_table.verticalHeaderItem(index).text().split(" ")[0] 
+			id_linktype = self.id.text()
+			speed = self.operator_table.item(index, 0).text()
+			charges = self.operator_table.item(index, 1).text()
+			penaliz = self.operator_table.item(index, 2).text()
+			distance_cost = self.operator_table.item(index, 3).text()
+			equiv_vahicules = self.operator_table.item(index, 4).text()
+			overlap_factor = self.operator_table.item(index, 5).text()
+			margin_maint_cost = self.operator_table.item(index, 6).text()
+			self.dataBaseSqlite.addLinkTypeOperator(id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
 
 		if result:
 			self.accept()

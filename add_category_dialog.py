@@ -23,7 +23,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent = None, codeCategory=None):
+    def __init__(self, tranus_folder, idScenario=None, parent = None, codeCategory=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -36,13 +36,14 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
         self.plugin_dir = os.path.dirname(__file__)
-        self.idScenario = None
+        self.idScenario = idScenario
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.volumen_travel_time = self.findChild(QtWidgets.QLineEdit, 'volumen_travel_time')
         self.value_of_waiting_time = self.findChild(QtWidgets.QLineEdit, 'value_of_waiting_time')
         self.min_trip_gener = self.findChild(QtWidgets.QLineEdit, 'min_trip_gener')
@@ -57,6 +58,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_category)
 
         # Validations
+        
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
         #self.name.setValidator(validatorExpr('alphaNum'))
@@ -76,7 +78,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.choice_elasticity.setValidator(validatorExpr('decimal'))
         self.choice_elasticity.textChanged.connect(self.check_state)
         self.add_mode_btn.clicked.connect(self.open_add_mode)
-
+        
         self.name.setMaxLength(10)
         self.description.setMaxLength(55)
 
@@ -89,6 +91,16 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
             self.load_default_data()
 
         self.add_mode_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
 
 
     def __validateSave(self):
@@ -128,6 +140,9 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         webbrowser.open_new_tab(filename)
 
     def save_new_category(self):
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         if self.id is None or self.id.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please write id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -189,13 +204,13 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         id_mode = self.mode_cb.itemData(self.mode_cb.currentIndex())
 
         if self.codeCategory is None:
-            newCategory = self.dataBaseSqlite.addCategory(self.id.text(), id_mode, self.name.text(), self.description.text(), self.volumen_travel_time.text(), self.value_of_waiting_time.text(), self.min_trip_gener.text(), self.max_trip_gener.text(), self.elasticity_trip_gener.text(), self.choice_elasticity.text())
+            newCategory = self.dataBaseSqlite.addCategory(scenarios, self.id.text(), id_mode, self.name.text(), self.description.text(), self.volumen_travel_time.text(), self.value_of_waiting_time.text(), self.min_trip_gener.text(), self.max_trip_gener.text(), self.elasticity_trip_gener.text(), self.choice_elasticity.text())
             if not newCategory:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new sector", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()   
                 return False
         else:
-            newCategory = self.dataBaseSqlite.updateCategory(self.id.text(), id_mode, self.name.text(), self.description.text(), self.volumen_travel_time.text(), self.value_of_waiting_time.text(), self.min_trip_gener.text(), self.max_trip_gener.text(), self.elasticity_trip_gener.text(), self.choice_elasticity.text())
+            newCategory = self.dataBaseSqlite.updateCategory(scenarios, self.id.text(), id_mode, self.name.text(), self.description.text(), self.volumen_travel_time.text(), self.value_of_waiting_time.text(), self.min_trip_gener.text(), self.max_trip_gener.text(), self.elasticity_trip_gener.text(), self.choice_elasticity.text())
 
         if newCategory is not None:
             self.parent().load_scenarios()
@@ -219,7 +234,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
                 a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
                 from category a
                 join mode b on (a.id_mode = b.id)
-                where a.id = {}""".format(id_category)
+                where a.id = {} and id_scenario = {}""".format(id_category, self.idScenario)
 
         data = self.dataBaseSqlite.executeSql(sql)
 

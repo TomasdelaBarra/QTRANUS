@@ -90,7 +90,7 @@ class Scenarios(object):
     @staticmethod
     def parse_lines_from_sqlite(lines):
         nodes = {}
-        print("parse_lines_from_sqlite {}".format(lines))
+        #print("parse_lines_from_sqlite {}".format(lines))
         for line in lines:
             nodes[line[1]] = {
                 'name': line[2],

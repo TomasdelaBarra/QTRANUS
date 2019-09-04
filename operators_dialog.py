@@ -163,14 +163,11 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_operators_data(self):
-        if self.idScenario:
-            qry = """select a.id, a.name, a.description 
-                     from operator a
-                     join scenario_operator b on (a.id = b.id_operator)
-                     where b.id_scenario = %s""" % (self.idScenario)
-            result = self.dataBaseSqlite.executeSql(qry)
-        else:
-            result = self.dataBaseSqlite.selectAll( 'operator', columns=' id, name, description')
+        
+        qry = """select a.id, a.name, a.description 
+                 from operator a
+                 where a.id_scenario = %s""" % (self.idScenario)
+        result = self.dataBaseSqlite.executeSql(qry)
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

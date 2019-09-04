@@ -289,14 +289,13 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenario_tree.expandAll()"""
 
     def __load_sector_data(self):
-        sectors = self.dataBaseSqlite.selectAll('sector')
+        
+        sectors = self.dataBaseSqlite.selectAll(' sector ')
         for value in sectors:
-            self.cb_sector.addItem(value[1], value[0])
+            self.cb_sector.addItem( f"{value[0]} {value[2]}", value[0])
 
     def __load_zonal_data(self):
-        sector = self.cb_sector.currentText()
-        id_sector = self.dataBaseSqlite.selectAll('sector', " where name='"+str(sector)+"'")
-        id_sector = id_sector[0][0]
+        id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex())
 
         if self.idScenario:
             # Internal Zonal Data

@@ -22,7 +22,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, scenarioSelectedIndex, parent = None):
+    def __init__(self, tranus_folder, idScenario=None, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -34,8 +34,8 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = parent.project
-        self.scenarioSelectedIndex = scenarioSelectedIndex
-        self.idScenario = None
+        #self.scenarioSelectedIndex = scenarioSelectedIndex
+        self.idScenario = idScenario
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
@@ -54,6 +54,8 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.add_sector_btn.clicked.connect(self.open_add_sector_window)
+        self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.sectors_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.sectors_tree.customContextMenuRequested.connect(self.open_menu_sectors)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
@@ -93,7 +95,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         opt = menu.exec_(self.sectors_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
-            dialog = AddSectorDialog(self.tranus_folder, parent = self, codeSector=sectorSelected)
+            dialog = AddSectorDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeSector=sectorSelected)
             dialog.show()
             result = dialog.exec_()
         if opt == remove:
@@ -106,7 +108,7 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens add scenario window
         """
-        dialog = AddSectorDialog(self.tranus_folder,  parent = self)
+        dialog = AddSectorDialog(self.tranus_folder,  idScenario=self.idScenario, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__get_sectors_data()
@@ -124,7 +126,18 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_()
                 return False
     
-    
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+        self.__get_sectors_data()
+
+
     def __load_scenarios_from_db_file(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "DB File was not found.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -140,16 +153,18 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
               
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
 
     def __get_sectors_data(self):
-        result = self.dataBaseSqlite.selectAll('sector', columns=' id, name, description ', orderby='order by 1 asc')
+        result = self.dataBaseSqlite.selectAll('sector', where=f" where id_scenario = {self.idScenario} ",columns=' id, name, description ', orderby='order by 1 asc')
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

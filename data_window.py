@@ -38,6 +38,7 @@ from .administrators_dialog import AdministratorsDialog
 from .scenarios_select_dialog import ScenariosSelectDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_excel_data_dialog import AddExcelDataDialog
+from .imports_network_dialog import ImportsNetworkDialog
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -101,6 +102,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_scenarios = self.findChild(QtWidgets.QAction, 'actionScenarios')
         self.actn_options = self.findChild(QtWidgets.QAction, 'actionOptions')
         self.actn_zones = self.findChild(QtWidgets.QAction, 'actionZones')
+        self.actn_imp_network = self.findChild(QtWidgets.QAction, 'actionImportNetwork')
         #self.actn_import_transfers = self.findChild(QtWidgets.QAction, 'actionImport_Transfers')
         #self.actn_import_exogenous_trips = self.findChild(QtWidgets.QAction, 'actionImport_Exogenous_Trips')
         self.actn_generate_input_files = self.findChild(QtWidgets.QAction, 'actionGenerate_Input_Files')
@@ -135,6 +137,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
         self.actn_scenarios.triggered.connect(self.open_scenarios_window)
         self.actn_zones.triggered.connect(self.open_zones_window)
+        self.actn_imp_network.triggered.connect(self.open_import_network)
         #self.actn_import_transfers.triggered.connect(self.open_import_transfers)
         #self.actn_import_exogenous_trips.triggered.connect(self.open_import_exogenous_trips)
         self.actn_options.triggered.connect(self.open_configuration_window)
@@ -988,9 +991,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
         result = self.dataBaseSqlite.selectAll(" config_model ", " where type = 'transport'")
         
         net_head =["Src","Dest","GISId","Type","Dist.","Capac.","Delay Routes..","0 Restricted Turns..../"]
-        qry_net = """select  node_from, node_to, id, coalesce(id_linktype,1), coalesce(distance,0), 
-                        coalesce(capacity,0), coalesce(delay,0), '' restricted
-                        from network order by 1"""
+        qry_net = """select distinct node_from, node_to, id, id_linktype, coalesce(length,0), coalesce(capacity,0), coalesce(delay,0)
+                    from link
+                    order by 1,2"""
         result_net = self.dataBaseSqlite.executeSql(qry_net) 
         net_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6],str(valor[7])+" /"] for valor in result_net] 
 
@@ -1148,6 +1151,16 @@ class DataWindow(QMainWindow, FORM_CLASS):
         dialog.show()
         result = dialog.exec_()
 
+
+    def open_import_network(self):
+        """
+            @summary: Opens data window
+        """
+        dialog = ImportsNetworkDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog.show()
+        result = dialog.exec_()
+
+
     def open_links_window(self):
         """
             @summary: Opens data window
@@ -1186,7 +1199,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = SectorsDialog(self.tranus_folder, self.scenarioSelectedIndex, parent = self)
+        dialog = SectorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -1197,7 +1210,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
         dialog = IntersectorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
-        #result = dialog.exec_()
+        result = dialog.exec_()
         self.__validate_buttons()
 
     def open_zonaldata_window(self):
@@ -1213,7 +1226,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens categories window
         """
-        dialog = CategoriesDialog(self.tranus_folder, parent = self)
+        dialog = CategoriesDialog(self.tranus_folder, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()

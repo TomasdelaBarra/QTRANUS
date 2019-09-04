@@ -22,7 +22,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent = None):
+    def __init__(self, tranus_folder, scenarioCode, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -37,10 +37,13 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.plugin_dir = os.path.dirname(__file__)
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
+        self.scenarioCode = scenarioCode
+        self.idScenario = None
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.categories_tree = self.findChild(QtWidgets.QTreeView, 'categories_tree')
         self.lb_total_items_categories = self.findChild(QtWidgets.QLabel, 'total_items_categories')
         self.categories_tree.setRootIsDecorated(False)
@@ -60,13 +63,35 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__get_scenarios_data()
         self.__get_categories_data()
 
+        if self.scenarioCode:
+            self.__find_scenario_data(self.scenarioCode)
+
         #Add Iconss
         self.show_used_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-gray.png"))
         self.show_used_btn.setToolTip("Show Used Only")
         self.show_changed_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
         self.show_changed_btn.setToolTip("Show Changed Only")
         self.add_category_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
-        
+    
+    
+
+    def __find_scenario_data(self, scenarioCode):
+        """
+            @summary: Find and Set data of the scenario Selected
+        """
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(scenarioCode))
+        self.idScenario = scenarioData[0][0]
+
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+
 
     def open_help(self):
         """
@@ -78,6 +103,10 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def open_menu_categories(self, position):
         menu = QMenu()
+        
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         indexes = self.categories_tree.selectedIndexes()
         categorySelected = indexes[0].model().itemFromIndex(indexes[0]).text()
@@ -88,12 +117,12 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         opt = menu.exec_(self.categories_tree.viewport().mapToGlobal(position))
     
         if opt == edit:
-            dialog = AddCategoryDialog(self.tranus_folder, parent = self, codeCategory=categorySelected)
+            dialog = AddCategoryDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeCategory=categorySelected)
             dialog.show()
             result = dialog.exec_()
             self.__get_categories_data()
         if opt == remove:
-            self.dataBaseSqlite.removeCategory(categorySelected)
+            self.dataBaseSqlite.removeCategory(scenarios, categorySelected)
             self.__get_categories_data()
             
 
@@ -102,29 +131,28 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens add scenario window
         """
-        dialog = AddCategoryDialog(self.tranus_folder,  parent = self)
+        dialog = AddCategoryDialog(self.tranus_folder, self.idScenario,  parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__get_categories_data()
               
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
 
     def __get_categories_data(self):
-        #sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
-        #        a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
-        #        from category a
-        #        join mode b on (a.id_mode = b.id) order by a.id asc"""
 
-        sql = """select a.id, a.name, a.description
-                from category a"""
+        sql = f"""select a.id, a.name, a.description
+                from category a 
+                where id_scenario = {self.idScenario}"""
                 
         result = self.dataBaseSqlite.executeSql(sql)
 

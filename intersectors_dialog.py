@@ -64,14 +64,14 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.lb_total_items_input = self.findChild(QtWidgets.QLabel, 'total_items_input')
         self.lb_total_items_trans = self.findChild(QtWidgets.QLabel, 'total_items_trans')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
-        self.scenario_tree.clicked.connect(self.select_scenario)
         self.intersectors_table = self.findChild(QtWidgets.QTableWidget, 'intersectors_table')
         self.intersectors_table_trans = self.findChild(QtWidgets.QTableWidget, 'intersectors_table_trans')
         self.cb_sector = self.findChild(QtWidgets.QComboBox, 'cb_sector')
         self.sustitute = self.findChild(QtWidgets.QLabel, 'sustitute')
         self.btn_sector_detail = self.findChild(QtWidgets.QPushButton, 'btn_sector_detail')
-        self.shortcut.activated.connect(self.paste_event)
+        
         # Control Actions
+        self.shortcut.activated.connect(self.paste_event)
         self.help.clicked.connect(self.open_help)
         self.btn_sector_detail.clicked.connect(self.open_sector_detail)
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -86,14 +86,15 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
+        self.__get_scenarios_data()
         self.__load_sector_cb_data()
         self.__load_intersector_data()
-        self.__get_scenarios_data()
 
         #Conections to signals
         self.cb_sector.currentIndexChanged[int].connect(self.sector_changed)
         self.intersectors_table.itemChanged.connect(self.__validate_intersectors_sector_input)
         self.intersectors_table_trans.itemChanged.connect(self.__validate_update_intersectors_trans)
+        self.scenario_tree.clicked.connect(self.select_scenario)
         
 
     def __validate_intersectors_sector_input(self, item):
@@ -161,8 +162,8 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
-        self.__load_intersector_data()
-        
+        #self.__load_intersector_data()
+
 
     def save_event(self):
         
@@ -177,6 +178,7 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             id_scenario = self.idScenario
             scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
             id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex()) 
             
             for index in range(0,rowsInputs):
@@ -188,7 +190,7 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 exog_prod_attractors = self.intersectors_table.item(index, 4).text()
                 ind_prod_attractors = self.intersectors_table.item(index, 5).text()
                 print(min_demand)
-                #self.dataBaseSqlite.addIntersectorSectorInput(scenarios, id_sector, id_input_sector, min_demand, max_demand, elasticity, substitute, exog_prod_attractors, ind_prod_attractors )
+                self.dataBaseSqlite.addIntersectorSectorInput(scenarios, id_sector, id_input_sector, min_demand, max_demand, elasticity, substitute, exog_prod_attractors, ind_prod_attractors )
             
             for index in range(0,rowsTrans):
                 #print("asd")
@@ -200,7 +202,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 flow_to_consumer = self.intersectors_table_trans.item(index, 4).text()
                 self.dataBaseSqlite.addIntersectorTrans(scenarios, id_sector, id_category, _type, time_factor, volume_factor, flow_to_product, flow_to_consumer)
             
-
         self.close()
 
 
@@ -214,9 +215,9 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         
 
     def sector_changed(self):
-        sector = self.cb_sector.currentText()
-        results = self.dataBaseSqlite.selectAll('sector', " where name = '{}'".format(sector))
-        self.sustitute.setText(str(results[0][7]))
+        sector = self.cb_sector.itemData(self.cb_sector.currentIndex())
+        results = self.dataBaseSqlite.selectAll('sector', " where id = {} and id_scenario = {} ".format(sector, self.idScenario))
+        self.sustitute.setText(str(results[0][8]))
         self.__load_intersector_data()
 
 
@@ -248,20 +249,24 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenario_tree.setSelectionModel(modelSelection)
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
+
     def __load_sector_cb_data(self):
-        sectors = self.dataBaseSqlite.selectAll('sector')
+        id_scenario = self.idScenario
+        sectors = self.dataBaseSqlite.selectAll(' sector ', where=f" where id_scenario = {id_scenario}")
         for value in sectors:
-            self.cb_sector.addItem(value[1], value[0])
+            self.cb_sector.addItem(f"{value[0]} {value[2]}", value[0])
+
 
     def __load_intersector_data(self):
         sectorId = self.cb_sector.itemData(self.cb_sector.currentIndex())
-        results = self.dataBaseSqlite.selectAll(' sector ', " where id = %s" % sectorId)
+        results = self.dataBaseSqlite.selectAll(' sector ', f" where id = {sectorId} and id_scenario = {self.idScenario}")
+        
         self.sustitute.setText(str(results[0][7]))
         
         if self.idScenario:
             # Default data of the table
             sql = """select a.id||" "||a.name sector, b.min_demand, max_demand, elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector) where id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
+                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
 
             sqlB = """select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
                     from category a left join inter_sector_transport_cat b on (a.id = b.id_category) where id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)

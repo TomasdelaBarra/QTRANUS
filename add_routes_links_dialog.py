@@ -142,17 +142,17 @@ class AddRoutesLinksDialog(QtWidgets.QDialog, FORM_CLASS):
         for values in routes_selected:
             self.parent().id_routes_arr_selected.append(values.model().itemFromIndex(values).text().split(" ")[0])
             
-        model = QtGui.QStandardItemModel()
+        model = self.parent().modelRoutes
         model.setHorizontalHeaderLabels(['Routes'])
         x=0
         for values in routes_selected:
             item = QtGui.QStandardItem()
             item.setIcon(self.ic_bus_stop)
             item.setText(values.model().itemFromIndex(values).text())
-            item.setData('passes_stops',Qt.UserRole)
+            item.setData('passes_stops', Qt.UserRole)
             #model.setData(model.index(x,0), 'Tipo')
-            model.setItem(x,item)
-            #model.appendRow(item)
+            #model.setItem(x,item)
+            model.appendRow(item)
             x+=1
 
         self.parent().tree_routes.setModel(model)
