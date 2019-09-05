@@ -227,7 +227,8 @@ class DataBaseSqlite():
 			""",
 			"""
 			CREATE TABLE IF NOT EXISTS route (
-				id	        INTEGER PRIMARY KEY,
+				id	        INTEGER,
+				id_scenario INTEGER,
 				name        TEXT NOT NULL,
 				description TEXT NOT NULL,
 				id_operator    INTEGER,
@@ -317,7 +318,7 @@ class DataBaseSqlite():
 			""",
 			"""
 			CREATE TABLE IF NOT EXISTS node (
-				id	            INTEGER PRIMARY KEY AUTOINCREMENT,
+				id	            INTEGER,
 				id_scenario     INTEGER,
 				id_type         INTEGER, 
 				name            TEXT, 
@@ -339,11 +340,22 @@ class DataBaseSqlite():
 			);
 			"""
 			]
+		indexes = ["""CREATE UNIQUE INDEX if NOT EXISTS idx_link_linkid_id_scenario 
+					ON link (id_scenario, linkid);""",
+				   """CREATE UNIQUE INDEX if NOT EXISTS idx_node_id_id_scenario 
+					ON node (id_scenario, id);""",
+				   """CREATE UNIQUE INDEX IF NOT EXISTS idx_route_id_id_scenario 
+				    ON route (id_scenario, id);"""]
 		# Types of routes: 1 Passes and Stops (passes_stops); 2 Passes Only (passes_only), 3 Can not Pass (cannot_pass)
 		# Types of Nodes: 1 Zone Centroid, 2 External, 0 Node
 		try:
+
 			for value in tables:
 				cursor.execute(value)
+
+			for value in indexes:
+				cursor.execute(value)
+
 		except:
 			return False
 		conn.close()
@@ -807,6 +819,24 @@ class DataBaseSqlite():
 			return False
 
 
+	def addFFileRoute(self, scenarios, data_list):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql_arr = []
+		for row in data_list:
+			for id_scenario in scenarios:
+				sql = """insert into route (id_scenario, id, name, description, id_operator, frequency_from, frequency_to, max_fleet,  target_occ, follows_schedule)
+		 		values (?,?,?,?,?,?,?,?,?,?);"""
+				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+		
+		cursor.executemany(sql, sql_arr)
+
+		conn.commit()
+		conn.close()
+		return True
+		
+
 	def updateRoute(self, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used=None, follows_schedule=None):
 		sql = """update route set name='{}', description='{}', id_operator={}, frequency_from={}, frequency_to={}, max_fleet={}, target_occ={}, used={}, follows_schedule={}
 			where id={}""".format(name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used, follows_schedule, id)
@@ -863,21 +893,19 @@ class DataBaseSqlite():
 		return True
 
 
-	def addFFileLink(self, scenarios, linkid, node_from, node_to, id_linktype, name, description, distance, capacity):
+	def addFFileLink(self, scenarios, data_list):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
+		sql_arr = []
+		sql = """INSERT OR REPLACE INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, capacity, name, description) 
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-		for id_scenario in scenarios:
-			result = self.selectAll(' link ', where=f" where id_scenario = {id_scenario[0]} and linkid = '{linkid}' ")
-			if len(result) == 0:
-				sql = """insert into link (id_scenario, linkid, node_from, node_to, id_linktype, name, description, length, capacity) 
-					values ({}, '{}', {}, {}, {}, '{}', '{}', {}, {});""".format(id_scenario[0], linkid, node_from, node_to, id_linktype, name, description, distance, capacity)
-			else:
-				sql = """update link set node_from = {}, node_to = {}, id_linktype={}, name = '{}', description='{}', length={}, capacity={}
-					where id_scenario = {} and linkid='{}';""".format(node_from, node_to, id_linktype, name, description, distance, capacity, id_scenario[0], linkid)
-			cursor.execute(sql)
-			conn.commit()
-
+		for row in data_list:
+			for id_scenario in scenarios:
+				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
+		
+		cursor.executemany(sql, sql_arr)
+		conn.commit()
 		conn.close()
 		return True
 
@@ -918,6 +946,23 @@ class DataBaseSqlite():
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
+
+	def addFFileNode(self, scenarios, data_list):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		sql_arr = []
+
+		sql = """INSERT OR REPLACE INTO node (id_scenario, id, x, y, id_type, name, description) 
+			values (?, ?, ?, ?, ?, ?, ?);"""
+
+		for row in data_list:
+			for id_scenario in scenarios:
+				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
+		
+		cursor.executemany(sql, sql_arr)
 		conn.commit()
 		conn.close()
 		return True

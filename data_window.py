@@ -1342,15 +1342,15 @@ class DataWindow(QMainWindow, FORM_CLASS):
         else:
             self.btn_zonal_data.setEnabled(False)
 
-        if self.__load_network_data():
+        """if self.__load_network_data():
             self.btn_link_types.setEnabled(True)
         else:
-            self.btn_link_types.setEnabled(False)
+            self.btn_link_types.setEnabled(False)"""
 
-        if self.__load_nodes_data():
+        """if self.__load_nodes_data():
             self.btn_link_types.setEnabled(True)
         else:
-            self.btn_link_types.setEnabled(False)
+            self.btn_link_types.setEnabled(False)"""
 
 
     def __load_zones_data(self):

@@ -125,7 +125,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         #self.close()
 
     def close_event(self, event):
-        # print("dentro close")
+        # wprint("dentro close")
         self.dataBaseSqlite.insertLoteTest()
 
         self.close()
@@ -134,23 +134,43 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
 
     def __load_csv_opers(self, path):
-        return True
+        scenario_code = self.scenarioCode
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        with open(path) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            data_list = []
+            try:
+                for index, row in enumerate(csv_reader):
+                    if index > 1:
+                        _id = row[0].strip()
+                        name = row[1].strip() 
+                        description = row[2].strip() 
+                        id_operator = row[3].strip()
+                        frequency_from = row[4].strip()
+                        frequency_to = row[5].strip()
+                        target_occ = row[6].strip()
+                        max_fleet = row[7].strip()
+                        follows_schedule = row[8].strip()
+                        data_list.append((_id, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, follows_schedule))   
+                self.dataBaseSqlite.addFFileRoute(scenarios, data_list)
+            except:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+            finally:
+                self.close() 
+                return True
+                
 
     def __load_csv_turns(self, path):
         return True
 
     def __load_csv_nodes(self, path):
-        self.lbl_progress.setText('Loading...')
-        self.progress_bar.setVisible(True)
-        self.lbl_progress.setVisible(True)
-        with open(path) as csv_file_read:
-            rows_file_read = csv.reader(csv_file_read, delimiter=',')
-            tot_rows = len(list(rows_file_read))
+        scenario_code = self.scenarioCode
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         with open(path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            step = 100/tot_rows
-            counter = 0
+            data_list = []
             try:
                 for index, row in enumerate(csv_reader):
                     if index > 1:
@@ -158,29 +178,19 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                         x = float(row[1].strip())
                         y = float(row[2].strip())
                         id_type = int(row[3].strip()) if int(row[3].strip()) == 1 or int(row[3].strip()) == 2 else 0
-                        name = row[4].strip()
-                        description = row[5].strip()
-                        result = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {_id}")
-                        if len(result) == 0:
-                            self.dataBaseSqlite.addNode(_id, id_type, name, description, x, y)
-                        else:
-                            self.dataBaseSqlite.updateNode(_id, id_type, name, description, x, y)
-                        counter += step
-                        self.progress_bar.setValue(counter)
+                        name = row[4].strip() if row[4].strip() else None
+                        description = row[5].strip() if row[5].strip() else None
+                        data_list.append((_id, x, y, id_type, name, description))
+                self.dataBaseSqlite.addFFileNode(scenarios, data_list)
             except:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-                self.close() 
-        self.progress_bar.setVisible(False)
-        self.close()  
+            finally:
+                self.close()   
+                return True
 
     def __load_csv_links(self, path):
-        self.lbl_progress.setText('Loading...')
-        self.progress_bar.setVisible(True)
-        self.lbl_progress.setVisible(True)
-
-        print(path)
-        scenario_code = path.split(".")[0][-3:]
+        scenario_code = self.scenarioCode
         scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
         if len(scenarios) == 0:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -195,25 +205,23 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             csv_reader = csv.reader(csv_file, delimiter=',')
             step = 100/tot_rows
             counter = 0
+            data_list = []
             try:
-                #self.dataBaseSqlite.truncateLinkTable()
                 for index, row in enumerate(csv_reader):
-                    if index > 0 and row[4].strip() != 0:
-                        linkid = f"{row[0].strip()}-{row[1].strip()}"
-                        node_from = row[1].strip()
-                        node_to = row[2].strip()
-                        id_linktype = row[4].strip()
-                        distance = row[5].strip()
-                        capacity = row[6].strip()
-                        name = row[7].strip()
-                        description = row[8].strip()
-                        
-                        self.dataBaseSqlite.addFFileLink(scenarios, linkid, node_from, node_to, id_linktype, name, description, distance, capacity)
-                        counter += step
-                        self.progress_bar.setValue(counter)
+                    if index > 0 and int(row[4].strip()) != 0:
+                        linkid = f"{row[1].strip()}-{row[2].strip()}"
+                        node_from = row[1].strip() 
+                        node_to = row[2].strip() 
+                        id_linktype = row[4].strip() 
+                        length = row[5].strip() if row[5].strip() else None
+                        capacity = row[6].strip() if row[6].strip() else None
+                        name = row[7].strip() if row[7].strip() else None 
+                        description = row[8].strip() if row[8].strip() else None
+                        data_list.append((linkid, node_from, node_to, id_linktype, length, capacity, name, description))
+                self.dataBaseSqlite.addFFileLink(scenarios, data_list)
             except:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-                self.close() 
-        self.progress_bar.setVisible(False)
-        self.close()         
+            finally:
+                self.close()
+                return True                 
