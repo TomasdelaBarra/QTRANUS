@@ -97,7 +97,6 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             self.__find_scenario_data(self.scenarioCode)
         
         self.__load_zones_cb_data()
-        self.__load_category_data()
         self.__load_mode_data()
         self.__get_scenarios_data()
         self.__load_zones_tb_data()
@@ -140,6 +139,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
+        self.__load_category_data()
         self.__load_zones_tb_data()
 
 
@@ -191,7 +191,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens QTranus users help
         """
         categorySelected = self.cb_category.itemData(self.cb_category.currentIndex())
-        dialog = AddCategoryDialog(self.tranus_folder, parent = self, codeCategory=categorySelected)
+        dialog = AddCategoryDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeCategory=categorySelected)
         dialog.show()
         result = dialog.exec_()
 
@@ -200,7 +200,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Opens QTranus users help
         """
         modeSelected = self.cb_mode.itemData(self.cb_mode.currentIndex())
-        dialog = AddModeDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeMode=modeSelected)
+        dialog = AddModeDialog(self.tranus_folder, parent = self, codeMode=modeSelected)
         dialog.show()
         result = dialog.exec_() 
 
@@ -347,9 +347,9 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def __load_category_data(self):
         
-        result = self.dataBaseSqlite.selectAll( ' category ', orderby=' order by 1 asc')
+        result = self.dataBaseSqlite.selectAll( ' category ', where=f" where id_scenario = {self.idScenario}", orderby=' order by 1 asc')
         for value in result:
-            self.cb_category.addItem("%s %s" % (value[0],value[2]),str(value[0]))
+            self.cb_category.addItem("%s %s" % (value[0],value[3]),str(value[0]))
 
 
     def __load_mode_data(self):

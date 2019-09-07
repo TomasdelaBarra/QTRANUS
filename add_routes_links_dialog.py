@@ -109,9 +109,9 @@ class AddRoutesLinksDialog(QtWidgets.QDialog, FORM_CLASS):
                 from 
                 route a
                 join operator b 
-                on (a.id_operator = b.id)
-                where id_operator in (%s) %s order by 1""" % (ids_operators, criteria)
-
+                on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
+                where a.id_scenario = %s and id_operator in (%s) %s order by 1""" % (self.idScenario, ids_operators, criteria)
+        
         result = self.dataBaseSqlite.executeSql(qry)
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Routes'])

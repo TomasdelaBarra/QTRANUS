@@ -91,7 +91,7 @@
            <item>
             <widget class="QTabWidget" name="total_items_exports_2">
              <property name="currentIndex">
-              <number>2</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="tab">
               <attribute name="title">

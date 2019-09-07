@@ -90,14 +90,10 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
         opt = menu.exec_(self.modes_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
-            if not self.idScenario:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-            else:
-                dialog = AddModeDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeMode=modeSelected)
-                dialog.show()
-                result = dialog.exec_()
-                self.__get_modes_data()
+            dialog = AddModeDialog(self.tranus_folder, parent = self, codeMode=modeSelected)
+            dialog.show()
+            result = dialog.exec_()
+            self.__get_modes_data()
         if opt == remove:
             self.dataBaseSqlite.removeMode(modeSelected)
             self.__get_modes_data()

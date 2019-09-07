@@ -45,6 +45,7 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.cb_type = self.findChild(QtWidgets.QComboBox, 'cb_type')
         self.le_x = self.findChild(QtWidgets.QLineEdit, 'le_x')
         self.le_y = self.findChild(QtWidgets.QLineEdit, 'le_y')
@@ -74,6 +75,17 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.codeNode is not None:
             self.setWindowTitle("Edit Node")
             self.load_default_data()
+
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+        self.load_default_data()
 
 
     def check_state(self, *args, **kwargs):
@@ -148,13 +160,13 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         id_type = self.cb_type.itemData(self.cb_type.currentIndex())
 
         if self.codeNode is None:
-            newNode = self.dataBaseSqlite.addNode(self.id.text(), id_type, self.name.text(), self.description.text(), self.le_x.text(),  self.le_y.text())
+            newNode = self.dataBaseSqlite.addNode(scenarios, self.id.text(), id_type, self.name.text(), self.description.text(), self.le_x.text(),  self.le_y.text())
             if not newNode:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_() 
                 return False
         else:
-            newNode = self.dataBaseSqlite.updateNode(self.id.text(), self.name.text(), self.description.text(), self.codeNode)
+            newNode = self.dataBaseSqlite.updateNode(scenarios, self.id.text(), id_type, self.name.text(), self.description.text(), self.le_x.text(),  self.le_y.text())
 
         if newNode is not None:
             self.parent().load_scenarios()

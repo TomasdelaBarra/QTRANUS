@@ -104,6 +104,10 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         indexes = self.administrators_tree.selectedIndexes()
         administratorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Administrator')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Administrator')
 
@@ -119,7 +123,7 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_administrators_data()
         if opt == remove:
-            self.dataBaseSqlite.removeAdministrator(administratorSelected)
+            self.dataBaseSqlite.removeAdministrator(scenarios, administratorSelected)
             self.__get_administrators_data()
             
 
@@ -162,17 +166,6 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_scenarios_data(self):
 
-        """#index = self.scenarios_model.findItems('00A - Test')
-        #if self.scenarioSelectedIndex is None:
-        #self.scenarioSelectedIndex = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        #print(self.scenarioSelectedIndex)
-        print(self.scenarioSelectedIndex.isValid())
-        print(self.scenarioSelectedIndex.parent())
-        print(self.scenarioSelectedIndex.column(), self.scenarioSelectedIndex.row())
-        print(self.scenarioSelectedIndex.model().itemFromIndex(self.scenarioSelectedIndex).text().split(" - ")[0])
-        testItem = self.scenarios_model.index(0, 0, QModelIndex()).child(0,0).child(0,0)
-        print(testItem.model().itemFromIndex(testItem).text().split(" - "))"""
-        #modelSelection.setCurrentIndex(self.scenarioSelectedIndex, QItemSelectionModel.Select)"""
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
         modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
@@ -188,11 +181,9 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario:
             qry = """select a.id, a.name, a.description 
                      from administrator a
-                     join scenario_administrator b on (a.id = b.id_administrator)
-                     where b.id_scenario = %s""" % (self.idScenario)
+                     where id_scenario = %s""" % (self.idScenario)
             result = self.dataBaseSqlite.executeSql(qry)
-        else:
-            result = self.dataBaseSqlite.selectAll('administrator', columns='id, name, description')
+        
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
         for x in range(0, len(result)):

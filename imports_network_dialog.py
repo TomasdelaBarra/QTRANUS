@@ -51,7 +51,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_opers = self.findChild(QtWidgets.QRadioButton, 'btn_opers')
         self.btn_turns = self.findChild(QtWidgets.QRadioButton, 'btn_turns')
         self.import_file_obj = self.findChild(QgsFileWidget, 'import_file_obj')
-        self.import_file_obj.setFilter(("*.csv;*.nodes;*.links;*.opers;*.turns"))
+        self.import_file_obj.setFilter(("*.csv;*.nodes;*.links;*.opers;*.turns;*.routes"))
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         self.progress_bar = self.findChild(QtWidgets.QProgressBar, 'pg_progress')
         self.lbl_progress = self.findChild(QtWidgets.QLabel, 'lbl_progresbar')
@@ -64,11 +64,16 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
         self.progress_bar.setVisible(False)
         self.lbl_progress.setVisible(False)
-                
+            
+        self.btn_links.setEnabled(False)
+        self.btn_routes.setEnabled(False)
+        self.btn_opers.setEnabled(False)
+        self.btn_turns.setEnabled(False)
+
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
-        #self.__get_administrators_data()
+        self.__validate_radiobuttons()
 
         
     def select_scenario(self, selectedIndex):
@@ -88,6 +93,19 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
+
+    def __validate_radiobuttons(self):
+        result_node = self.dataBaseSqlite.selectAll(' node ')
+        result_route = self.dataBaseSqlite.selectAll(' route ')
+        result_link = self.dataBaseSqlite.selectAll(' link ')
+        self.btn_opers.setEnabled(True)
+        if len(result_node) > 0:
+            self.btn_links.setEnabled(True)
+
+        if len(result_link) > 0:
+            self.btn_turns.setEnabled(True)
+            if len(result_route) > 0:
+                self.btn_routes.setEnabled(True)
 
 
     def __get_scenarios_data(self):
@@ -131,6 +149,25 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.close()
 
     def __load_csv_routes(self, path):
+        scenario_code = self.scenarioCode
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        with open(path) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            data_list = []
+            try:
+                for index, row in enumerate(csv_reader):
+                    if index > 0 and int(row[3].strip()) != 0:
+                        id_link = f"{row[0].strip()}-{row[1].strip()}"
+                        id_route = row[2].strip()
+                        type_route = 2 if row[3].strip() == 1 else  1 if row[3].strip() == 2 else 3 if row[3].strip() == 0 else 0
+                        data_list.append((id_link, id_route, type_route))   
+                self.dataBaseSqlite.addLinkRouteFFile(scenarios, data_list)
+            except:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+            finally:
+                self.close() 
+                return True
         return True
 
     def __load_csv_opers(self, path):
@@ -143,8 +180,8 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 for index, row in enumerate(csv_reader):
                     if index > 1:
                         _id = row[0].strip()
-                        name = row[1].strip() 
-                        description = row[2].strip() 
+                        name = row[1].strip().replace('"','')
+                        description = row[2].strip().replace('"','')
                         id_operator = row[3].strip()
                         frequency_from = row[4].strip()
                         frequency_to = row[5].strip()
@@ -162,7 +199,26 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 
 
     def __load_csv_turns(self, path):
-        return True
+        scenario_code = self.scenarioCode
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        with open(path) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            data_list = []
+            try:
+                for index, row in enumerate(csv_reader):
+                    if index > 0:
+                        id_link = f"{row[0].strip()}-{row[1].strip()}"
+                        id_node = row[2].strip()
+                        delay = row[3].strip()
+                        data_list.append((id_link, id_node, delay))   
+                self.dataBaseSqlite.addLinkIntersectioDelayFFile(scenarios, data_list)
+            except:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+            finally:
+                self.close() 
+                return True
+        
 
     def __load_csv_nodes(self, path):
         scenario_code = self.scenarioCode

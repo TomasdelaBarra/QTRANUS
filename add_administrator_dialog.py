@@ -45,6 +45,7 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
+        self.scenario_tree.clicked.connect(self.select_scenario)
 
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
@@ -81,6 +82,17 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         elif state == QtGui.QValidator.Invalid:
             color = '#f6989d' # red
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
+
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+        self.load_default_data()
 
 
     def open_help(self):
@@ -127,7 +139,7 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_() 
                 return False
         else:
-            newAdministrator = self.dataBaseSqlite.updateAdministrator(self.id.text(), self.name.text(), self.description.text(), self.codeAdministrator)
+            newAdministrator = self.dataBaseSqlite.updateAdministrator(scenarios, self.id.text(), self.name.text(), self.description.text())
 
         if newAdministrator is not None:
             self.parent().load_scenarios()
@@ -144,11 +156,16 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        data = self.dataBaseSqlite.selectAll('administrator', ' where id = {}'.format(self.codeAdministrator))
+        data = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {} and id_scenario = {}'.format(self.codeAdministrator, self.idScenario))
         
-        self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][1]))
-        self.description.setText(str(data[0][2]))
+        if data and self.codeAdministrator:
+            self.id.setText(str(data[0][0]))
+            self.name.setText(str(data[0][2]))
+            self.description.setText(str(data[0][3]))
+        else:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Please Select another Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return True
 
 
     def __get_scenarios_data(self):

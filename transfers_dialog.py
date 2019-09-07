@@ -104,7 +104,6 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         dialog = AddExcelDataDialog(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='transfers')
         dialog.show()
         result = dialog.exec_()
-        print("Cierre ventana ",result)
         self.__load_operators_tb_data()
 
     
@@ -161,7 +160,7 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __load_operators_cb_data(self):        
-        result = self.dataBaseSqlite.selectAll( ' operator ', columns='id, name', orderby=' order by 1 asc')
+        result = self.dataBaseSqlite.selectAll( ' operator ', where=f' where id_scenario = {self.idScenario}',  columns='id, name', orderby=' order by 1 asc')
 
         for value in result:
             self.cb_operator_origin.addItem(str(value[0])+" "+str(value[1]), value[0])
@@ -176,9 +175,9 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                 b.id||' '||b.name operator_from, c.id||' '||c.name operator_to, a.cost
                 from 
                 transfer_operator_cost a
-                join operator b on a.id_operator_from = b.id
-                join operator c on a.id_operator_to = c.id
-                where id_scenario = %s order by 1,2 asc""" % self.idScenario
+                join operator b on a.id_operator_from = b.id and a.id_scenario = b.id_scenario
+                join operator c on a.id_operator_to = c.id and a.id_scenario = c.id_scenario
+                where a.id_scenario = %s order by 1,2 asc""" % self.idScenario
 
             result = self.dataBaseSqlite.executeSql(qry)
             self.transfers_table.setRowCount(len(result))

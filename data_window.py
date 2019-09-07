@@ -820,8 +820,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             coalesce(a.basics_modal_constant,0) penaliz, 
                             coalesce(a.basics_fixed_wating_factor,0)  minwait,  0 maxwait, 0 path_asc 
                             from operator a
-                            join scenario_operator b on (a.id = b.id_operator)
-                            where b.id_scenario = {}""".format(id_scenario)
+                            where id_scenario = {}""".format(id_scenario)
         result_ope = self.dataBaseSqlite.executeSql(qry_ope) 
         ope_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3],valor[4],valor[5],valor[6],valor[7],str(valor[8])+" /"] for valor in result_ope] 
         
@@ -830,8 +829,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         qry_route = """select a.id, a.name, a.id_operator, a.frequency_from, 
                     a.frequency_to, a.target_occ/100, a.max_fleet, a.follows_schedule
                     from route a
-                    join scenario_route b on (a.id = b.id_route)
-                    where b.id_scenario = {} and used = 1""".format(id_scenario)
+                    where id_scenario = {} and used = 1""".format(id_scenario)
         result_route = self.dataBaseSqlite.executeSql(qry_route) 
         route_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3],valor[4],valor[5],valor[6],str(valor[7])+" /"] for valor in result_route] 
 
@@ -839,7 +837,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
         trans_adm_head =["No","'Name'"]
         qry_adm = """select a.id, name  
                      from administrator a
-                     join scenario_administrator b on (a.id = b.id_administrator)
                      where id_scenario = {} """.format(id_scenario)
         result_adm = self.dataBaseSqlite.executeSql(qry_adm) 
         adm_data = [[valor[0],"'"+str(valor[1])+"'"] for valor in result_adm] 
@@ -848,15 +845,15 @@ class DataWindow(QMainWindow, FORM_CLASS):
         trans_lynkt_head =["No","'Name'","Admin","MinMaintCo"]
         qry_lynkt = """select a.id, name, id_administrator, min_maintenance_cost 
                         from link_type a
-                        join scenario_linktype b on (a.id = b.id_linktype)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        where a.id_scenario = {}""".format(id_scenario)
         result_lynkt = self.dataBaseSqlite.executeSql(qry_lynkt) 
         lynkt_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3]] for valor in result_lynkt] 
 
         # 3.0
         trans_cat_head =["No","'Name'","VofTrTime","VofWtTime", "Available Modes"]
         qry_cat = """select id, name, volumen_travel_time, value_of_waiting_time, id_mode 
-                    from category"""
+                    from category
+                    where id_scenario = {}""".format(id_scenario)
         result_cat = self.dataBaseSqlite.executeSql(qry_cat) 
         cat_data = [[valor[0],"'"+str(valor[1])+"'",valor[2],valor[3],valor[4]] for valor in result_cat] 
 
@@ -866,8 +863,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                         coalesce(a.energy_slope,0) energy_slope, coalesce(a.energy_cost,0) energy_cost,
                         coalesce(a.cost_time_operation,0) cost_time_operation, coalesce(a.cost_porc_paid_by_user, 0) cost_porc_paid_by_user
                         from operator a
-                        join scenario_operator b on (a.id = b.id_operator)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        where id_scenario = {}""".format(id_scenario)
         result_cost_ener = self.dataBaseSqlite.executeSql(qry_cost_ener) 
         cost_ener_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6]] for valor in result_cost_ener] 
 
@@ -877,8 +873,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                         CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(speed,0), coalesce(equiv_vahicules,0), coalesce(distance_cost,0), 
                         coalesce(charges,0) toll, coalesce(margin_maint_cost,0), coalesce(penaliz,0)
                         from link_type_operator a
-                        join scenario_operator b on (a.id_operator = b.id_operator)
-                        where b.id_scenario = {}
+                        where id_scenario = {}
                         order by 1,2 """.format(id_scenario)
         result_cond = self.dataBaseSqlite.executeSql(qry_cond) 
         cost_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6],valor[7]] for valor in result_cond] 
@@ -888,8 +883,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         qry_overlap = """select 
                         CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(overlap_factor,0) overlap_factor
                         from link_type_operator a
-                        join scenario_operator b on (a.id_operator = b.id_operator)
-                        where b.id_scenario = {}
+                        where id_scenario = {}
                         order by 1,2 """.format(id_scenario)
         result_overlap = self.dataBaseSqlite.executeSql(qry_overlap) 
         overlap_data = [[valor[0],valor[1],valor[2]] for valor in result_overlap] 
@@ -899,8 +893,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         qry_tariff = """select a.id, basics_boarding_tariff, basics_time_tariff,  
                         basics_time_tariff, cost_porc_paid_by_user/100  
                         from operator a
-                        join scenario_operator b on (a.id = b.id_operator)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        where id_scenario = {}""".format(id_scenario)
         result_tariff = self.dataBaseSqlite.executeSql(qry_tariff) 
         tariff_data = [[valor[0],valor[1],valor[2],valor[3],valor[4]] for valor in result_tariff] 
 
@@ -915,7 +908,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         # 5.3
         cat_cost_head =["Cat","Oper","Penal F.","Tariff F..","ASC"]
         qry_cat_cost = """select id_category, id_operator, tariff_factor, penal_factor, 0 asc
-                        from operator_category"""
+                        from operator_category
+                        where id_scenario = {}""".format(id_scenario)
         result_cat_cost = self.dataBaseSqlite.executeSql(qry_cat_cost) 
         cat_cost_data = [[valor[0],valor[1],valor[2],valor[3],str(valor[4])+" /"] for valor in result_cat_cost] 
 
@@ -993,9 +987,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
         net_head =["Src","Dest","GISId","Type","Dist.","Capac.","Delay Routes..","0 Restricted Turns..../"]
         qry_net = """select distinct node_from, node_to, id, id_linktype, coalesce(length,0), coalesce(capacity,0), coalesce(delay,0)
                     from link
-                    order by 1,2"""
+                    where id_scenario = %s
+                    order by 1,2""" % (id_scenario)
+        
         result_net = self.dataBaseSqlite.executeSql(qry_net) 
-        net_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6],str(valor[7])+" /"] for valor in result_net] 
+        net_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],str(valor[6])+" /"] for valor in result_net] 
 
         try:
             if not os.path.exists("{}/{}".format(self.tranus_folder, codeScenario)):
@@ -1051,8 +1047,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         ope_simu_head =["Oper","TimeFactor","ConsolPar"]
         qry_ope_simu = """select a.id, basics_time_factor, -1 cosolpar
                         from operator a
-                        join scenario_operator b on (a.id = b.id_operator)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        where id_scenario = {}""".format(id_scenario)
                     
         result_ope_simu = self.dataBaseSqlite.executeSql(qry_ope_simu) 
         ope_simu_data = [[valor[0],valor[1],valor[2]] for valor in result_ope_simu]
@@ -1062,8 +1057,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         qry_restr = """select a.id, perc_speed_reduction_vc/100, perc_max_speed_reduction/100, 
                         vc_max_reduction/100, capacity_factor/100 
                         from link_type a
-                        join scenario_route b on (a.id = b.id_route)
-                        where b.id_scenario = {}""".format(id_scenario)
+                        where id_scenario = {}""".format(id_scenario)
         result_restr = self.dataBaseSqlite.executeSql(qry_restr) 
         restr_data = [[valor[0],valor[1],valor[2],valor[3],valor[4]] for valor in result_restr]
 
@@ -1071,14 +1065,16 @@ class DataWindow(QMainWindow, FORM_CLASS):
         trip_gen_head =["Cat","MinGen","MaxGen", "GenElast","ModeElast","Logit Sc","CarAvail"]
         qry_trip_gen = """select id, min_trip_gener, max_trip_gener, 
                     elasticity_trip_gener, 1 modeelast, 1 logitsc, 1 caravail 
-                    from category"""
+                    from category
+                    where id_scenario = {}""".format(id_scenario)
         result_trip_gen = self.dataBaseSqlite.executeSql(qry_trip_gen) 
         trip_gen_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6]] for valor in result_trip_gen]
         
         # 2.4
         path_head =["Cat","PathChElas","Logit Sc"]
         qry_path = """select id, choice_elasticity, 1 logitsc 
-                        from category"""
+                        from category
+                    where id_scenario = {}""".format(id_scenario)
         result_path = self.dataBaseSqlite.executeSql(qry_path) 
         path_data = [[valor[0],valor[1],valor[2]] for valor in result_path]
         
@@ -1337,10 +1333,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
         
 
     def load_data(self):
-        if self.__load_zones_data():
+        return True
+        """if self.__load_zones_data():
             self.btn_zonal_data.setEnabled(True)
         else:
-            self.btn_zonal_data.setEnabled(False)
+            self.btn_zonal_data.setEnabled(False)"""
 
         """if self.__load_network_data():
             self.btn_link_types.setEnabled(True)

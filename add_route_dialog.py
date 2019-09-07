@@ -36,11 +36,15 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.idScenario = idScenario
 
+
         # Linking objects with controls
+        self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
+        self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
-        self.id_operator = self.findChild(QtWidgets.QComboBox, 'id_operator')
+        self.cb_operator = self.findChild(QtWidgets.QComboBox, 'id_operator')
         self.frequency_from = self.findChild(QtWidgets.QLineEdit, 'frequecy_from')
         self.frequency_to = self.findChild(QtWidgets.QLineEdit, 'frequency_to')
         self.max_fleet = self.findChild(QtWidgets.QLineEdit, 'max_fleet')
@@ -104,6 +108,17 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         webbrowser.open_new_tab(filename)
 
 
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+        self.load_default_data()
+
+
     def save_new_route(self):
         id_scenario = self.idScenario
         scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
@@ -124,7 +139,7 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             return False
 
-        if self.id_operator is None or self.id_operator.currentText() == '':
+        if self.cb_operator is None or self.cb_operator.currentText() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please write the route's attractor factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
@@ -151,8 +166,8 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         
         used = 1 if self.used.isChecked() else 0
         follows_schedule = 1 if self.follows_schedule.isChecked() else 0
-        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where name = '{}'".format(self.id_operator.currentText()))
-        id_operator = self.id_operator.itemData(self.id_operator.currentIndex())
+        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where name = '{}'".format(self.cb_operator.currentText()))
+        id_operator = self.cb_operator.itemData(self.cb_operator.currentIndex())
 
         if self.codeRoute is None:
             newRoute = self.dataBaseSqlite.addRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.target_occ.text(), used, follows_schedule)
@@ -161,7 +176,7 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_()
                 return False
         else:
-            newRoute = self.dataBaseSqlite.updateRoute( self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.target_occ.text(), used, follows_schedule)
+            newRoute = self.dataBaseSqlite.updateRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.target_occ.text(), used, follows_schedule)
         self.accept()
 
     def load_scenarios(self):
@@ -169,24 +184,23 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        data = self.dataBaseSqlite.selectAll('route', ' where id = {}'.format(self.codeRoute))
-        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {}".format(data[0][3]))
+        data = self.dataBaseSqlite.selectAll('route', ' where id = {} and id_scenario = {} '.format(self.codeRoute, self.idScenario))
+        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {} ".format(data[0][4]))
         name_operator = operator_result[0][2]
         
         self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][1]))
-        self.description.setText(str(data[0][2]))
-        indexIdOperator = self.id_operator.findText(self.dataBaseSqlite.selectAll(' operator ', ' where id = {}'.format(data[0][3]))[0][1], Qt.MatchFixedString)
-        self.id_operator.setCurrentIndex(indexIdOperator)
+        self.name.setText(str(data[0][2]))
+        self.description.setText(str(data[0][3]))
+        
+        indexIdOperator = self.cb_operator.findText(self.dataBaseSqlite.selectAll(' operator ', ' where id = {} and id_scenario = {}'.format(data[0][4], self.idScenario)) [0][2], Qt.MatchFixedString)
+        self.cb_operator.setCurrentIndex(indexIdOperator)
 
-        """indexIdOperator = self.id_operator.findText(name_operator, Qt.MatchFixedString)
-        self.id_operator.setCurrentIndex(indexIdOperator)"""
-        self.frequency_from.setText(str(data[0][4]))
-        self.frequency_to.setText(str(data[0][5]))
-        self.target_occ.setText(str(data[0][6]))
-        self.max_fleet.setText(str(data[0][7]))
-        used = True if data[0][8]==1 else False 
-        follows_schedule = True if data[0][9]==1 else False 
+        self.frequency_from.setText(str(data[0][5]))
+        self.frequency_to.setText(str(data[0][6]))
+        self.target_occ.setText(str(data[0][7]))
+        self.max_fleet.setText(str(data[0][8]))
+        used = True if data[0][9]==1 else False 
+        follows_schedule = True if data[0][10]==1 else False 
         self.used.setChecked(used)
         self.follows_schedule.setChecked(follows_schedule)
         
@@ -200,7 +214,6 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenario_tree.expandAll()
 
     def __get_operators_data(self):
-        result = self.dataBaseSqlite.selectAll("operator")
-
+        result = self.dataBaseSqlite.selectAll("operator", where = f" where id_scenario = {self.idScenario}")
         for value in result:
-            self.id_operator.addItem(value[1],value[0])
+            self.cb_operator.addItem(str(value[2]), value[0])

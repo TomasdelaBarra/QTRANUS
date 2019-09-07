@@ -91,6 +91,7 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
+        self.__get_categories_data()
 
 
     def open_help(self):

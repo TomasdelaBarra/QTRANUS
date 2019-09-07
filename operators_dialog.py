@@ -191,8 +191,6 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Find and Set data of the scenario Selected
         """
-        #codeScenario = self.scenarioSelectedIndex.data().split(" - ")[0]
-        #codeScenario = self.scenarioSelectedIndex
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(scenarioCode))
         self.idScenario = scenarioData[0][0]
 

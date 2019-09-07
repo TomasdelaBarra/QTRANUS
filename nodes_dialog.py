@@ -119,7 +119,10 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_nodes_data()
         if opt == remove:
-            self.dataBaseSqlite.removeNode(nodeSelected)
+            id_scenario = self.idScenario
+            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+            self.dataBaseSqlite.removeNode(scenarios, nodeSelected)
             self.__get_nodes_data()
             
 
@@ -178,7 +181,9 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
                  case WHEN id_type = 1 then 'Internal' 
                       WHEN id_type = 2 then 'External'
                       WHEN id_type is NULL then 'Node'  end type    
-                 from node order by 1 asc """ 
+                 from node  
+                 where id_scenario = %s
+                 order by 1 asc """ % (self.idScenario)
         result = self.dataBaseSqlite.executeSql(qry)
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Type'])

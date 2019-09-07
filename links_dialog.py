@@ -183,8 +183,8 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                                     then '0' else a.two_way end ||' '||linkid linkid, a.name,  b.id||' '||b.name linktype, 
                                     node_from, node_to
                     from link a
-                    left join link_type b on (a.id_linktype = b.id)
-                    WHERE id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0)
+                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0)
                     group  by 1,2,3,4,5
                 ), two_way as (
                 select  
@@ -198,8 +198,8 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                         a.node_from,
                         a.node_to
                     from link a
-                    left join link_type b on a.id_linktype = b.id
-                    where two_way = 1 and id_scenario = {0}
+                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+                    where two_way = 1 and a.id_scenario = {0}
                     group by 1)
                 select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
                 from (

@@ -85,6 +85,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Scenarios Tree
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
+        self.scenario_tree.clicked.connect(self.select_scenario)
         
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 
@@ -164,6 +165,20 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             result = self.dataBaseSqlite.selectAll(" link ", where=f" where linkid = '{linkid}'")
             if result:
                 self.btn_reverse.setEnabled(True)
+
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
+        self.__load_cb_type()
+        self.__load_cb_ori_dest()
+        self.__load_tb_operator_aviable()
+        self.__load_tb_turns_delay()
 
 
     def load_reverse(self):
@@ -294,8 +309,8 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         qry = """select b.id||' '||b.name name, b.description
                 from link_type_operator a
                 join operator b 
-                on (a.id_operator = b.id)
-                where a.id_linktype = %s and speed is not null """ % (id_linktype)
+                on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
+                where a.id_linktype = %s and a.id_scenario = %s and speed is not null """ % (id_linktype, self.idScenario)
         
         result = self.dataBaseSqlite.executeSql(qry)
         self.id_operators_arr = []
@@ -372,7 +387,6 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             todo 
             group by 1"""
 
-        print(qry)
         result = self.dataBaseSqlite.executeSql(qry)
 
         if result:
@@ -523,14 +537,14 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __load_cb_type(self):
-        types = self.dataBaseSqlite.selectAll(' link_type ')
+        types = self.dataBaseSqlite.selectAll(' link_type ', where=f" where id_scenario = {self.idScenario}")
         self.cb_type.clear()
         for value in types:
-            self.cb_type.addItem("%s %s" % (value[0], value[1]), value[0])
+            self.cb_type.addItem("%s %s" % (value[0], value[2]), value[0])
 
 
     def __load_cb_ori_dest(self):
-        nodes = self.dataBaseSqlite.selectAll(' node ')
+        nodes = self.dataBaseSqlite.selectAll(' node ', where=f" where id_scenario = {self.idScenario}")
         self.cb_origin.clear()
         self.cb_destination.clear()
         for value in nodes:
@@ -593,6 +607,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
                 order by 1"""
 
         result = self.dataBaseSqlite.executeSql(qry)
+
         self.modelRoutes.clear()
         self.modelRoutes.setHorizontalHeaderLabels(['Routes'])
         x=0

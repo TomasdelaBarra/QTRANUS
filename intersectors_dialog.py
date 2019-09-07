@@ -269,19 +269,21 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                   from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
 
             sqlB = """select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) where id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
+                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
 
             resultA = self.dataBaseSqlite.executeSql(sql)
             resultB = self.dataBaseSqlite.executeSql(sqlB)
             
             if len(resultA)==0:
                 sql = """select a.id||" "||a.name sector, '' min_demand, '' max_demand, '' elasticity, '' substitute, '' exog_prod_attractors, '' ind_prod_attractors 
-                  from sector a"""
+                  from sector a 
+                  where id_scenario = {}""".format(self.idScenario)
                 resultA = self.dataBaseSqlite.executeSql(sql)
 
             if len(resultB)==0:
                 sql = """select a.id||" "||a.name category, '' type, '' time_factor, '' volume_factor, '' flow_to_product, '' flow_to_consumer 
-                    from category a """ 
+                    from category a
+                    where id_scenario = {}""".format(self.idScenario)
                 resultB = self.dataBaseSqlite.executeSql(sql)
 
             self.intersectors_table.setRowCount(len(resultA))

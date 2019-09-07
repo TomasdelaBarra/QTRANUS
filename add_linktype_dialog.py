@@ -42,11 +42,12 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.vertical_header_operator = []
 		self.linkTypeSelected = linkTypeSelected
 		self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+		self.scenario_tree.clicked.connect(self.select_scenario)
 		# Definition Section
 		self.id = self.findChild(QtWidgets.QLineEdit, 'id')
 		self.name = self.findChild(QtWidgets.QLineEdit, 'name')
 		self.description = self.findChild(QtWidgets.QLineEdit, 'description')
-		self.id_administrator = self.findChild(QtWidgets.QComboBox, 'id_administrator')
+		self.cb_administrator = self.findChild(QtWidgets.QComboBox, 'id_administrator')
 		
 		# Basics Section
 		self.capacity_factor = self.findChild(QtWidgets.QLineEdit, 'capacity_factor')
@@ -93,6 +94,17 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.load_default_data()
 
 		self.operator_table.itemChanged.connect(self.__validate_operators)
+
+
+	def select_scenario(self, selectedIndex):
+		"""
+		    @summary: Set Scenario selected
+		"""
+		self.scenarioSelectedIndex = selectedIndex
+		self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+		scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+		self.idScenario = scenarioData[0][0]
+		self.load_default_data()
 
 
 	def __validate_operators(self, item):
@@ -148,7 +160,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 
-		if self.id_administrator is None or self.id_administrator.currentText().strip() == '':
+		if self.cb_administrator is None or self.cb_administrator.currentText().strip() == '':
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write the operator's Author.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
@@ -178,13 +190,12 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 
-		result = self.dataBaseSqlite.selectAll('administrator', " where name = '"+self.id_administrator.currentText()+"'") 
-		id_administrator = result[0][0]		
-		
+		id_administrator = self.cb_administrator.itemData(self.cb_administrator.currentIndex())
+
 		if self.linkTypeSelected is None:
 			result = self.dataBaseSqlite.addLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
 		else:
-			result = self.dataBaseSqlite.updateLinkType(self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
+			result = self.dataBaseSqlite.updateLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
 		# Save Operator Data Table
 		operatorTable = self.operator_table.rowCount()
 	
@@ -198,7 +209,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			equiv_vahicules = self.operator_table.item(index, 4).text()
 			overlap_factor = self.operator_table.item(index, 5).text()
 			margin_maint_cost = self.operator_table.item(index, 6).text()
-			self.dataBaseSqlite.addLinkTypeOperator(id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
+			self.dataBaseSqlite.addLinkTypeOperator(scenarios, id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
 
 		if result:
 			self.accept()
@@ -223,38 +234,38 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			ifExist = self.dataBaseSqlite.selectAll('link_type_operator', " where id_linktype = {} and id_operator = {} ".format(id_linktype, id_operator))
 			
 			if len(ifExist) == 0:
-				if not self.dataBaseSqlite.addLinkTypeOperator(id_linktype, id_operator, column=dataColumn, value=item_value):
+				if not self.dataBaseSqlite.addLinkTypeOperator(scenarios, id_linktype, id_operator, column=dataColumn, value=item_value):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
 			else: 
-				if not self.dataBaseSqlite.updateLinkTypeOperator(id_linktype, id_operator, column=dataColumn, value=item_value):
+				if not self.dataBaseSqlite.updateLinkTypeOperator(scenarios, id_linktype, id_operator, column=dataColumn, value=item_value):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
 
 
 	def load_default_data(self):
-		linktype_result = self.dataBaseSqlite.selectAll(' link_type ', " where id = {}".format(self.linkTypeSelected))
-		print("linktype_result ", linktype_result)
+		linktype_result = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, self.idScenario))
+		
 		self.id.setText(str(linktype_result[0][0]))
-		self.name.setText(str(linktype_result[0][1]))
-		self.description.setText(str(linktype_result[0][2]))
+		self.name.setText(str(linktype_result[0][2]))
+		self.description.setText(str(linktype_result[0][3]))
+		
+		nameAdministrator = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {}'.format(linktype_result[0][4]))[0][2]
+		indexAdministrator = self.cb_administrator.findText(nameAdministrator, Qt.MatchFixedString)
+		self.cb_administrator.setCurrentIndex(indexAdministrator)
 
-		nameAdministrator = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {}'.format(linktype_result[0][3]))[0][1]
-		indexAdministrator = self.id_administrator.findText(nameAdministrator, Qt.MatchFixedString)
-		self.id_administrator.setCurrentIndex(indexAdministrator)
-
-		self.capacity_factor.setText(str(linktype_result[0][4]))
-		self.min_maintenance_cost.setText(str(linktype_result[0][5]))
-		self.porc_speed_reduction.setText(str(linktype_result[0][6]))
-		self.porc_max_speed_reduction.setText(str(linktype_result[0][7]))
-		self.vc_max_reduction.setText(str(linktype_result[0][8]))
+		self.capacity_factor.setText(str(linktype_result[0][5]))
+		self.min_maintenance_cost.setText(str(linktype_result[0][6]))
+		self.porc_speed_reduction.setText(str(linktype_result[0][7]))
+		self.porc_max_speed_reduction.setText(str(linktype_result[0][8]))
+		self.vc_max_reduction.setText(str(linktype_result[0][9]))
 		
 
 	def __load_fields(self):
 		
-		administrator_result = self.dataBaseSqlite.selectAll(' administrator ')
+		administrator_result = self.dataBaseSqlite.selectAll(' administrator ', where=f" where id_scenario = {self.idScenario}")
 		for value in administrator_result:
-			self.id_administrator.addItem(value[1])
+			self.id_administrator.addItem(value[2], value[0])
 
 		# Table data
 		if self.linkTypeSelected:
@@ -271,29 +282,31 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.linkTypeSelected and len(existOperatorLinkType) > 0:
 			sql = """
 				WITH operator_base as (
-					SELECT id, name from operator
+						SELECT id, name, id_scenario from operator
 					),
 					link_type_data as (
-					select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
-					b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost 
-					from 
-					operator a
-					left join link_type_operator b on a.id = b.id_operator
-					where b.id_linktype = {}
+						select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
+						b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost, a.id_scenario
+						from 
+						operator a
+						left join link_type_operator b on (a.id = b.id_operator) and (a.id_scenario = b.id_scenario)
+						where b.id_linktype = {0} and a.id_scenario = {1}
 					)
 					select case WHEN b.name is null then a.id||' '||a.name else b.name end name, b.speed, b.charges, b.penaliz, 
-					b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
+						b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
 					from 
-					operator_base a
-					left join link_type_data b on a.id = b.id
-				""".format(self.linkTypeSelected)
+						operator_base a
+					left join link_type_data b on a.id = b.id and a.id_scenario = b.id_scenario 
+					WHERE a.id_scenario = {1}
+					""".format(self.linkTypeSelected, self.idScenario)
 		else:
 			sql = """select a.id||' '||a.name, '' speed, '' charges, '' penaliz, '' distance_cost,
 					 '' equiv_vahicules, '' overlap_factor, '' margin_maint_cost 
 				 	from
 				 		operator a 
-					"""
-		#print("sql {}".format(sql))
+				 	where id_scenario = %s
+					""" % (self.idScenario)
+		
 		result_ope = self.dataBaseSqlite.executeSql(sql)
 		
 		rowsCount = len(result_ope)

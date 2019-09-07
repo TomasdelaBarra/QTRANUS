@@ -319,10 +319,10 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			id_operator = self.id.text()
 			dataColumn = self.columnOperatorCetegoryDb[column]
 			category_name = self.vertical_header_cat[row]
-			id_category = self.dataBaseSqlite.selectAll('category', " where name = '"+str(category_name)+"'")
+			id_category = self.dataBaseSqlite.selectAll(' category ', " where id = '"+str(category_name.split(" ")[0])+"'")
 			id_category = id_category[0][0]
 
-			ifExist = self.dataBaseSqlite.selectAll('operator_category', " where id_operator = {} and id_category = {} ".format(id_operator, id_category))
+			ifExist = self.dataBaseSqlite.selectAll('operator_category', " where id_operator = {} and id_category = {} and id_scenario = {}".format(id_operator, id_category, self.idScenario))
 			
 			if len(ifExist) == 0:
 				if not self.dataBaseSqlite.addOperatorCategory(scenarios, id_operator, id_category, column=dataColumn, value=item_value):
@@ -350,7 +350,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		sql = """ select a.name category, b.tariff_factor, b.penal_factor 
 				from category a 
 				left join operator_category b on (a.id = b.id)
-				where b.id_operator = %s and id_scenario = %s """ % (self.operatorSelected, self.idScenario)
+				where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
 		
 		result = self.dataBaseSqlite.executeSql(sql)
 
@@ -363,32 +363,33 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		        z+=1
 
 		self.id.setText(str(operator_result[0][0]))
-		self.name.setText(str(operator_result[0][1]))
-		self.description.setText(str(operator_result[0][2]))
-		indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][3]))[0][1], Qt.MatchFixedString)
+		self.name.setText(str(operator_result[0][2]))
+		self.description.setText(str(operator_result[0][3]))
+		
+		indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][4]))[0][1], Qt.MatchFixedString)
 		self.cb_mode.setCurrentIndex(indexMode)
 
-		self.cb_type.itemData(operator_result[0][4])
+		self.cb_type.itemData(operator_result[0][5])
 
-		self.basics_modal_constant.setText(str(operator_result[0][5]))
-		self.basics_occupency.setText(str(operator_result[0][6]))
-		self.basics_time_factor.setText(str(operator_result[0][7]))
-		self.basics_fixed_wating_factor.setText(str(operator_result[0][8]))
-		self.basics_boarding_tariff.setText(str(operator_result[0][9]))
-		self.basics_distance_tariff.setText(str(operator_result[0][10]))
-		self.basics_time_tariff.setText(str(operator_result[0][11]))
+		self.basics_modal_constant.setText(str(operator_result[0][6]))
+		self.basics_occupency.setText(str(operator_result[0][7]))
+		self.basics_time_factor.setText(str(operator_result[0][8]))
+		self.basics_fixed_wating_factor.setText(str(operator_result[0][9]))
+		self.basics_boarding_tariff.setText(str(operator_result[0][10]))
+		self.basics_distance_tariff.setText(str(operator_result[0][11]))
+		self.basics_time_tariff.setText(str(operator_result[0][12]))
 		
-		self.energy_min.setText(str(operator_result[0][12]))
-		self.energy_max.setText(str(operator_result[0][13]))
-		self.energy_slope.setText(str(operator_result[0][14]))
-		self.energy_cost.setText(str(operator_result[0][15]))
+		self.energy_min.setText(str(operator_result[0][13]))
+		self.energy_max.setText(str(operator_result[0][14]))
+		self.energy_slope.setText(str(operator_result[0][15]))
+		self.energy_cost.setText(str(operator_result[0][16]))
 
-		self.cost_time_operation.setText(str(operator_result[0][16]))
-		self.cost_porc_paid_by_user.setText(str(operator_result[0][17]))
+		self.cost_time_operation.setText(str(operator_result[0][17]))
+		self.cost_porc_paid_by_user.setText(str(operator_result[0][18]))
 
-		self.stops_min_stop_time.setText(str(operator_result[0][18]))
-		self.stops_unit_boarding_time.setText(str(operator_result[0][19]))
-		self.stops_unit_alight_time.setText(str(operator_result[0][20]))
+		self.stops_min_stop_time.setText(str(operator_result[0][19]))
+		self.stops_unit_boarding_time.setText(str(operator_result[0][20]))
+		self.stops_unit_alight_time.setText(str(operator_result[0][21]))
 
 
 	def __load_fields(self):
@@ -403,8 +404,8 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		if self.operatorSelected:
 			sql =""" select a.name category, b.tariff_factor, b.penal_factor 
-					from category a left join operator_category b on (a.id = b.id_category)
-					where b.id_operator = %s and id_scenario = %s """ % (self.operatorSelected, self.idScenario)
+					from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+					where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
 			existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
 		else:
 			existOperatorCategory = []
