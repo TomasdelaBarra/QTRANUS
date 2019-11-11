@@ -52,6 +52,7 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #Loads
         self.__get_scenarios_data()
+        self.__loadId()
         if self.codeMode is not None:
             self.setWindowTitle("Edit Mode")
             self.load_default_data()
@@ -72,6 +73,11 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.name.setMaxLength(10)
         self.description.setMaxLength(55)
 
+
+
+    def __loadId(self):
+        if self.codeMode is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" mode ")))
 
     def check_state(self, *args, **kwargs):
         sender = self.sender()
@@ -148,8 +154,8 @@ class AddModeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.id.setText(str(data[0][0]))
         self.name.setText(str(data[0][1]))
         self.description.setText(str(data[0][2]))
-        self.paht_overlapping_factor.setText(str(data[0][3]))
-        self.maximum_numbers_paths.setText(str(data[0][4]))
+        self.paht_overlapping_factor.setText(Helpers.decimalFormat(str(data[0][3])))
+        self.maximum_numbers_paths.setText(Helpers.decimalFormat(str(data[0][4])))
 
 
     def __get_scenarios_data(self):

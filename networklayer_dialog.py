@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import QColor
+from PyQt5 import QtWidgets 
 
 from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
 from qgis.core import QgsGradientColorRamp, QgsProject
@@ -19,13 +20,14 @@ from .classes.network.Level import *
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.FileManagement import FileManagement as FileM
 from .classes.general.Helpers import Helpers as HP
+from .scenarios_model_sqlite import ScenariosModelSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
 
 class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, parent = None, layerId=None):
+    def __init__(self, tranus_folder, parent = None, layerId=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -33,6 +35,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(NetworkLayerDialog, self).__init__(parent)
         self.setupUi(self)
+        self.tranus_folder = tranus_folder
         self.project = parent.project
         self.network = Network()
         self.level = None
@@ -44,7 +47,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.buttonColorRamp.hide()
         self.buttonColor = QgsColorButton(self, 'Color')
         self.buttonColor.hide()
-        #self.buttonColorRamp = QgsColorRampButton(self, 'Color Ramp')
+        
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -86,10 +89,22 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_scenario_operators()
         self.__load_scenarios_combobox()
         self.__load_variable_combobox()
-        self.__reload_scenarios()
+        #self.__reload_scenarios()
+        self.__load_scenarios()
 
         if self.layerId:
             self.__load_default_data()
+
+
+    def __load_scenarios(self):
+
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenarios.setSelectionModel(modelSelection)
+
 
     def open_help(self):
         """
@@ -241,13 +256,11 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         items = ["", "-"]
         self.scenarioOperator.addItems(items)
         
-    def __reload_scenarios(self):
-        """
-            @summary: Reloads scenarios
-        """
+    """def __reload_scenarios(self):
+        
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
-        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)"""
     
     def total_checked(self):
         """

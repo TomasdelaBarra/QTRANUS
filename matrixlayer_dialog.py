@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import QColor
+from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem, QMainWindow, QToolBar, QHBoxLayout
 
 from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
 from qgis.core import QgsProject,QgsGradientColorRamp
@@ -16,16 +17,18 @@ from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.FileManagement import FileManagement as FileM 
 from .scenarios_model import ScenariosModel
 from .classes.ExpressionData import ExpressionData
+from .scenarios_model_sqlite import ScenariosModelSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'matrixlayer.ui'))
 
 class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, parent = None, layerId=None):
+    def __init__(self, tranus_folder, parent = None, layerId=None):
         super(MatrixLayerDialog, self).__init__(parent)
         self.setupUi(self)
         
+        self.tranus_folder = tranus_folder
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
@@ -72,12 +75,23 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_zone_lists()
         self.__load_categories()
         self.__load_centroids()
-        self.__reload_scenarios()
+        #self.__reload_scenarios()
+        self.__load_scenarios()
         self.method.setCurrentIndex(1)
 
         if self.layerId:
             self.__load_default_data()
         
+
+    def __load_scenarios(self):
+
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenarios.setSelectionModel(modelSelection)
+
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -239,13 +253,11 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         items = ["", "-", "/"]
         self.operators.addItems(items)
     
-    def __reload_scenarios(self):
-        """
-            @summary: Reloads scenarios
-        """
+    """def __reload_scenarios(self):
+        
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
-        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)"""
         
     def __load_zone_lists(self):
         """

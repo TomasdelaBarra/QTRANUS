@@ -16,6 +16,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.Validators import * # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -72,9 +73,16 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_cb_type()
         #Loads
         self.__get_scenarios_data()
+        self.__loadId()
+
         if self.codeNode is not None:
             self.setWindowTitle("Edit Node")
             self.load_default_data()
+
+
+    def __loadId(self):
+        if self.codeNode is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" node "))) 
 
 
     def select_scenario(self, selectedIndex):
@@ -85,7 +93,7 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
-        self.load_default_data()
+        #self.load_default_data()
 
 
     def check_state(self, *args, **kwargs):
@@ -127,7 +135,7 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             return False
 
-        if self.name is None or self.name.text().strip() == '':
+        """if self.name is None or self.name.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please write the name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
@@ -135,7 +143,7 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.description is None or self.description.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please write the description.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            return False
+            return False"""
 
         if self.le_x is None or self.le_x.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please Write X", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -158,9 +166,11 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         id_type = self.cb_type.itemData(self.cb_type.currentIndex())
+        name = self.name.text() if self.name.text() else None
+        description = self.description.text() if self.description.text() else None
 
         if self.codeNode is None:
-            newNode = self.dataBaseSqlite.addNode(scenarios, self.id.text(), id_type, self.name.text(), self.description.text(), self.le_x.text(),  self.le_y.text())
+            newNode = self.dataBaseSqlite.addNode(scenarios, self.id.text(), id_type, name, description, self.le_x.text(),  self.le_y.text())
             if not newNode:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_() 
@@ -197,15 +207,22 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cb_type.setCurrentIndex(indexType)
 
         self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][2]))
-        self.description.setText(str(data[0][3]))
-        self.le_x.setText(str(data[0][4]))
-        self.le_y.setText(str(data[0][5]))
+        self.name.setText(str(data[0][2]) if data[0][2] else '')
+        self.description.setText(str(data[0][3]) if data[0][3] else '')
+        self.le_x.setText(Helpers.decimalFormat(str(data[0][4])))
+        self.le_y.setText(Helpers.decimalFormat(str(data[0][5])))
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])

@@ -150,16 +150,14 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
     def __get_scenarios_data(self):
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
         
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
-
-        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        self.scenario_tree.setModel(self.scenarios_model)
-        self.scenario_tree.expandAll()"""
 
 
     def __get_operators_data(self):

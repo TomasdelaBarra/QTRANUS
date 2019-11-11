@@ -33,6 +33,8 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(ZonalDataDialog, self).__init__(parent)
         self.setupUi(self)
+
+        # Resize Dialog for high resolution monitor
         resolution_dict = Helpers.screenResolution(70)
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
@@ -46,17 +48,13 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         self._column = 0
         self.table_type = None
         self.header = ['Exog. Production','Induced Production', 'Min. Prod','Max. Prod', 'Exog. Demand','Base Price', 'Value Added', 'Attractor']
-        self.header_import = ['Max. Imp.','Min Imp', 'Base Price','Attractor']
+        self.header_import = ['Min Imp', 'Max. Imp.', 'Base Price','Attractor']
         self.header_export = ['Exports']
         self.columnZonalDataDb = ["exogenous_production","induced_production","min_production","max_production","exogenous_demand","base_price","value_added","attractor"]
         self.columnZonalDataDbImp = ["max_imports","min_imports","base_price","attractor"]
         self.columnZonalDataDbExp = ["exports"]
         self.scenarioCode = scenarioCode
         self.idScenario = None
-
-        # Resize Dialog for high resolution monitor
-        resolution_dict = Helpers.screenResolution(90)
-        self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = parent.project
         self.copyScenarioSelected = None
@@ -96,7 +94,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
-        self.__load_sector_data()
+        
         self.__load_zonal_data()
         self.__get_scenarios_data()
 
@@ -112,7 +110,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             item_value = item.text()
             row = item.row()
 
-            result = validatorRegex(item_value, 'real')
+            result = validatorRegex(item_value, 'real-negative')
             if not result:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
@@ -126,7 +124,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             item_value = item.text()
             row = item.row()
 
-            result = validatorRegex(item_value, 'real')
+            result = validatorRegex(item_value, 'real-negative')
             if not result:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
@@ -141,7 +139,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             item_value = item.text()
             row = item.row()
 
-            result = validatorRegex(item_value, 'real')
+            result = validatorRegex(item_value, 'real-negative')
             if not result:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Warning", "Only Numbers", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
@@ -192,6 +190,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
+        self.__load_sector_data()
         self.__load_zonal_data()
 
 
@@ -210,6 +209,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
             id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex()) 
             
+            zonal_data_arr = []
             for index in range(0,rowsInternal):
                 id_zone = self.internal_data_table.verticalHeaderItem(index).text().split(" ")[0] 
                 id_zone = id_zone if id_zone != 'Global' else 0
@@ -221,23 +221,27 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                 base_price = self.internal_data_table.item(index, 5).text()
                 value_added = self.internal_data_table.item(index, 6).text()
                 attractor = self.internal_data_table.item(index, 7).text()
-                self.dataBaseSqlite.addZonalData(scenarios, id_sector, id_zone, exogenous_production, induced_production, min_production, max_production, exogenous_demand, base_price, value_added, attractor)
+                zonal_data_arr.append((id_sector, id_zone, exogenous_production, induced_production, min_production, max_production, exogenous_demand, base_price, value_added, attractor))
+            self.dataBaseSqlite.addZonalDataInsertUpdate(scenarios, zonal_data_arr)
 
+            zonal_data_import = []
             for index in range(0,rowsImports):
                 id_zone = self.imports_data_table.verticalHeaderItem(index).text().split(" ")[0] 
                 id_zone = id_zone if id_zone != 'Global' else 0
-                max_imports = self.imports_data_table.item(index, 0).text()
-                min_imports = self.imports_data_table.item(index, 1).text()
+                min_imports = self.imports_data_table.item(index, 0).text()
+                max_imports = self.imports_data_table.item(index, 1).text()
                 base_price = self.imports_data_table.item(index, 2).text()
                 attractor = self.imports_data_table.item(index, 3).text()
-                self.dataBaseSqlite.addZonalDataImports(scenarios, id_sector, id_zone, max_imports, min_imports, base_price, attractor)  
+                zonal_data_import.append((id_sector, id_zone,  min_imports, max_imports, base_price, attractor))
+            self.dataBaseSqlite.addZonalDataImportInsertUpdate(scenarios, zonal_data_import) 
             
+            zonal_data_exports = []
             for index in range(0,rowsExports):
                 id_zone = self.imports_data_table.verticalHeaderItem(index).text().split(" ")[0] 
                 id_zone = id_zone if id_zone != 'Global' else 0
                 exports = self.exports_data_table.item(index, 0).text()
-                
-                self.dataBaseSqlite.addZonalDataExports(scenarios, id_sector, id_zone, exports)
+                zonal_data_exports.append((id_sector, id_zone, exports))
+            self.dataBaseSqlite.addZonalDataExportsInsertUpdate(scenarios, zonal_data_exports)
             
         self.close()
 
@@ -277,52 +281,56 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
     def __get_scenarios_data(self):
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
         
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
-        
-        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        self.scenario_tree.setModel(self.scenarios_model)
-        self.scenario_tree.expandAll()"""
 
     def __load_sector_data(self):
         
-        sectors = self.dataBaseSqlite.selectAll(' sector ')
-        for value in sectors:
-            self.cb_sector.addItem( f"{value[0]} {value[2]}", value[0])
+        sectors = self.dataBaseSqlite.selectAll(' sector ', where = f" where id_scenario = {self.idScenario}")
+        
+        if self.cb_sector.count() == 0:
+            for value in sectors:
+                self.cb_sector.addItem( f"{value[0]} {value[2]}", value[0])
+        
 
     def __load_zonal_data(self):
         id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex())
+        
 
         if self.idScenario:
             # Internal Zonal Data
+            id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+
             sql = """select 
                         zone.id||" "||zone.name zone, zone.external, exogenous_production, 
-                        induced_production, min_production, max_production, 
+                        induced_production, min_production, max_production,   
                         exogenous_demand, base_price, value_added, attractor
                     from 
                     (select * from zone) zone
                     left join 
-                    (select a.id_zone, exogenous_production, induced_production, min_production,
+                    (select a.id_zone, exogenous_production, induced_production, min_production, 
                     max_production, exogenous_demand, base_price, value_added, attractor 
                     from zonal_data a
                     where a.id_sector = {} and a.id_scenario = {}) zonal_data
                     on zone.id = zonal_data.id_zone
-                    where external is null
+                    where (external is null or external = 0)
                     order by zone.id""".format(id_sector, self.idScenario)
 
             # Imports Zonal Data
             sql_import = """select 
-                        zone.id||" "||zone.name zone,  zone.external, min_imports, 
-                        max_imports, base_price, attractor
+                        zone.id||" "||zone.name zone,  zone.external, min_imports,  
+                        max_imports, base_price, attractor_import
                     from 
                     (select * from zone where external = 1) zone
                     left join 
-                    (select a.id_zone, min_imports, max_imports, base_price,
-                    attractor
+                    (select a.id_zone,  min_imports, max_imports, base_price,
+                    attractor_import
                     from zonal_data a
                     where a.id_sector = {} and a.id_scenario = {}) zonal_data
                     on zone.id = zonal_data.id_zone
@@ -339,15 +347,70 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     where a.id_sector = {} and a.id_scenario = {}) zonal_data
                     on zone.id = zonal_data.id_zone
                     order by zone.id""".format(id_sector, self.idScenario)
-            
+
+
             result = self.dataBaseSqlite.executeSql(sql)
             result_imp = self.dataBaseSqlite.executeSql(sql_import)
             result_exp = self.dataBaseSqlite.executeSql(sql_exp)
+
+            result_prev = None
+            result_imp_prev = None
+            result_exp_prev = None
+
+            if id_prevScenario:
+                # Internal Zonal Data Prevous Scenario
+                sql_prev = """select 
+                            zone.id||" "||zone.name zone, zone.external, exogenous_production, 
+                            induced_production, min_production, max_production,   
+                            exogenous_demand, base_price, value_added, attractor
+                        from 
+                        (select * from zone) zone
+                        left join 
+                        (select a.id_zone, exogenous_production, induced_production, 
+                        min_production, max_production, exogenous_demand, base_price, value_added, attractor 
+                        from zonal_data a
+                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                        on zone.id = zonal_data.id_zone
+                        where (external is null or external != 0)
+                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+                
+                # Imports Zonal Data
+                sql_import_prev = """select 
+                            zone.id||" "||zone.name zone,  zone.external, min_imports,
+                            max_imports, base_price, attractor_import
+                        from 
+                        (select * from zone where external = 1) zone
+                        left join 
+                        (select a.id_zone, max_imports, min_imports, base_price,
+                        attractor_import
+                        from zonal_data a
+                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                        on zone.id = zonal_data.id_zone
+                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+
+                # Exports Zonal Data
+                sql_exp_prev = """select 
+                    zone.id||" "||zone.name zone,  zone.external, exports
+                    from 
+                    (select * from zone where external = 1) zone
+                    left join 
+                    (select a.id_zone, exports
+                    from zonal_data a
+                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                    on zone.id = zonal_data.id_zone
+                    order by zone.id""".format(id_sector, id_prevScenario[0][0])
+
+                result_prev = self.dataBaseSqlite.executeSql(sql_prev)
+                result_imp_prev = self.dataBaseSqlite.executeSql(sql_import_prev)
+                result_exp_prev = self.dataBaseSqlite.executeSql(sql_exp_prev)
+            
+            
+
             
             if len(result)==0:
                     sql = """select 
                             a.id||" "||a.name zone, a.external, '' exogenous_production, 
-                            '' induced_production, '' min_production, '' max_production, 
+                            '' induced_production, '' min_production, '' max_production,  
                             '' exogenous_demand, '' base_price, '' value_added, '' attractor
                         from zone a  
                         order by a.id"""
@@ -355,8 +418,8 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if len(result_imp)==0:
                     sql_import = """select 
-                        zone.id||" "||zone.name zone,  zone.external,'' min_imports, 
-                        '' max_imports, '' base_price, '' attractor
+                        zone.id||" "||zone.name zone,  zone.external,  '' min_imports, '' max_imports, 
+                        '' base_price, '' attractor_import
                     from 
                     (select * from zone where external = 1) zone
                     order by zone.id"""
@@ -383,6 +446,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             self.imports_data_table.setRowCount(rowsCount)
             self.imports_data_table.setColumnCount(columsCount)
             self.imports_data_table.setHorizontalHeaderLabels(self.header_import) # Headers of columns table
+            self.imports_data_table.horizontalHeader().setStretchLastSection(True)
 
             #Export Zonal Data
             columsCount = len(self.header_export)
@@ -390,6 +454,9 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             self.exports_data_table.setRowCount(rowsCount)
             self.exports_data_table.setColumnCount(columsCount)
             self.exports_data_table.setHorizontalHeaderLabels(self.header_export) # Headers of columns table
+            self.exports_data_table.horizontalHeader().setStretchLastSection(True)
+
+            font = QFont()
 
             #Internal Data
             for index, valor in enumerate(result):
@@ -408,11 +475,24 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             header = self.internal_data_table.horizontalHeader()       
             for x in range(0,columsCount):
                 header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
+
             for indice,valor in enumerate(result):
                 x = 0
                 for z in range(2,len(valor)):
                     data = result[indice][z] if result[indice][z] is not None else ''
-                    self.internal_data_table.setItem(indice, x, QTableWidgetItem(str(data)))
+                    itemText = QTableWidgetItem()
+                    itemText.setText(Helpers.decimalFormat(str(data)))
+
+                    if result_prev:
+                        if result[indice][z] != result_prev[indice][z]:
+                            itemText.setForeground(QColor("green"))
+                            font.setBold(True)
+                            itemText.setFont(font)  
+                        else:
+                            font.setBold(False)
+                            itemText.setFont(font)   
+                            itemText.setForeground(QColor("black"))
+                    self.internal_data_table.setItem(indice, x, itemText)
                     x+=1
             
             #Imports Zonal Data
@@ -432,7 +512,20 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                 x = 0
                 for z in range(2,len(valor)):
                     data = result_imp[indice][z] if result_imp[indice][z] is not None else ''
-                    self.imports_data_table.setItem(indice, x, QTableWidgetItem(str(data)))
+                    itemText = QTableWidgetItem()
+                    itemText.setText(Helpers.decimalFormat(str(data)))
+
+                    if result_imp_prev:
+                        if result_imp[indice][z] != result_imp_prev[indice][z]:
+                            itemText.setForeground(QColor("green"))
+                            font.setBold(True)
+                            itemText.setFont(font)  
+                        else:
+                            font.setBold(False)
+                            itemText.setFont(font)   
+                            itemText.setForeground(QColor("black"))
+
+                    self.imports_data_table.setItem(indice, x, itemText)
                     x+=1
 
             # Export Zonal Data
@@ -448,11 +541,25 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             header = self.exports_data_table.horizontalHeader()       
             for x in range(0,columsCount):
                 header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
+
             for indice,valor in enumerate(result_exp):
                 x = 0
                 for z in range(2,len(valor)):
                     data = result_exp[indice][z] if result_exp[indice][z] is not None else ''
-                    self.exports_data_table.setItem(indice, x, QTableWidgetItem(str(data)))
+                    itemText = QTableWidgetItem()
+                    itemText.setText(Helpers.decimalFormat(str(data)))
+
+                    if result_imp_prev:
+                        if result_exp[indice][z] != result_exp_prev[indice][z]:
+                            itemText.setForeground(QColor("green"))
+                            font.setBold(True)
+                            itemText.setFont(font)  
+                        else:
+                            font.setBold(False)
+                            itemText.setFont(font)   
+                            itemText.setForeground(QColor("black"))
+
+                    self.exports_data_table.setItem(indice, x, itemText)
                     x+=1
 
             header_a = self.internal_data_table.horizontalHeader()       

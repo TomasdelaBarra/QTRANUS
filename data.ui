@@ -6,24 +6,78 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>728</width>
-    <height>422</height>
+    <width>854</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Data</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout_7">
+    <item>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QTreeView" name="scenarios_tree"/>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <widget class="QSplitter" name="splitter">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <widget class="QTreeView" name="scenarios_tree"/>
+        <widget class="QWidget" name="">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QGroupBox" name="landUse_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Project</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_6">
+               <item>
+                <widget class="QPushButton" name="btn_options">
+                 <property name="text">
+                  <string>Options</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_scenarios">
+                 <property name="text">
+                  <string>Scenarios</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_zones">
+                 <property name="text">
+                  <string>Zones</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_3">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
           <item>
            <widget class="QGroupBox" name="landUse">
             <property name="sizePolicy">
@@ -51,7 +105,7 @@
                   <bool>false</bool>
                  </property>
                  <property name="text">
-                  <string>Intersectors</string>
+                  <string>Inter-Sectors</string>
                  </property>
                 </widget>
                </item>
@@ -183,8 +237,8 @@
            </widget>
           </item>
          </layout>
-        </item>
-       </layout>
+        </widget>
+       </widget>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -219,7 +273,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>728</width>
+     <width>854</width>
      <height>21</height>
     </rect>
    </property>
@@ -248,11 +302,8 @@
    </widget>
    <widget class="QMenu" name="menuProject">
     <property name="title">
-     <string>Project</string>
+     <string>File</string>
     </property>
-    <addaction name="actionOptions"/>
-    <addaction name="actionScenarios"/>
-    <addaction name="actionZones"/>
     <addaction name="actionImportNetwork"/>
    </widget>
    <addaction name="menuProject"/>

@@ -7,6 +7,7 @@ from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -14,6 +15,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .classes.general.Validators import validatorRegex
@@ -30,12 +32,19 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		"""
 		super(AddLinkTypeDialog, self).__init__(parent)
 		self.setupUi(self)
+		resolution_dict = Helpers.screenResolution(85)
+		self.resize(resolution_dict['width'], resolution_dict['height'])
+
 		self.dataProject = None
 		self.tranus_folder = tranus_folder
 		self.plugin_dir = os.path.dirname(__file__)
 		self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
 		self.model = QtGui.QStandardItemModel()
 		self.idScenario = idScenario
+		self.shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
+		self.shortcut.activated.connect(self.paste_event)
+		self._row = 0
+		self._column = 0
 
 		self.header = ['Speed', 'Charges', 'Penaliz.', 'Distance Cost', 'Equiv Vehicules', 'Overlap Factor', 'Marg. Maint. Cost']
 		self.columnLinkTypeDb = ['speed', 'charges', 'penaliz', 'distance_cost', 'equiv_vahicules', 'overlap_factor', 'margin_maint_cost']
@@ -58,6 +67,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		# Operator Data Section
 		self.operator_table = self.findChild(QtWidgets.QTableWidget, 'operator_table')
+
+		self.changeLineEditStyle = "color: green; font-weight: bold"
 
 		# Validations 
 		self.id.setValidator(validatorExpr('integer'))
@@ -83,11 +94,13 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.vc_max_reduction.textChanged.connect(self.check_state)
 
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
+		self.operator_table.cellClicked.connect(self.set_row_colum_internal)
 		#self.operator_table.itemChanged.connect(self.__update_operator_linktype)
 		
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_linktype)
-		self.__load_fields()
+		#self.__load_fields()
 		self.__get_scenarios_data()
+		self.__loadId()
 
 		if self.linkTypeSelected:
 			self.setWindowTitle("Edit Link Type")
@@ -95,6 +108,27 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		self.operator_table.itemChanged.connect(self.__validate_operators)
 
+
+	def __loadId(self):
+		if self.linkTypeSelected is None:
+			self.id.setText(str(self.dataBaseSqlite.maxIdTable(" link_type "))) 
+
+
+	def set_row_colum_internal(self, row, column):
+		self._row = row
+		self._column = column
+
+	  # For Paste Text to Table
+	def paste_event(self):
+		text = QApplication.clipboard().text()
+		rows = text.split('\n')
+		row = self._row
+		column = self._column
+		for rowIndex, cells in enumerate(rows):
+			cells = cells.split('\t')
+			for cellIndex, cell in enumerate(cells):
+				self.operator_table.setItem(rowIndex+row, cellIndex+column, QTableWidgetItem(str(cell)))
+	      
 
 	def select_scenario(self, selectedIndex):
 		"""
@@ -105,6 +139,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
 		self.idScenario = scenarioData[0][0]
 		self.load_default_data()
+		self.__load_fields()
 
 
 	def __validate_operators(self, item):
@@ -198,7 +233,9 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			result = self.dataBaseSqlite.updateLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
 		# Save Operator Data Table
 		operatorTable = self.operator_table.rowCount()
-	
+		
+		operator_arr = []
+
 		for index in range(0, operatorTable):
 			id_operator = self.operator_table.verticalHeaderItem(index).text().split(" ")[0] 
 			id_linktype = self.id.text()
@@ -209,7 +246,11 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			equiv_vahicules = self.operator_table.item(index, 4).text()
 			overlap_factor = self.operator_table.item(index, 5).text()
 			margin_maint_cost = self.operator_table.item(index, 6).text()
-			self.dataBaseSqlite.addLinkTypeOperator(scenarios, id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
+			#self.dataBaseSqlite.addLinkTypeOperator(scenarios, id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
+			operator_arr.append((id_linktype, id_operator,  speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost)) 
+
+		print(scenarios, operator_arr)
+		self.dataBaseSqlite.addLinkTypeOperatorInsertUpdate(scenarios, operator_arr)
 
 		if result:
 			self.accept()
@@ -244,28 +285,65 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
 	def load_default_data(self):
-		linktype_result = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, self.idScenario))
 		
-		self.id.setText(str(linktype_result[0][0]))
-		self.name.setText(str(linktype_result[0][2]))
-		self.description.setText(str(linktype_result[0][3]))
-		
-		nameAdministrator = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {}'.format(linktype_result[0][4]))[0][2]
-		indexAdministrator = self.cb_administrator.findText(nameAdministrator, Qt.MatchFixedString)
-		self.cb_administrator.setCurrentIndex(indexAdministrator)
+		if self.linkTypeSelected:
+			linktype_result = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, self.idScenario))
+			id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 
-		self.capacity_factor.setText(str(linktype_result[0][5]))
-		self.min_maintenance_cost.setText(str(linktype_result[0][6]))
-		self.porc_speed_reduction.setText(str(linktype_result[0][7]))
-		self.porc_max_speed_reduction.setText(str(linktype_result[0][8]))
-		self.vc_max_reduction.setText(str(linktype_result[0][9]))
+			linktype_result_prev = None
+			if id_prevScenario:
+				linktype_result_prev = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, id_prevScenario[0][0]))
+        
+			administrator_result = self.dataBaseSqlite.selectAll(' administrator ', " where id = {} and id_scenario = {}".format(linktype_result[0][4], self.idScenario))
+			
+			self.id.setText(str(linktype_result[0][0]))
+			self.name.setText(str(linktype_result[0][2]))
+			self.description.setText(str(linktype_result[0][3]))
+			
+			self.cb_administrator.setCurrentText(str(administrator_result[0][0])+" "+str(administrator_result[0][2]))
+
+			self.capacity_factor.setText(Helpers.decimalFormat(str(linktype_result[0][5])))
+			self.min_maintenance_cost.setText(Helpers.decimalFormat(str(linktype_result[0][6])))
+			self.porc_speed_reduction.setText(Helpers.decimalFormat(str(linktype_result[0][7])))
+			self.porc_max_speed_reduction.setText(Helpers.decimalFormat(str(linktype_result[0][8])))
+			self.vc_max_reduction.setText(Helpers.decimalFormat(str(linktype_result[0][9])))
+			
+			self.capacity_factor.setStyleSheet(self.changeLineEditStyle)
+			if id_prevScenario and linktype_result_prev: 
+				
+				if (linktype_result[0][5] !=  linktype_result_prev[0][5]):
+					self.capacity_factor.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.capacity_factor.setStyleSheet("")
+
+				if (linktype_result[0][6] !=  linktype_result_prev[0][6]):
+					self.min_maintenance_cost.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.min_maintenance_cost.setStyleSheet("")
+
+				if (linktype_result[0][7] !=  linktype_result_prev[0][7]):
+					self.porc_speed_reduction.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.porc_speed_reduction.setStyleSheet("")
+
+				if (linktype_result[0][8] !=  linktype_result_prev[0][8]):
+					self.porc_max_speed_reduction.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.porc_max_speed_reduction.setStyleSheet("")
+
+				if (linktype_result[0][9] !=  linktype_result_prev[0][9]):
+					self.vc_max_reduction.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.vc_max_reduction.setStyleSheet("")
 		
 
 	def __load_fields(self):
 		
 		administrator_result = self.dataBaseSqlite.selectAll(' administrator ', where=f" where id_scenario = {self.idScenario}")
 		for value in administrator_result:
-			self.id_administrator.addItem(value[2], value[0])
+			self.id_administrator.addItem(str(value[0])+" "+str(value[2]), value[0])
+
+		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 
 		# Table data
 		if self.linkTypeSelected:
@@ -319,21 +397,44 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.vertical_header_operator.append(valor[0])
 			headerItem = QTableWidgetItem(valor[0])
 			headerItem.setIcon(QIcon(self.plugin_dir+"/icons/category.jpg"))
-			self.operator_table.setVerticalHeaderItem(index,headerItem)
+			self.operator_table.setVerticalHeaderItem(index, headerItem)
+
+		font = QFont()
 
 		# Set columns size
 		for indice,valor in enumerate(result_ope):
 			x = 0
 			for z in range(1,len(valor)):
 				data = result_ope[indice][z] if result_ope[indice][z] is not None else ''
-				self.operator_table.setItem(indice, x, QTableWidgetItem(str(data)))
+				itemText = QTableWidgetItem()
+				itemText.setText(Helpers.decimalFormat(str(data)))
+
+				if id_prevScenario and self.linkTypeSelected:
+					result_prev = self.dataBaseSqlite.findLinkTypeOperator(id_prevScenario[0][0], self.linkTypeSelected, result_ope[indice][0].split(" ")[0])
+					if len(result_prev) > 0:
+						if result_ope[indice][z] != result_prev[0][z]:
+							itemText.setForeground(QColor("green"))
+							font.setBold(True)
+							itemText.setFont(font)  
+						else:
+							font.setBold(False)
+							itemText.setFont(font)   
+							itemText.setForeground(QColor("black"))
+
+				self.operator_table.setItem(indice, x, itemText)
 				x+=1
 
 
 	def __get_scenarios_data(self):
-		model = QtGui.QStandardItemModel()
-		model.setHorizontalHeaderLabels(['Scenarios'])
+		result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
 
 		self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+		modelSelection = QItemSelectionModel(self.scenarios_model)
+		itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+		indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+		modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
 		self.scenario_tree.setModel(self.scenarios_model)
 		self.scenario_tree.expandAll()
+		self.scenario_tree.setSelectionModel(modelSelection)
+
+		self.select_scenario(self.scenario_tree.selectedIndexes()[0])

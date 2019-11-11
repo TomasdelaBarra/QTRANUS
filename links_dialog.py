@@ -49,17 +49,21 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_link_btn = self.findChild(QtWidgets.QPushButton, 'add_link_btn')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
-        
+        self.le_search = self.findChild(QtWidgets.QLineEdit, 'le_search')
+        self.btn_search = self.findChild(QtWidgets.QPushButton, 'btn_search')
+        self.le_search.setPlaceholderText("Link ID")
+
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.add_link_btn.clicked.connect(self.open_add_link_window)
+        self.btn_search.clicked.connect(self.__search_link)
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.links_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.links_tree.customContextMenuRequested.connect(self.open_menu_links)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         
-        #Loads
+        # Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
         self.__get_links_data()
@@ -76,8 +80,19 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.show_changed_btn.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
         self.show_changed_btn.setToolTip("Show Changed Only")
         self.add_link_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+        self.btn_search.setIcon(QIcon(self.plugin_dir+"/icons/search.svg"))
+        self.btn_search.setToolTip("Search Link ID")
 
-        
+    def __search_link(self):
+        le_searchTxt = self.le_search.text()
+        if not le_searchTxt:
+            #messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Search", "Please enter value.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            #messagebox.exec_()
+            self.__get_links_data()
+            return False
+        self.__get_links_data(linkid=le_searchTxt)
+
+
     def select_scenario(self, selectedIndex):
         """
             @summary: Set Scenario selected
@@ -160,15 +175,15 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
     def paste_scenario(self, codeScenario=None):
         self.copyScenarioSelected
         data = self.dataBaseSqlite.selectAll('scenario', "where code = '{}'".format(self.copyScenarioSelected))        
-        #result = DataBaseSqlite().addScenario(data[0][1], data[0][2], data[0][3], codeScenario)
-        #if result:
+        
         return True
 
     def __get_scenarios_data(self):
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
@@ -176,15 +191,15 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
                
 
-    def __get_links_data(self): 
-
+    def __get_links_data(self, linkid=None): 
+        linkid = f" and linkid like '%{linkid}%' " if linkid else ''
         qry = """with base as (
                     select distinct case when (a.two_way is null or a.two_way == '') 
                                     then '0' else a.two_way end ||' '||linkid linkid, a.name,  b.id||' '||b.name linktype, 
                                     node_from, node_to
                     from link a
                     left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0)
+                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0) {1}
                     group  by 1,2,3,4,5
                 ), two_way as (
                 select  
@@ -199,7 +214,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                         a.node_to
                     from link a
                     left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    where two_way = 1 and a.id_scenario = {0}
+                    where two_way = 1 and a.id_scenario = {0} {1}
                     group by 1)
                 select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
                 from (
@@ -208,8 +223,8 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                     UNION
                     select linkid, name, linktype, node_from, node_to
                     from two_way 
-                ) order by node_from, node_to asc""".format(self.idScenario)
-
+                ) order by node_from, node_to asc""".format(self.idScenario, linkid)
+                
         result = self.dataBaseSqlite.executeSql(qry)
         
         model = QtGui.QStandardItemModel()

@@ -14,6 +14,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 
@@ -41,6 +42,7 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.scenario_tree.clicked.connect(self.select_scenario)
+        
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
@@ -78,15 +80,23 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.target_occ.setValidator(validatorExpr('decimal'))
         self.target_occ.textChanged.connect(self.check_state)
 
+        self.changeLineEditStyle = "color: green; font-weight: bold"
+
         #Loads
         self.__get_scenarios_data()
         self.__get_operators_data()
+        self.__loadId()
         
-        if self.codeRoute is not None:
+        if self.codeRoute:
             self.setWindowTitle("Edit Route")
             self.load_default_data()
 
 
+    def __loadId(self):
+        if self.codeRoute is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" route "))) 
+
+            
     def check_state(self, *args, **kwargs):
         sender = self.sender()
         validator = sender.validator()
@@ -123,6 +133,11 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         id_scenario = self.idScenario
         scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
         scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        
+        if self.codeRoute is None and not self.dataBaseSqlite.validateId(' route ', self.id.text()):
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please write another route's id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
 
         if self.id is None or self.id.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please write the route's id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -140,7 +155,7 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         if self.cb_operator is None or self.cb_operator.currentText() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please write the route's attractor factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please select Operator.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
 
@@ -166,7 +181,6 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         
         used = 1 if self.used.isChecked() else 0
         follows_schedule = 1 if self.follows_schedule.isChecked() else 0
-        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where name = '{}'".format(self.cb_operator.currentText()))
         id_operator = self.cb_operator.itemData(self.cb_operator.currentIndex())
 
         if self.codeRoute is None:
@@ -184,36 +198,66 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        data = self.dataBaseSqlite.selectAll('route', ' where id = {} and id_scenario = {} '.format(self.codeRoute, self.idScenario))
-        operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {} ".format(data[0][4]))
-        name_operator = operator_result[0][2]
         
-        self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][2]))
-        self.description.setText(str(data[0][3]))
-        
-        indexIdOperator = self.cb_operator.findText(self.dataBaseSqlite.selectAll(' operator ', ' where id = {} and id_scenario = {}'.format(data[0][4], self.idScenario)) [0][2], Qt.MatchFixedString)
-        self.cb_operator.setCurrentIndex(indexIdOperator)
+        if self.codeRoute:
+            data = self.dataBaseSqlite.selectAll('route', ' where id = {} and id_scenario = {} '.format(self.codeRoute, self.idScenario))
+            id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+            operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {} and id_scenario = {} ".format(data[0][4], self.idScenario))
+            if id_prevScenario:
+                data_prev = self.dataBaseSqlite.selectAll('route', ' where id = {} and id_scenario = {} '.format(self.codeRoute, id_prevScenario[0][0]))
+            self.id.setText(str(data[0][0]))
+            self.name.setText(str(data[0][2]))
+            self.description.setText(str(data[0][3]))
+            
+            self.cb_operator.setCurrentText(str(operator_result[0][0])+" "+str(operator_result[0][2]))
 
-        self.frequency_from.setText(str(data[0][5]))
-        self.frequency_to.setText(str(data[0][6]))
-        self.target_occ.setText(str(data[0][7]))
-        self.max_fleet.setText(str(data[0][8]))
-        used = True if data[0][9]==1 else False 
-        follows_schedule = True if data[0][10]==1 else False 
-        self.used.setChecked(used)
-        self.follows_schedule.setChecked(follows_schedule)
+            self.frequency_from.setText(Helpers.decimalFormat(str(data[0][5])))
+            self.frequency_to.setText(Helpers.decimalFormat(str(data[0][6])))
+            self.target_occ.setText(Helpers.decimalFormat(str(data[0][7])))
+            self.max_fleet.setText(Helpers.decimalFormat(str(data[0][8])))
+            used = True if data[0][9]==1 else False 
+            follows_schedule = True if data[0][10]==1 else False 
+            self.used.setChecked(used)
+            self.follows_schedule.setChecked(follows_schedule)
+
+            if id_prevScenario and data_prev: 
+                if (data[0][5] !=  data_prev[0][5]):
+                    self.frequency_from.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.frequency_from.setStyleSheet("")
+
+                if (data[0][6] !=  data_prev[0][6]):
+                    self.frequency_to.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.frequency_to.setStyleSheet("")
+
+                if (data[0][7] !=  data_prev[0][7]):
+                    self.target_occ.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.target_occ.setStyleSheet("")
+
+                if (data[0][8] !=  data_prev[0][8]):
+                    self.max_fleet.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.max_fleet.setStyleSheet("")
         
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
     def __get_operators_data(self):
         result = self.dataBaseSqlite.selectAll("operator", where = f" where id_scenario = {self.idScenario}")
         for value in result:
-            self.cb_operator.addItem(str(value[2]), value[0])
+            self.cb_operator.addItem(str(value[0])+" "+str(value[2]), value[0])

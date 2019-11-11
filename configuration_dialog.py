@@ -16,6 +16,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
@@ -49,6 +50,7 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.projectLandUseIter = self.findChild(QtWidgets.QLineEdit, 'land_iterations')
 		self.projectLandUseConver = self.findChild(QtWidgets.QLineEdit, 'land_convergence')
 		self.projectLandUseSmoothingFact = self.findChild(QtWidgets.QLineEdit, 'land_smoothing_factor')
+		self.projectLandUseInternalCostFact = self.findChild(QtWidgets.QLineEdit, 'land_def_internal_cost_factor')
 
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_scenario)
@@ -166,8 +168,14 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 			print("Please write the project's Smoothing factor.")
 			return False
 
+		if self.projectLandUseInternalCostFact is None or self.projectLandUseInternalCostFact.text().strip() == '':
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Project Configuration", "Please write the project's Land use Internal Cost Factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			print("Please write the project's Smoothing factor.")
+			return False
+
 		transport = dict(type='transport', iterations=self.projectTransIter.text(), convergence=self.projectTransConver.text(), smoothing_factor=self.projectTransSmoothingFact.text(), route_similarity_factor=self.projectTransRouteSimil.text())
-		landUse = dict(type='landuse', iterations=self.projectLandUseIter.text(), convergence=self.projectLandUseConver.text(), smoothing_factor=self.projectLandUseSmoothingFact.text())
+		landUse = dict(type='landuse', iterations=self.projectLandUseIter.text(), convergence=self.projectLandUseConver.text(), smoothing_factor=self.projectLandUseSmoothingFact.text(), internal_cost_factor=self.projectLandUseInternalCostFact.text())
 		configMode = [transport, landUse]
 
 		if self.dataProject:
@@ -178,7 +186,7 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		if result:
 			self.accept()
 		else:
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Project Configuration", "Please write the project's Land use Smoothing factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Project Configuration", "Write database error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
@@ -193,12 +201,13 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.projectDescription.setText(result[0][2])
 			self.projectAuthor.setText(result[0][3])
 
-			self.projectTransIter.setText(str(result_model_trans[0][2]))
-			self.projectTransConver.setText(str(result_model_trans[0][3]))
-			self.projectTransSmoothingFact.setText(str(result_model_trans[0][4]))
-			self.projectTransRouteSimil.setText(str(result_model_trans[0][5]))
+			self.projectTransIter.setText(Helpers.decimalFormat(str(result_model_trans[0][2])))
+			self.projectTransConver.setText(Helpers.decimalFormat(str(result_model_trans[0][3])))
+			self.projectTransSmoothingFact.setText(Helpers.decimalFormat(str(result_model_trans[0][4])))
+			self.projectTransRouteSimil.setText(Helpers.decimalFormat(str(result_model_trans[0][5])))
 
-			self.projectLandUseIter.setText(str(result_model_landuse[0][2]))
-			self.projectLandUseConver.setText(str(result_model_landuse[0][3]))
-			self.projectLandUseSmoothingFact.setText(str(result_model_landuse[0][4]))
+			self.projectLandUseIter.setText(Helpers.decimalFormat(str(result_model_landuse[0][2])))
+			self.projectLandUseConver.setText(Helpers.decimalFormat(str(result_model_landuse[0][3])))
+			self.projectLandUseSmoothingFact.setText(Helpers.decimalFormat(str(result_model_landuse[0][4])))
+			self.projectLandUseInternalCostFact.setText(Helpers.decimalFormat(str(result_model_landuse[0][6])))
 			

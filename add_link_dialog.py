@@ -17,6 +17,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.Validators import * # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .add_routes_links_dialog import AddRoutesLinksDialog
 from .add_linktype_dialog import AddLinkTypeDialog
@@ -79,6 +80,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_linktype = self.findChild(QtWidgets.QPushButton, 'btn_linktype')
         self.btn_cannot_turn = self.findChild(QtWidgets.QPushButton, 'btn_cannot_turn')
         
+        self.changeLineEditStyle = "color: green; font-weight: bold"
 
         # Turns Section
         self.tbl_turns = self.findChild(QtWidgets.QTableWidget, 'tbl_turns')
@@ -304,41 +306,41 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __load_tb_operator_aviable(self):
         id_linktype = self.cb_type.itemData(self.cb_type.currentIndex())
-       
-        header = ['Name', 'Description']
-        qry = """select b.id||' '||b.name name, b.description
-                from link_type_operator a
-                join operator b 
-                on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
-                where a.id_linktype = %s and a.id_scenario = %s and speed is not null """ % (id_linktype, self.idScenario)
-        
-        result = self.dataBaseSqlite.executeSql(qry)
-        self.id_operators_arr = []
-        for value in result:
-            self.id_operators_arr.append(value[0].split(" ")[0])
+        if id_linktype:
+            header = ['Name', 'Description']
+            qry = """select b.id||' '||b.name name, b.description
+                    from link_type_operator a
+                    join operator b 
+                    on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
+                    where a.id_linktype = %s and a.id_scenario = %s and speed is not null """ % (id_linktype, self.idScenario)
+            
+            result = self.dataBaseSqlite.executeSql(qry)
+            self.id_operators_arr = []
+            for value in result:
+                self.id_operators_arr.append(value[0].split(" ")[0])
 
-        if result:
-            rowsCount = len(result)
-            columsCount = len(result[0])
-            self.tbl_operators.setRowCount(rowsCount)
-            self.tbl_operators.setColumnCount(columsCount)
-            self.tbl_operators.setHorizontalHeaderLabels(header) # Headers of columns table
-            self.tbl_operators.horizontalHeader().setStretchLastSection(True)
+            if result:
+                rowsCount = len(result)
+                columsCount = len(result[0])
+                self.tbl_operators.setRowCount(rowsCount)
+                self.tbl_operators.setColumnCount(columsCount)
+                self.tbl_operators.setHorizontalHeaderLabels(header) # Headers of columns table
+                self.tbl_operators.horizontalHeader().setStretchLastSection(True)
 
-            # Set columns size
-            for index,value in enumerate(result):
-                x = 0
-                for z in range(0,len(value)):
-                    data = result[index][z] if result[index][z] is not None else ''
-                    item = QTableWidgetItem(str(data))
-                    item.setFlags(Qt.NoItemFlags)
-                    self.tbl_operators.setItem(index, x, item)
-                    x+=1
-        else:
-            self.tbl_operators.clear()
-            self.tbl_operators.setRowCount(0)
-            self.tbl_operators.setColumnCount(0)
-        return 
+                # Set columns size
+                for index,value in enumerate(result):
+                    x = 0
+                    for z in range(0,len(value)):
+                        data = result[index][z] if result[index][z] is not None else ''
+                        item = QTableWidgetItem(str(data))
+                        item.setFlags(Qt.NoItemFlags)
+                        self.tbl_operators.setItem(index, x, item)
+                        x+=1
+            else:
+                self.tbl_operators.clear()
+                self.tbl_operators.setRowCount(0)
+                self.tbl_operators.setColumnCount(0)
+            return 
 
 
     def __load_tb_turns_delay(self):
@@ -408,7 +410,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             # Set columns size
             for index,value in enumerate(result):
                     data = result[index][1] if result[index][1] is not None else ''
-                    self.tbl_turns.setItem(index, 0, QTableWidgetItem(str(data)))
+                    self.tbl_turns.setItem(index, 0, QTableWidgetItem(Helpers.decimalFormat(str(data))))
 
         else:
             self.tbl_turns.clear()
@@ -475,6 +477,11 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         two_way = 1 if self.two_way.isChecked() else 0
         used_in_scenario = 1 if self.used_in_scenario.isChecked() else 0
 
+        if not id_type:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Please select a link type", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
         if id_origin == id_destination:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Please write another value for origin or destination", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -495,6 +502,8 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             turn_to = self.tbl_turns.verticalHeaderItem(index).text()
             delay = self.tbl_turns.item(index, 0).text() if  self.tbl_turns.item(index, 0).text() != 'Inf' else -1
             self.turns_delays_arr.append((turn_to, delay))
+
+        #print(f"arreglos de rutas con tipos {self.id_routes_arr_selected}")
 
         if self.codeLink is None:
             newLink = self.dataBaseSqlite.addLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
@@ -520,12 +529,14 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             count = model.rowCount()
             for value in range(0,count):
                 item = model.itemFromIndex(model.index(value,0))
-                # 1 passes_stop 2 passes_only 3 cannot_pass
-                typeRoute = 3
-                if item.data(Qt.UserRole) == 'passes_stops':
+                # 1 passes_stop 2 passes_only 0 cannot_pass
+                typeRoute = None
+                if item.data(Qt.UserRole) == 'passes_only':
                     typeRoute = 1
-                elif item.data(Qt.UserRole)=='passes_only':
+                if item.data(Qt.UserRole) == 'passes_stops':
                     typeRoute = 2
+                if item.data(Qt.UserRole) == 'cannot_pass':
+                    typeRoute = 0
                 idRoute = item.text().split(' ')[0]
                 self.id_routes_arr_selected.append((idRoute, typeRoute))
 
@@ -556,83 +567,116 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cb_origin.setEnabled(False)
         self.cb_destination.setEnabled(False)
 
-        # Basics Data
-        data = self.dataBaseSqlite.selectAll(
-                ' link ', 
-                f""" where linkid = '{self.codeLink}' and id_scenario = {self.idScenario} """,
-                columns= "node_from, node_to, id_linktype, id, name, description, length, capacity, delay, two_way, used_in_scenario")
+        if self.codeLink:
+            # Basics Data
+            id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 
-        if not data:
             data = self.dataBaseSqlite.selectAll(
-                ' link ', 
-                f""" where linkid = '{self.codeLink}' """,
-                columns= "node_from, node_to, id_linktype, id, name, description, length, capacity, delay, two_way, used_in_scenario")
-        
+                    ' link ', 
+                    f""" where linkid = '{self.codeLink}' and id_scenario = {self.idScenario} """,
+                    columns= "node_from, node_to, id_linktype, id, name, description, length, capacity, delay, two_way, used_in_scenario")
 
-        resultOrigin = self.dataBaseSqlite.selectAll(' node ', where=f' where id = {data[0][0]}', columns='id, name')
-        resultDestination = self.dataBaseSqlite.selectAll(' node ', where=f' where id = {data[0][1]}', columns='id, name')
-        resultTypeLink = self.dataBaseSqlite.selectAll(' link_type ', where=f' where id = {data[0][2]}', columns='id, name')
-
-        originText = f"{resultOrigin[0][0]} {resultOrigin[0][1]}" if resultOrigin[0][1] else f"{resultOrigin[0][0]} "
-        indexOrigin = self.cb_origin.findText(originText)
-        self.cb_origin.setCurrentIndex(indexOrigin)
-
-        destinationText = f"{resultDestination[0][0]} {resultDestination[0][1]}" if resultDestination[0][1] else f"{resultDestination[0][0]} "
-        indexDestination = self.cb_destination.findText(destinationText)
-        self.cb_destination.setCurrentIndex(indexDestination)
-
-        if resultTypeLink:
-            indexLinkType = self.cb_type.findText(str(f'{resultTypeLink[0][0]} {resultTypeLink[0][1]}'))
-            self.cb_type.setCurrentIndex(indexLinkType)
-
-        self.name.setText(str(data[0][4] if data[0][4] else ''))
-        self.description.setText(str(data[0][5] if data[0][5] else ''))
-
-        self.length.setText(str(data[0][6] if data[0][6] else ''))
-        self.capacity.setText(str(data[0][7] if data[0][7] else ''))
-        self.delay.setText(str(data[0][8] if data[0][8] else ''))
-       
-        two_way = True if data[0][9]==1 else False 
-        self.two_way.setChecked(two_way)
-
-        used_in_scenario = True if data[0][10]==1 else False 
-        self.used_in_scenario.setChecked(used_in_scenario)
-        
-        # Routes
-        qry = f"""select distinct c.id||' '||c.name, b.type_route
-                from link a
-                join link_route b on (a.linkid = b.id_link)
-                join route c on (b.id_route = c.id)
-                where a.linkid = '{self.codeLink}' and a.id_scenario = {self.idScenario}
-                order by 1"""
-
-        result = self.dataBaseSqlite.executeSql(qry)
-
-        self.modelRoutes.clear()
-        self.modelRoutes.setHorizontalHeaderLabels(['Routes'])
-        x=0
-        for value in result:
-            item = QtGui.QStandardItem()
-            item.setIcon(self.ic_redlight)
-            typeRoute = 'cannot_pass'
-            if value[1] == 1:
-                item.setIcon(self.ic_bus_stop)
-                typeRoute = 'passes_stops'
-            if value[1] == 2:
-                typeRoute = 'passes_only'
-                item.setIcon(self.ic_greenlight)
+            if not data:
+                data = self.dataBaseSqlite.selectAll(
+                    ' link ', 
+                    f""" where linkid = '{self.codeLink}' """,
+                    columns= "node_from, node_to, id_linktype, id, name, description, length, capacity, delay, two_way, used_in_scenario")
             
-            item.setData(typeRoute,Qt.UserRole)
-            item.setText(value[0])
-            self.modelRoutes.insertRow(x,item)
-            x+=1
-        self.tree_routes.setModel(self.modelRoutes)
-        self.tree_routes.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
+            data_prev = None
+            if id_prevScenario:
+                data_prev = self.dataBaseSqlite.selectAll(
+                    ' link ', 
+                    f""" where linkid = '{self.codeLink}' and id_scenario = {id_prevScenario[0][0]} """,
+                    columns= "node_from, node_to, id_linktype, id, name, description, length, capacity, delay, two_way, used_in_scenario")
+
+            resultOrigin = self.dataBaseSqlite.selectAll(' node ', where=f' where id = {data[0][0]} and id_scenario = {self.idScenario}', columns='id, name')
+            resultDestination = self.dataBaseSqlite.selectAll(' node ', where=f' where id = {data[0][1]} and id_scenario = {self.idScenario}', columns='id, name')
+            resultTypeLink = self.dataBaseSqlite.selectAll(' link_type ', where=f' where id = {data[0][2]} and id_scenario = {self.idScenario}', columns='id, name')
+
+            originText = f"{resultOrigin[0][0]} {resultOrigin[0][1]}" if resultOrigin[0][1] else f"{resultOrigin[0][0]} "
+            indexOrigin = self.cb_origin.findText(originText)
+            self.cb_origin.setCurrentIndex(indexOrigin)
+
+            destinationText = f"{resultDestination[0][0]} {resultDestination[0][1]}" if resultDestination[0][1] else f"{resultDestination[0][0]} "
+            indexDestination = self.cb_destination.findText(destinationText)
+            self.cb_destination.setCurrentIndex(indexDestination)
+
+            if resultTypeLink:
+                indexLinkType = self.cb_type.findText(str(f'{resultTypeLink[0][0]} {resultTypeLink[0][1]}'))
+                self.cb_type.setCurrentIndex(indexLinkType)
+
+            self.name.setText(str(data[0][4] if data[0][4] else ''))
+            self.description.setText(str(data[0][5] if data[0][5] else ''))
+
+            self.length.setText(Helpers.decimalFormat(str(round(data[0][6],2) if data[0][6] else '')))
+            self.capacity.setText(Helpers.decimalFormat(str(data[0][7] if data[0][7] else '')))
+            self.delay.setText(Helpers.decimalFormat(str(data[0][8] if data[0][8] else '')))
+
+            if id_prevScenario and data_prev:
+                if (data[0][6] != data_prev[0][6]):
+                    self.length.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.length.setStyleSheet("")
+
+                if (data[0][7] != data_prev[0][7]):
+                    self.capacity.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.capacity.setStyleSheet("")
+
+                if (data[0][8] != data_prev[0][8]):
+                    self.delay.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.delay.setStyleSheet("")
+           
+            two_way = True if data[0][9]==1 else False 
+            self.two_way.setChecked(two_way)
+
+            used_in_scenario = True if data[0][10]==1 else False 
+            self.used_in_scenario.setChecked(used_in_scenario)
+            
+            # Routes
+            qry = f"""select distinct c.id||' '||c.name, b.type_route
+                    from link a
+                    join link_route b on (a.linkid = b.id_link) and (a.id_scenario = b.id_scenario)
+                    join route c on (b.id_route = c.id) and (a.id_scenario = c.id_scenario)
+                    where a.linkid = '{self.codeLink}' and a.id_scenario = {self.idScenario}
+                    order by 1"""
+
+            result = self.dataBaseSqlite.executeSql(qry)
+
+            self.modelRoutes.clear()
+            self.modelRoutes.setHorizontalHeaderLabels(['Routes'])
+            x=0
+            for value in result:
+                item = QtGui.QStandardItem()
+                if value[1] == 1:
+                    typeRoute = 'passes_only'
+                    item.setIcon(self.ic_greenlight)
+                if value[1] == 2:
+                    typeRoute = 'passes_stops'
+                    item.setIcon(self.ic_bus_stop)
+                if value[1] == 0:
+                    typeRoute = 'cannot_pass'
+                    item.setIcon(self.ic_redlight)
+                # print(f"Tipo Ruta Id: {value[1]} tipo ruta txt {typeRoute}")
+                item.setData(typeRoute,Qt.UserRole)
+                item.setText(value[0])
+                self.modelRoutes.insertRow(x,item)
+                x+=1
+            self.tree_routes.setModel(self.modelRoutes)
+            self.tree_routes.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
         
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])

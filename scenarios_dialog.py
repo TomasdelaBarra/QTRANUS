@@ -76,23 +76,23 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Scenario')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Scenario')
         copy = menu.addAction(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"),'Copy Scenario Changes')
-        paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Scenario Changes')
+        self.paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Scenario Changes')
         if self.copyScenarioSelected:
-            paste.setEnabled(True)
+            self.paste.setEnabled(True)
         else:
-            paste.setEnabled(False)
+            self.paste.setEnabled(False)
 
         opt = menu.exec_(self.scenario_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
-            dialog = AddScenarioDialog(self.tranus_folder, parent = self, codeScenario=codeScenarioSelected)
+            dialog = AddScenarioDialog(self.tranus_folder, parent = self, codeScenario=codeScenarioSelected, action='edit')
             dialog.show()
             result = dialog.exec_()
         if opt == copy:
-            paste.setEnabled(True)
+            self.paste.setEnabled(True)
             self.copy_scenario(codeScenario=codeScenarioSelected)
-        if opt == paste:
-            paste.setEnabled(True)
+        if opt == self.paste:
+            self.paste.setEnabled(True)
             self.paste_scenario(codeScenario=codeScenarioSelected)
             self.__get_scenarios_data()
         if opt == remove:
@@ -104,7 +104,10 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens add scenario window
         """
-        dialog = AddScenarioDialog(self.tranus_folder,  parent = self)
+        indexes = self.scenario_tree.selectedIndexes()
+        codeScenarioSelected = indexes[0].model().itemFromIndex(indexes[0]).text().split(" - ")[0] if indexes else None
+        
+        dialog = AddScenarioDialog(self.tranus_folder,  parent = self, codeScenario=codeScenarioSelected, action='new')
         dialog.show()
         result = dialog.exec_()
         
@@ -113,7 +116,8 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Question, "Remove scenario", "Are you sure you want to remove scenario {}?".format(codeScenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         result = messagebox.exec_()
         if result == QtWidgets.QMessageBox.Yes:
-            removeResult = self.dataBaseSqlite.removeScenario(codeScenario)
+            scenarios = self.dataBaseSqlite.selectAllScenarios(codeScenario)
+            removeResult = self.dataBaseSqlite.removeScenario(codeScenario, scenarios)
             if removeResult:
                 return True
             else:
@@ -125,11 +129,20 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         self.copyScenarioSelected = codeScenario
 
     def paste_scenario(self, codeScenario=None):
-        self.copyScenarioSelected
-        data = self.dataBaseSqlite.selectAll('scenario', "where code = '{}'".format(self.copyScenarioSelected))
+        print("Copiado "+self.copyScenarioSelected, "Pegar en "+codeScenario)
+        result = self.dataBaseSqlite.selectAll( " scenario ", where=f" where code = '{codeScenario}'")
+
+        self.dataBaseSqlite.syncScenariosDB(result[0][0], self.copyScenarioSelected)
         
-        #result = DataBaseSqlite().addScenario(data[0][1], data[0][2], data[0][3], codeScenario)
-        #if result:
+        scenarios = self.dataBaseSqlite.selectAllScenarios(codeScenario)
+        
+        for id_scenario in scenarios:
+            print("dentro del for", id_scenario[0], id_scenario[3])
+            self.dataBaseSqlite.syncScenariosDB(id_scenario[0], id_scenario[3])
+
+        self.copyScenarioSelected = None
+        self.paste.setEnabled(False)
+
         return True
     
     def __load_scenarios_from_db_file(self):

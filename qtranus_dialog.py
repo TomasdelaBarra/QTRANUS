@@ -36,6 +36,7 @@ from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
 from .networklayer_dialog import NetworkLayerDialog
 from .results_dialog import ResultsDialog
+from .run_dialog import RunDialog
 from .data_window import DataWindow
 from .classes.general.FileManagement import FileManagement
 from .classes.general.Helpers import Helpers
@@ -66,7 +67,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtWidgets.QLineEdit, 'layers_group_name')
-        #self.db_folder_btn = self.findChild(QtWidgets.QToolButton, 'db_folder_btn')
+        self.db_btn = self.findChild(QtWidgets.QToolButton, 'db_btn')
         #self.new_db_btn = self.findChild(QtWidgets.QPushButton, name='new_project_btn')
         self.tranus_folder = self.findChild(QtWidgets.QLineEdit, 'tranus_folder')
         self.zone_shape = self.findChild(QtWidgets.QLineEdit, 'zone_shape')
@@ -91,7 +92,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.layers_group_name.textEdited.connect(self.save_layers_group_name)
-        #self.db_folder_btn.clicked.connect(self.select_db_zip_file(self.select_db))
+        self.db_btn.clicked.connect(self.select_db_file(self.select_db))
         #self.new_db_btn.clicked.connect(self.new_db)
         self.data_btn.clicked.connect(self.data_dialog)
         self.results_btn.clicked.connect(self.results_dialog)
@@ -107,6 +108,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         #self.proj.removeAll.connect(self.clearObjects)
         self.pg_loading.setVisible(False)
         self.lbl_loading.setVisible(False)
+
+        self.run_btn.setEnabled(True)
+
         # Loads
         self.reload_scenarios()
         if self.project['zones_id_field_name']:
@@ -175,7 +179,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             newDB = DataBase()
             if(newDB.create_new_data_base(self.project['tranus_folder'], self.layers_group_name.text().strip())):
                 self.project.load_db_file(self.project['tranus_folder'] + "\\" + self.layers_group_name.text().strip() + ".zip")
-                self.data_btn.setEnabled(True)
+                #self.data_btn.setEnabled(True)
             
                 print(self.project.db_path)
 
@@ -214,26 +218,30 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.centroid_shape.setText('')
             
     def select_network_links_shape(self, file_name):
-        result = self.project.load_network_links_shape_file(file_name)
+        result, networkShapeFields = self.project.load_network_links_shape_file(file_name)
+        #result, networkShapeFields = self.project.load_network_links_shape_file(file_name[0]) 
         if result:
             self.network_links_shape.setText(file_name[0])
             self.results_btn.setEnabled(self.project.is_valid_network())
+            self.load_network_shape_fields(networkShapeFields)
         else:
             self.network_links_shape.setText('')
         self.check_configure()
             
     def select_network_nodes_shape(self, file_name):
-        result = self.project.load_network_nodes_shape_file(file_name)
+        result, nodesShapeFields = self.project.load_network_nodes_shape_file(file_name)
         if result:
             self.network_nodes_shape.setText(file_name[0])
             self.results_btn.setEnabled(self.project.is_valid_network())
+            self.load_nodes_shape_fields(nodesShapeFields)
         else:
             self.network_nodes_shape.setText('')
             
     def select_db(self, file_name):
-        self.project.load_db_file(file_name)
-        self.layers_group_name.setText(file_name)
-        self.data_btn.setEnabled(True)
+        return 
+        """self.project.load_db_file(file_name)
+        self.layers_group_name.setText(file_name)"""
+        #self.data_btn.setEnabled(True)
 
     def select_tranus_folder(self):
         """
@@ -284,9 +292,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return select_file
     
-    def select_db_zip_file(self, callback):
+    def select_db_file(self, callback):
         def select_file():
-            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select DB zip file', directory='', filter='*.*, *.zip')
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select DB file', directory='', filter='*.*, *.db')
             if file_name:
                 file_name = file_name.replace('/', '\\')
                 print(file_name)
@@ -316,7 +324,12 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens results window 
         """
-        dialog = ResultsDialog(parent = self)
+        if self.tranus_folder.text().strip() =='':
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+        
+        dialog = ResultsDialog(self.tranus_folder.text(), parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -324,8 +337,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens run window 
         """
-        #To Do
-        #Call your window here
+        dialog = RunDialog(self.tranus_folder.text(), parent = self)
+        dialog.show()
+        result = dialog.exec_()
         pass
 
     def default_data(self):
@@ -386,9 +400,11 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Validates configuration
         """
-        if self.project.is_valid() or self.project.is_valid_network():
+        #if self.project.is_valid() and self.project.is_valid_network() :
+        if self.project.is_valid():
             self.results_btn.setEnabled(True)
-            #self.data_btn.setEnabled(True)
+            self.data_btn.setEnabled(True)
+
 
     def load_zone_shape_fields(self, fields):
         """
@@ -404,7 +420,39 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.zones_shape_fields.setEnabled(True)
             self.zones_shape_fields.clear()
             self.zones_shape_fields.addItems(fields)
-            print("")
+
+
+    def load_network_shape_fields(self, fields):
+        """
+            @summary: Loads zone shape fields combo
+            @param fields: Zone shape fields
+            @type fields: List object
+        """
+        
+        if fields is None:
+            QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
+            print ("There are no fields to load.")
+        else:
+            self.links_shape_fields.setEnabled(True)
+            self.links_shape_fields.clear()
+            self.links_shape_fields.addItems(fields)
+
+
+    def load_nodes_shape_fields(self, fields):
+        """
+            @summary: Loads zone shape fields combo
+            @param fields: Zone shape fields
+            @type fields: List object
+        """
+        
+        if fields is None:
+            QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
+            print ("There are no fields to load.")
+        else:
+            self.nodes_shape_fields.setEnabled(True)
+            self.nodes_shape_fields.clear()
+            self.nodes_shape_fields.addItems(fields)
+            
             
     def zones_shape_fields_changed(self):
         """

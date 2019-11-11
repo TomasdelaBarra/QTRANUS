@@ -13,6 +13,7 @@ from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.general.Helpers import Helpers
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
@@ -42,7 +43,8 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         self.external = self.findChild(QtWidgets.QCheckBox, 'external')
         self.internal_cost_factor = self.findChild(QtWidgets.QLineEdit, 'internal_cost_factor')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
-        
+        self.def_internal_cost_factor = None
+
         # Control Actions
         self.external.clicked.connect(self.evaluate_external)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_zone)
@@ -61,9 +63,25 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         #Loads
         self.__get_scenarios_data()
         self.evaluate_external()
+        self.__loadId()
+
         if self.codeZone is not None:
             self.setWindowTitle("Edit Zone")
             self.load_default_data()
+
+        self.__loadDefaultInternalCostFactor()
+
+    def __loadDefaultInternalCostFactor(self):
+        result = self.dataBaseSqlite.selectAll( " config_model ", where =" where  type = 'landuse' " )
+        self.def_internal_cost_factor = result[0][6]
+        if self.codeZone is None:
+            self.internal_cost_factor.setText(str(self.def_internal_cost_factor))
+        if self.codeZone is not None and self.internal_cost_factor.text().strip() == '':
+            self.internal_cost_factor.setText(str(self.def_internal_cost_factor))
+
+    def __loadId(self):
+        if self.codeZone is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" zone ")))
 
 
     def check_state(self, *args, **kwargs):
@@ -152,7 +170,7 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         externalVal = True if data[0][2]==1 else False 
         self.external.setChecked(externalVal)
         internal_cost_factor = str(data[0][3]) if data[0][3] is not None else ''
-        self.internal_cost_factor.setText(internal_cost_factor)
+        self.internal_cost_factor.setText(Helpers.decimalFormat(internal_cost_factor))
         self.evaluate_external()
 
 

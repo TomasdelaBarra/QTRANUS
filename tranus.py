@@ -94,7 +94,7 @@ class Scenarios(object):
         for line in lines:
             nodes[line[1]] = {
                 'name': line[2],
-                'prev': line[4] if line[4] else None
+                'prev': line[3] if line[3] else None
             }
         print(nodes)
         return nodes

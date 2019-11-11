@@ -32,10 +32,11 @@ from .classes.ExpressionData import ExpressionData
 from .classes.CustomExceptions import InputFileSourceError
 
 class QTranusProject(object):
-    def __init__(self, proj):
+    def __init__(self, proj, iface):
         """
             @summary: Constructor
         """
+        self.iface = iface
         self.proj = proj
         self.tranus_project = None
         self.map_data = MapData()
@@ -1166,32 +1167,37 @@ class QTranusProject(object):
         registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(file_path[0], 'Network_Links', 'ogr')
+        
         if not layer.isValid():
             self['network_links_shape_file_path'] = ''
             self['network_links_shape_id'] = ''
             return False
-            
+        network_shape_fields = [field.name() for field in layer.fields()]    
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['network_links_shape_file_path'] = layer.source()
         self['network_links_shape_id'] = layer.id()
-        return True
+        return True, network_shape_fields
+
 
     def load_network_nodes_shape_file(self, file_path):
         self.network_nodes_shape_path = file_path
         registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(file_path[0], 'Network_Nodes', 'ogr')
+
         if not layer.isValid():
             self['network_nodes_shape_file_path'] = ''
             self['network_nodes_shape_id'] = ''
             return False
-            
+
+        nodes_shape_fields = [field.name() for field in layer.fields()]    
+
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['network_nodes_shape_file_path'] = layer.source()
         self['network_nodes_shape_id'] = layer.id()
-        return True
+        return True, nodes_shape_fields
 
     def load_project_file_shape_files(self, file_path, shape):
         layer_name = ''

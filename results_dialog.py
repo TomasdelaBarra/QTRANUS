@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import os, webbrowser
 from PyQt5 import QtWidgets, uic
+from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem, QMainWindow, QToolBar, QHBoxLayout
 from PyQt5 import QtCore
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import *
 from PyQt5.QtGui import QIcon
 from qgis.core import QgsProject
 from qgis.utils import iface
+
 
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Helpers import Helpers
@@ -12,21 +16,22 @@ from .scenarios_model import ScenariosModel
 from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
 from .networklayer_dialog import NetworkLayerDialog
+from .scenarios_model_sqlite import ScenariosModelSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'results.ui'))
 
 class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, parent = None):
+    def __init__(self, tranus_folder, parent = None):
         super(ResultsDialog, self).__init__(parent)
         self.setupUi(self)
         # Resize Dialog for high resolution monitor
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
-
+        self.tranus_folder = tranus_folder
         self.project = parent.project
-        self.zones_dialog = ZoneLayerDialog(parent=self)
+        
         self.plugin_dir = os.path.dirname(__file__)
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
@@ -49,7 +54,8 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
         
         # Loads
-        self.__reload_scenarios()
+        #self.__reload_scenarios()
+        self.__load_scenarios()
         self.__load_layers_list()
             
     def open_help(self):
@@ -59,13 +65,21 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'results.html')
         webbrowser.open_new_tab(filename)
     
-    def __reload_scenarios(self):
-        """
-            @summary: Reloads scenarios
-        """
+    """def __reload_scenarios(self):
+       
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
-        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)"""
+
+
+    def __load_scenarios(self):
+
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenarios.setSelectionModel(modelSelection)
     
     def __load_layers_list(self):
         """
@@ -101,6 +115,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             print ("There are no fields to load, please reload SHP file.")
         else:
+            self.zones_dialog = ZoneLayerDialog(self.tranus_folder, parent=self)
             self.zones_dialog.show()
             result = self.zones_dialog.exec_()
             self.__load_layers_list()
@@ -150,7 +165,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             
             print ("There are no fields to load, please reload SHP file.")
         else:
-            dialog = MatrixLayerDialog(parent = self)
+            dialog = MatrixLayerDialog(self.tranus_folder, parent = self)
             dialog.show()
             result = dialog.exec_()
             self.__load_layers_list()
@@ -165,7 +180,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
 
             print ("Please select a network link shape file.")
         else:
-            dialog = NetworkLayerDialog(parent = self)
+            dialog = NetworkLayerDialog(self.tranus_folder, parent = self)
             dialog.show()
             result = dialog.exec_()
             self.__load_layers_list()

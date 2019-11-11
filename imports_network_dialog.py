@@ -9,6 +9,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from qgis.gui import *
 
+from qgis.core import QgsProject
+from qgis.gui import QgisInterface
+from qgis.core import Qgis
 
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
@@ -84,7 +87,6 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
-        #self.__get_administrators_data()
 
 
     def open_help(self):
@@ -156,10 +158,11 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             data_list = []
             try:
                 for index, row in enumerate(csv_reader):
-                    if index > 0 and int(row[3].strip()) != 0:
+                    #if index > 0 and int(row[3].strip()) != 0:
+                    if index > 0:
                         id_link = f"{row[0].strip()}-{row[1].strip()}"
                         id_route = row[2].strip()
-                        type_route = 2 if row[3].strip() == 1 else  1 if row[3].strip() == 2 else 3 if row[3].strip() == 0 else 0
+                        type_route = row[3].strip() if row[3].strip() != 0 else 3
                         data_list.append((id_link, id_route, type_route))   
                 self.dataBaseSqlite.addLinkRouteFFile(scenarios, data_list)
             except:
@@ -185,7 +188,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                         id_operator = row[3].strip()
                         frequency_from = row[4].strip()
                         frequency_to = row[5].strip()
-                        target_occ = row[6].strip()
+                        target_occ = float(row[6].strip())*100
                         max_fleet = row[7].strip()
                         follows_schedule = row[8].strip()
                         data_list.append((_id, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, follows_schedule))   
@@ -194,7 +197,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             finally:
-                self.close() 
+                #self.close() 
                 return True
                 
 
@@ -216,7 +219,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             finally:
-                self.close() 
+                #self.close() 
                 return True
         
 
@@ -238,11 +241,11 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                         description = row[5].strip() if row[5].strip() else None
                         data_list.append((_id, x, y, id_type, name, description))
                 self.dataBaseSqlite.addFFileNode(scenarios, data_list)
+                self.project.iface.messageBar().pushMessage("Success", "Import Nodes", level=Qgis.Success, duration=3)
             except:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             finally:
-                self.close()   
                 return True
 
     def __load_csv_links(self, path):

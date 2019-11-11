@@ -37,7 +37,7 @@ class ScenariosModelSqlite(QtGui.QStandardItemModel):
         item = QtGui.QStandardItem(scenario.code + " - " + scenario.name)
         item.setEditable(False)
         #item.setCheckable(False)
-        item.setIcon(QIcon(self.plugin_dir+"/icons/square-green.png"))
+        item.setIcon(QIcon(self.plugin_dir+"/icons/square-gray.png"))
         for child in scenario.children:
             item.appendRow(self.add_scenario(child))
             item.setIcon(QIcon(self.plugin_dir+"/icons/square-gray.png"))

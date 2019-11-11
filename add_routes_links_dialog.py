@@ -54,7 +54,7 @@ class AddRoutesLinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.routes_tree.clicked.connect(self.select_routes)
        
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
-        #self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.save_event)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
 
         self.__get_routes_data()
 

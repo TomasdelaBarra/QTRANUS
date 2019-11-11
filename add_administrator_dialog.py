@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from string import *
-import os, re, webbrowser
+import os, re, webbrowser, json
 
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
@@ -61,15 +61,21 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.description.setValidator(validatorExpr('alphaNum'))
         self.description.textChanged.connect(self.check_state)
         """
-        self.name.setMaxLength(10)
+        self.name.setMaxLength(25)
         self.description.setMaxLength(55)
+        self.changeLineEditStyle = "color: green; font-weight: bold"
 
         #Loads
         self.__get_scenarios_data()
+        self.__loadId()
         if self.codeAdministrator is not None:
             self.setWindowTitle("Edit Administrator")
             self.load_default_data()
 
+
+    def __loadId(self):
+        if self.codeAdministrator is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" administrator "))) 
 
     def check_state(self, *args, **kwargs):
         sender = self.sender()
@@ -101,6 +107,7 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
+        
 
     def save_new_administrator(self):
         id_scenario = self.idScenario
@@ -157,20 +164,41 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def load_default_data(self):
         data = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {} and id_scenario = {}'.format(self.codeAdministrator, self.idScenario))
+        id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+        if id_prevScenario:
+            data_prev = self.dataBaseSqlite.selectAll(' administrator ', ' where id = {} and id_scenario = {}'.format(self.codeAdministrator, id_prevScenario[0][0]))
         
         if data and self.codeAdministrator:
             self.id.setText(str(data[0][0]))
             self.name.setText(str(data[0][2]))
             self.description.setText(str(data[0][3]))
-        else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Please Select another Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            return True
+            if id_prevScenario and data_prev:    
+                if (data[0][2] !=  data_prev[0][2]):
+                    self.name.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.name.setStyleSheet("")
+
+                if (data[0][3] !=  data_prev[0][3]):
+                    self.description.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.description.setStyleSheet("")
+                
+            else:
+                self.name.setStyleSheet(self.changeLineEditStyle)
+                self.description.setStyleSheet(self.changeLineEditStyle)
+            
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])

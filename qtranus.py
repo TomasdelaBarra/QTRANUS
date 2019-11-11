@@ -66,7 +66,7 @@ class QTranus:
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-        self.project = QTranusProject(QgsProject.instance())
+        self.project = QTranusProject(QgsProject.instance(), iface)
     
         # Create the dialog (after translation) and keep reference
         self.dlg = QTranusDialog(project=self.project)

@@ -13,8 +13,8 @@ from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
-from .classes.general.Helpers import Helpers
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_mode_dialog import AddModeDialog
 from .add_category_dialog import AddCategoryDialog
@@ -207,16 +207,14 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
     def __get_scenarios_data(self):
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
         
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
-
-        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        self.scenario_tree.setModel(self.scenarios_model)
-        self.scenario_tree.expandAll()"""
 
 
     def __load_zones_tb_data(self):
@@ -256,14 +254,14 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
                 x = 0
                 for z in range(0,len(valor)):
                     data = result[indice][z] if result[indice][z] is not None else ''
-                    self.trips_tbl.setItem(indice, x, QTableWidgetItem(str(data)))
+                    self.trips_tbl.setItem(indice, x, QTableWidgetItem(Helpers.decimalFormat(str(data))))
                     x+=1
 
             for indice,valor in enumerate(result_b):
                 x = 0
                 for z in range(0,len(valor)):
                     data = result_b[indice][z] if result_b[indice][z] is not None else ''
-                    self.factor_tbl.setItem(indice, x, QTableWidgetItem(str(data)))
+                    self.factor_tbl.setItem(indice, x, QTableWidgetItem(Helpers.decimalFormat(str(data))))
                     x+=1
 
             self.lb_total_items_exotrips.setText(" %s Items " % len(result))
@@ -277,6 +275,16 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
         trips = self.le_trip.text()
         id_scenario = self.idScenario
+
+        if not trips:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select trips value", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
+        if id_from == id_to:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select another origin or destination", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
 
         if not self.idScenario:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -346,10 +354,10 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         
     
     def __load_category_data(self):
-        
         result = self.dataBaseSqlite.selectAll( ' category ', where=f" where id_scenario = {self.idScenario}", orderby=' order by 1 asc')
-        for value in result:
-            self.cb_category.addItem("%s %s" % (value[0],value[3]),str(value[0]))
+        if self.cb_category.count() == 0:
+            for value in result:
+                self.cb_category.addItem("%s %s" % (value[0],value[3]),str(value[0]))
 
 
     def __load_mode_data(self):
@@ -359,7 +367,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __load_zones_cb_data(self):
-        result = self.dataBaseSqlite.selectAll( 'zone ', ' where id > 0 ',orderby=' order by 1 asc')
+        result = self.dataBaseSqlite.selectAll( 'zone ', ' where id > 0',orderby=' order by 1 asc')
 
         for value in result:
             self.cb_tr_zone_origin.addItem(str(value[0])+" "+str(value[1]), value[0])

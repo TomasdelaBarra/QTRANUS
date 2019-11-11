@@ -24,11 +24,20 @@ class Helpers(object):
         string = string.replace("[","").replace("]","").replace("'","")
         return string.split(',')
 
+
     @staticmethod
     def expressionToList(expression):
         expression = str(expression)
         expression = expression.replace("[","").replace("]","").replace("'","")
         return expression.split(',')
+
+
+    @staticmethod
+    def decimalFormat(num):
+        import re 
+        
+        return re.sub("\.0$","",num)
+
 
     @staticmethod
     def screenResolution(percent=0):

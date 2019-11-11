@@ -5,25 +5,28 @@ from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets 
 from PyQt5.QtCore import *
 from qgis.gui import QgsMessageBar
-from .classes.ExpressionData import ExpressionData
+from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem, QMainWindow, QToolBar, QHBoxLayout
+from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsProject
 
+from .classes.ExpressionData import ExpressionData
 from .classes.general.FileManagement import FileManagement as FileM
 from .classes.general.Helpers import Helpers
 from .scenarios_model import ScenariosModel
-from qgis.core import QgsMessageLog, QgsVectorLayer, QgsField, QgsProject
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .scenarios_model_sqlite import ScenariosModelSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'zonelayer.ui'))
 
 class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
 
-    def __init__(self, parent=None, layerId=None):
+    def __init__(self, tranus_folder, parent=None, layerId=None):
         super(ZoneLayerDialog, self).__init__(parent)
         self.setupUi(self)
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
+        self.tranus_folder = tranus_folder
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
@@ -56,11 +59,23 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__load_sectors_combobox()
         self.__load_fields_combobox()
         self.__load_operators()
-        self.reload_scenarios()
+        # self.reload_scenarios()
+        self.__load_scenarios()
 
         if self.layerId:
             self.__load_default_data()
     
+    
+    def __load_scenarios(self):
+
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenarios.setSelectionModel(modelSelection)
+
+
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -132,13 +147,11 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             self.expression.setText(self.expression.text() + " + " + textToAdd)
     
-    def reload_scenarios(self):
-        """
-            @summary: Reloads scenarios
-        """
+    """def reload_scenarios(self):
+        
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
-        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)"""
         
 
     def ready(self):

@@ -15,6 +15,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .add_mode_dialog import AddModeDialog
 
@@ -81,16 +82,23 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.name.setMaxLength(10)
         self.description.setMaxLength(55)
+        self.changeLineEditStyle = "color: green; font-weight: bold"
 
         #Loads
-        self.__get_scenarios_data()
         self.__get_modes_data()
+        self.__get_scenarios_data()
         self.__validateSave()
+        self.__loadId()
         if self.codeCategory is not None:
             self.setWindowTitle("Edit Category")
             self.load_default_data()
 
         self.add_mode_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+
+
+    def __loadId(self):
+        if self.codeCategory is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" category "))) 
 
 
     def select_scenario(self, selectedIndex):
@@ -101,6 +109,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
+        self.load_default_data()
 
 
     def __validateSave(self):
@@ -152,7 +161,7 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if self.codeCategory is None:
             if not self.dataBaseSqlite.validateId(' category ', self.id.text()):
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Category", "Please write other Category id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Category", "Please write another Category id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
 
@@ -227,36 +236,109 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        #data = self.dataBaseSqlite.selectAll('category', ' where key = {}'.format(self.codeCategory))
         id_category = self.codeCategory
+        id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+        if id_prevScenario:
+            sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
+                a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
+                from category a
+                join mode b on (a.id_mode = b.id) 
+                where a.id = {} and a.id_scenario = {}""".format(id_category, id_prevScenario[0][0])
+
+            data_prev = self.dataBaseSqlite.executeSql(sql)
 
         sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
                 a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
                 from category a
-                join mode b on (a.id_mode = b.id)
-                where a.id = {} and id_scenario = {}""".format(id_category, self.idScenario)
+                join mode b on (a.id_mode = b.id) 
+                where a.id = {} and a.id_scenario = {}""".format(id_category, self.idScenario)
 
         data = self.dataBaseSqlite.executeSql(sql)
+        
+        if data and self.codeCategory:
+            self.id.setText(str(data[0][0]))
+            self.name.setText(str(data[0][1]))
+            self.description.setText(str(data[0][2]))
+            self.volumen_travel_time.setText(Helpers.decimalFormat(str(data[0][3])))
+            self.value_of_waiting_time.setText(Helpers.decimalFormat(str(data[0][4])))
+            self.min_trip_gener.setText(Helpers.decimalFormat(str(data[0][5])))
+            self.max_trip_gener.setText(Helpers.decimalFormat(str(data[0][6])))
+            self.elasticity_trip_gener.setText(Helpers.decimalFormat(str(data[0][7])))
+            self.choice_elasticity.setText(Helpers.decimalFormat(str(data[0][8])))
 
-        indexMode = self.mode_cb.findText(data[0][9], Qt.MatchFixedString)
-        self.mode_cb.setCurrentIndex(indexMode)
+            indexMode = self.mode_cb.findText(data[0][9], Qt.MatchFixedString)
+            self.mode_cb.setCurrentIndex(indexMode)
+            
+            if id_prevScenario and data_prev: 
+                if (data[0][1] !=  data_prev[0][1]):
+                    self.name.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.name.setStyleSheet("")
 
-        self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][1]))
-        self.description.setText(str(data[0][2]))
-        self.volumen_travel_time.setText(str(data[0][3]))
-        self.value_of_waiting_time.setText(str(data[0][4]))
-        self.min_trip_gener.setText(str(data[0][5]))
-        self.max_trip_gener.setText(str(data[0][6]))
-        self.elasticity_trip_gener.setText(str(data[0][7]))
-        self.choice_elasticity.setText(str(data[0][8]))
+                if (data[0][2] !=  data_prev[0][2]):
+                    self.description.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.description.setStyleSheet("")
+   
+                if (data[0][3] !=  data_prev[0][3]):
+                    self.volumen_travel_time.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.volumen_travel_time.setStyleSheet("")
+
+                if (data[0][4] !=  data_prev[0][4]):
+                    self.value_of_waiting_time.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.value_of_waiting_time.setStyleSheet("")
+
+                if (data[0][5] !=  data_prev[0][5]):
+                    self.min_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.min_trip_gener.setStyleSheet("")
+
+                if (data[0][5] !=  data_prev[0][5]):
+                    self.min_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.min_trip_gener.setStyleSheet("")
+
+                if (data[0][6] !=  data_prev[0][6]):
+                    self.max_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.max_trip_gener.setStyleSheet("")
+
+                if (data[0][7] !=  data_prev[0][7]):
+                    self.elasticity_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.elasticity_trip_gener.setStyleSheet("")
+
+                if (data[0][8] !=  data_prev[0][8]):
+                    self.choice_elasticity.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.choice_elasticity.setStyleSheet("")
+            else:
+                self.name.setStyleSheet(self.changeLineEditStyle)
+                self.description.setStyleSheet(self.changeLineEditStyle)
+                self.volumen_travel_time.setStyleSheet(self.changeLineEditStyle)
+                self.value_of_waiting_time.setStyleSheet(self.changeLineEditStyle)
+                self.min_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                self.min_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                self.max_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                self.elasticity_trip_gener.setStyleSheet(self.changeLineEditStyle)
+                self.choice_elasticity.setStyleSheet(self.changeLineEditStyle)
+
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
 
 
     def __get_modes_data(self):

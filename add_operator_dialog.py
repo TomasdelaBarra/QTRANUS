@@ -3,6 +3,7 @@ import os, re, webbrowser, numpy as np
 from string import *
 
 from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import *
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
@@ -14,6 +15,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr  # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .classes.general.Validators import validatorRegex
@@ -40,8 +42,15 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.columnOperatorCetegoryDb = ['tariff_factor', 'penal_factor']
 		self.vertical_header_cat = []
 		self.operatorSelected = codeOperator
-		self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+
 		self.idScenario = idScenario
+
+		# Style of LineEdit
+		self.changeLineEditStyle = "color: green; font-weight: bold"
+
+		# Scenario Section
+		self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
+		self.scenario_tree.clicked.connect(self.select_scenario)
 
 		# Definition Section
 		self.id = self.findChild(QtWidgets.QLineEdit, 'id')
@@ -79,7 +88,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.stops_unit_alight_time = self.findChild(QtWidgets.QLineEdit, 'stops_unit_alight_time')
 
 		self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
-		self.by_category_tbl.itemChanged.connect(self.__update_category)
+		#self.by_category_tbl.itemChanged.connect(self.__update_category)
 		
 		# Validations
 		self.id.setValidator(validatorExpr('integer'))
@@ -129,11 +138,17 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_operator)
 		self.__load_fields()
 		self.__get_scenarios_data()
+		self.__loadId()
 
 		if self.operatorSelected:
 			self.setWindowTitle("Edit Operator")
 			self.load_default_data()
 		self.by_category_tbl.itemChanged.connect(self.__validate_category)	
+
+
+	def __loadId(self):
+		if self.operatorSelected is None:
+			self.id.setText(str(self.dataBaseSqlite.maxIdTable(" operator "))) 
 
 
 	def __validate_category(self, item):
@@ -147,6 +162,17 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 				messagebox.exec_()
 				self.by_category_tbl.setItem(item.row(),  item.column(), QTableWidgetItem(str('')))
 
+	
+	def select_scenario(self, selectedIndex):
+		"""
+		    @summary: Set Scenario selected
+		"""
+		self.scenarioSelectedIndex = selectedIndex
+		self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+		scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+		self.idScenario = scenarioData[0][0]
+		self.load_default_data()
+		self.__load_fields()
 
 
 	def check_state(self, *args, **kwargs):
@@ -298,6 +324,33 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			data.update(scenarios=scenarios)
 			result = self.dataBaseSqlite.addOperator(data)
 
+		rowsCategory = self.by_category_tbl.rowCount()
+		ope_cat_arr = []
+		for index in range(0,rowsCategory):
+			id_operator = self.id.text()
+			id_category = self.by_category_tbl.verticalHeaderItem(index).text().split(" ")[0] 
+			tariff_factor = self.by_category_tbl.item(index, 0).text()
+			penal_factor = self.by_category_tbl.item(index, 1).text()
+
+			ifExist = self.dataBaseSqlite.selectAll('operator_category', " where id_operator = {} and id_category = {} and id_scenario = {}".format(id_operator, id_category, self.idScenario))
+			
+			ope_cat_arr.append((id_operator, id_category, tariff_factor, penal_factor))
+
+			if not self.dataBaseSqlite.operatorCategoryInsertUpdate(scenarios, ope_cat_arr):	
+				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+				messagebox.exec_()
+				
+			"""if len(ifExist) == 0:
+				if not self.dataBaseSqlite.addOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
+					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+					messagebox.exec_()
+			else: 
+				if not self.dataBaseSqlite.updateOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
+					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+					messagebox.exec_()"""
+		
+		self.dataBaseSqlite.syncTransfers(scenarios)
+		
 		if result:
 			self.accept()
 		else:
@@ -335,65 +388,147 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
 	def load_default_data(self):
-		operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {}".format(self.operatorSelected))
-		
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
 		self.cb_type.clear()
 		for index, valor in enumerate(types):
 			self.cb_type.addItem(valor, index+1)
-		
+
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()
 		for value in mode_result:
 			self.cb_mode.addItem(value[1], value[0])
 
-		sql = """ select a.name category, b.tariff_factor, b.penal_factor 
-				from category a 
-				left join operator_category b on (a.id = b.id)
-				where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
+		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+		if id_prevScenario:
+			operator_result_prev = self.dataBaseSqlite.selectAll(' operator ', " where id = {} and id_scenario = {}".format(self.operatorSelected, id_prevScenario[0][0]))
 		
-		result = self.dataBaseSqlite.executeSql(sql)
+		operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {} and id_scenario = {}".format(self.operatorSelected, self.idScenario))
+		if operator_result and self.operatorSelected:
 
-		self.model.setHorizontalHeaderLabels(self.header)
-		for x in range(0, len(result)):
-		    self.model.insertRow(x)
-		    z=0
-		    for y in range(0,3):
-		        self.model.setData(self.model.index(x, y), result[x][z])
-		        z+=1
+			self.id.setText(str(operator_result[0][0]))
+			self.name.setText(str(operator_result[0][2]))
+			self.description.setText(str(operator_result[0][3]))
+			
+			indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][4]))[0][1], Qt.MatchFixedString)
+			self.cb_mode.setCurrentIndex(indexMode)
 
-		self.id.setText(str(operator_result[0][0]))
-		self.name.setText(str(operator_result[0][2]))
-		self.description.setText(str(operator_result[0][3]))
-		
-		indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][4]))[0][1], Qt.MatchFixedString)
-		self.cb_mode.setCurrentIndex(indexMode)
+			self.cb_type.itemData(operator_result[0][5])
 
-		self.cb_type.itemData(operator_result[0][5])
+			self.basics_modal_constant.setText(Helpers.decimalFormat(str(operator_result[0][6])))
+			self.basics_occupency.setText(Helpers.decimalFormat(str(operator_result[0][7])))
+			self.basics_time_factor.setText(Helpers.decimalFormat(str(operator_result[0][8])))
+			self.basics_fixed_wating_factor.setText(Helpers.decimalFormat(str(operator_result[0][9])))
+			self.basics_boarding_tariff.setText(Helpers.decimalFormat(str(operator_result[0][10])))
+			self.basics_distance_tariff.setText(Helpers.decimalFormat(str(operator_result[0][11])))
+			self.basics_time_tariff.setText(Helpers.decimalFormat(str(operator_result[0][12])))
+			
+			self.energy_min.setText(Helpers.decimalFormat(str(operator_result[0][13])))
+			self.energy_max.setText(Helpers.decimalFormat(str(operator_result[0][14])))
+			self.energy_slope.setText(Helpers.decimalFormat(str(operator_result[0][15])))
+			self.energy_cost.setText(Helpers.decimalFormat(str(operator_result[0][16])))
 
-		self.basics_modal_constant.setText(str(operator_result[0][6]))
-		self.basics_occupency.setText(str(operator_result[0][7]))
-		self.basics_time_factor.setText(str(operator_result[0][8]))
-		self.basics_fixed_wating_factor.setText(str(operator_result[0][9]))
-		self.basics_boarding_tariff.setText(str(operator_result[0][10]))
-		self.basics_distance_tariff.setText(str(operator_result[0][11]))
-		self.basics_time_tariff.setText(str(operator_result[0][12]))
-		
-		self.energy_min.setText(str(operator_result[0][13]))
-		self.energy_max.setText(str(operator_result[0][14]))
-		self.energy_slope.setText(str(operator_result[0][15]))
-		self.energy_cost.setText(str(operator_result[0][16]))
+			self.cost_time_operation.setText(Helpers.decimalFormat(str(operator_result[0][17])))
+			self.cost_porc_paid_by_user.setText(Helpers.decimalFormat(str(operator_result[0][18])))
 
-		self.cost_time_operation.setText(str(operator_result[0][17]))
-		self.cost_porc_paid_by_user.setText(str(operator_result[0][18]))
+			self.stops_min_stop_time.setText(Helpers.decimalFormat(str(operator_result[0][19])))
+			self.stops_unit_boarding_time.setText(Helpers.decimalFormat(str(operator_result[0][20])))
+			self.stops_unit_alight_time.setText(Helpers.decimalFormat(str(operator_result[0][21])))
 
-		self.stops_min_stop_time.setText(str(operator_result[0][19]))
-		self.stops_unit_boarding_time.setText(str(operator_result[0][20]))
-		self.stops_unit_alight_time.setText(str(operator_result[0][21]))
+			if id_prevScenario and operator_result_prev:
+				if (operator_result[0][1] !=  operator_result_prev[0][1]):
+					self.name.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.name.setStyleSheet("")
 
+				if (operator_result[0][2] !=  operator_result_prev[0][2]):
+					self.description.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.description.setStyleSheet("")
+
+				if (operator_result[0][6] !=  operator_result_prev[0][6]):
+					self.basics_modal_constant.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_modal_constant.setStyleSheet("")
+
+				if (operator_result[0][7] !=  operator_result_prev[0][7]):
+					self.basics_occupency.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_occupency.setStyleSheet("")
+
+				if (operator_result[0][8] !=  operator_result_prev[0][8]):
+					self.basics_time_factor.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_time_factor.setStyleSheet("")
+
+				if (operator_result[0][9] !=  operator_result_prev[0][9]):
+					self.basics_fixed_wating_factor.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_fixed_wating_factor.setStyleSheet("")
+
+				if (operator_result[0][10] !=  operator_result_prev[0][10]):
+					self.basics_boarding_tariff.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_boarding_tariff.setStyleSheet("")
+
+				if (operator_result[0][11] !=  operator_result_prev[0][11]):
+					self.basics_distance_tariff.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_distance_tariff.setStyleSheet("")
+
+				if (operator_result[0][12] !=  operator_result_prev[0][12]):
+					self.basics_time_tariff.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.basics_time_tariff.setStyleSheet("")
+
+				if (operator_result[0][13] !=  operator_result_prev[0][13]):
+					self.energy_min.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.energy_min.setStyleSheet("")
+
+				if (operator_result[0][14] !=  operator_result_prev[0][14]):
+					self.energy_max.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.energy_max.setStyleSheet("")
+
+				if (operator_result[0][15] !=  operator_result_prev[0][15]):
+					self.energy_slope.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.energy_slope.setStyleSheet("")
+
+				if (operator_result[0][16] !=  operator_result_prev[0][16]):
+					self.energy_cost.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.energy_cost.setStyleSheet("")
+
+				if (operator_result[0][17] !=  operator_result_prev[0][17]):
+					self.cost_time_operation.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.cost_time_operation.setStyleSheet("")
+
+				if (operator_result[0][18] !=  operator_result_prev[0][18]):
+					self.cost_porc_paid_by_user.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.cost_porc_paid_by_user.setStyleSheet("")
+
+				if (operator_result[0][19] !=  operator_result_prev[0][19]):
+					self.stops_min_stop_time.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.stops_min_stop_time.setStyleSheet("")
+
+				if (operator_result[0][20] !=  operator_result_prev[0][20]):
+					self.stops_unit_boarding_time.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.stops_unit_boarding_time.setStyleSheet("")
+
+				if (operator_result[0][21] !=  operator_result_prev[0][21]):
+					self.stops_unit_alight_time.setStyleSheet(self.changeLineEditStyle)
+				else:
+					self.stops_unit_alight_time.setStyleSheet("")
 
 	def __load_fields(self):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
+		
+		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 		
 		for index, valor in enumerate(types):
 			self.cb_type.addItem(types[index],index+1)
@@ -409,25 +544,55 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
 		else:
 			existOperatorCategory = []
-			
-		# Table data
-		if self.operatorSelected and len(existOperatorCategory)>0:
-			sql = """ select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
-			from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
-			where b.id_operator = {} and a.id_scenario = {}  """.format(self.operatorSelected, self.idScenario)
-		else:	
-			sql= """select id||' '||name category, '' tariff_factor, '' penal_factor 
-				from category where id_scenario = {}""".format(self.idScenario)
 
-		print(f"{sql}")
-		result_cat = self.dataBaseSqlite.executeSql(sql)
+		operatorSql = " b.id_operator = {0}".format(self.operatorSelected) if self.operatorSelected else  'b.id_operator is null '
+		# Table data
+		sql = """with base as (
+			select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
+			from category a 
+			join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+			where {0} and a.id_scenario = {1}
+		),
+		operator_only as (
+			select id||' '||name category, '' tariff_factor, '' penal_factor 
+			from category where id_scenario = {1}
+		)
+		select * from 
+			base
+		UNION
+			select * from 
+			operator_only
+			where category not in (select category from base)""".format(operatorSql, self.idScenario)
+		
+		print(sql)
+		result_cat = self.dataBaseSqlite.executeSql(sql) 
+		result_cat_prev = ''
+		if id_prevScenario and self.operatorSelected:
+			sql = """with base as (
+				select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
+				from category a 
+				join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+				where b.id_operator = {0} and a.id_scenario = {1}
+			),
+			operator_only as (
+				select id||' '||name category, '' tariff_factor, '' penal_factor 
+				from category where id_scenario = {1}
+			)
+			select * from 
+				base
+			UNION
+				select * from 
+				operator_only
+				where category not in (select category from base)""".format(self.operatorSelected, id_prevScenario[0][0])
+
+			result_cat_prev = self.dataBaseSqlite.executeSql(sql)
 		
 		rowsCount = len(result_cat)
 		columsCount = len(result_cat[0])-1
 		self.by_category_tbl.setRowCount(rowsCount)
 		self.by_category_tbl.setColumnCount(columsCount)
 		self.by_category_tbl.setHorizontalHeaderLabels(self.header) # Headers of columns table
-
+		self.by_category_tbl.horizontalHeader().setStretchLastSection(True)
 		for index, valor in enumerate(result_cat):
 			self.vertical_header_cat.append(valor[0])
 			headerItem = QTableWidgetItem(valor[0])
@@ -438,18 +603,36 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		header = self.by_category_tbl.horizontalHeader()       
 		for x in range(0,columsCount):
 			header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
+		# Fill values of the table
 		for indice,valor in enumerate(result_cat):
 			x = 0
 			for z in range(1,len(valor)):
 				data = result_cat[indice][z] if result_cat[indice][z] is not None else ''
-				self.by_category_tbl.setItem(indice, x, QTableWidgetItem(str(data)))
+				data_prev = data
+				if result_cat_prev:
+					data_prev = result_cat_prev[indice][z] if result_cat_prev[indice][z] is not None else ''
+				font = QFont()
+				font.setBold(True)
+				itemText = QTableWidgetItem()
+				itemText.setText(Helpers.decimalFormat(str(data)))
+				if data != data_prev:
+					itemText.setForeground(QColor("green"))
+					itemText.setFont(font)
+				
+				self.by_category_tbl.setItem(indice, x, itemText)
 				x+=1
 
 
 	def __get_scenarios_data(self):
-		model = QtGui.QStandardItemModel()
-		model.setHorizontalHeaderLabels(['Scenarios'])
+		result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
 
 		self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+		modelSelection = QItemSelectionModel(self.scenarios_model)
+		itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+		indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+		modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
 		self.scenario_tree.setModel(self.scenarios_model)
 		self.scenario_tree.expandAll()
+		self.scenario_tree.setSelectionModel(modelSelection)
+
+		self.select_scenario(self.scenario_tree.selectedIndexes()[0])

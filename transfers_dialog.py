@@ -4,6 +4,7 @@ from string import *
 
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
+from PyQt5.QtGui import *
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -135,28 +136,28 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
     def save_event(self):
         rowsCount = self.transfers_table.rowCount()
         id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         for index in range(0, rowsCount):
             id_origin = self.transfers_table.item(index, 0).text().split(" ")[0]
             id_destination = self.transfers_table.item(index, 1).text().split(" ")[0]
             cost = self.transfers_table.item(index, 2).text()
-            self.dataBaseSqlite.updateTransferOperator(id_scenario, id_origin, id_destination, cost)
+            self.dataBaseSqlite.updateTransferOperator(scenarios, id_origin, id_destination, cost)
         
         self.close()
 
     def __get_scenarios_data(self):
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
         
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
-
-        """self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        self.scenario_tree.setModel(self.scenarios_model)
-        self.scenario_tree.expandAll()"""
 
 
     def __load_operators_cb_data(self):        
@@ -168,7 +169,6 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def __load_operators_tb_data(self):
-
         if self.idScenario:
             qry = """
                 select 
@@ -179,7 +179,10 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                 join operator c on a.id_operator_to = c.id and a.id_scenario = c.id_scenario
                 where a.id_scenario = %s order by 1,2 asc""" % self.idScenario
 
+            id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+
             result = self.dataBaseSqlite.executeSql(qry)
+
             self.transfers_table.setRowCount(len(result))
             self.transfers_table.setColumnCount(3)
             self.transfers_table.setHorizontalHeaderLabels(self.header)
@@ -187,12 +190,26 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
 
             header = self.transfers_table.horizontalHeader()       
             header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-
+            font = QFont()
+            font.setBold(True)
+            
             for indice,valor in enumerate(result):
                 x = 0
                 for z in range(0,len(valor)):
                     data = result[indice][z] if result[indice][z] is not None else ''
-                    self.transfers_table.setItem(indice, x, QTableWidgetItem(str(data)))
+                    itemText = QTableWidgetItem()
+                    itemText.setText(Helpers.decimalFormat(str(data)))
+                    if id_prevScenario:
+                        cost_prev = self.dataBaseSqlite.findTransfer(result[indice][0].split(" ")[0], result[indice][1].split(" ")[0], id_prevScenario[0][0])
+                        
+                        if cost_prev and (result[indice][2] != cost_prev[0][0]) and z == 2:
+                            itemText.setForeground(QColor("green"))
+                            itemText.setFont(font)                 
+                        elif z == 2:
+                            itemText.setForeground(QColor("black"))
+                            font.setBold(False)
+                            itemText.setFont(font)                 
+                    self.transfers_table.setItem(indice, x, itemText)
                     x+=1
                     
             self.lb_total_items_transfers.setText(" %s Items " % len(result))

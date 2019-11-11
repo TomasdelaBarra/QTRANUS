@@ -164,10 +164,11 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
 
     def __get_scenarios_data(self):
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         modelSelection = QItemSelectionModel(self.scenarios_model)
-        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         self.scenario_tree.setSelectionModel(modelSelection)
@@ -180,7 +181,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
         qry = """select id, name, 
                  case WHEN id_type = 1 then 'Internal' 
                       WHEN id_type = 2 then 'External'
-                      WHEN id_type is NULL then 'Node'  end type    
+                      WHEN id_type = 3 then 'Node'  end type    
                  from node  
                  where id_scenario = %s
                  order by 1 asc """ % (self.idScenario)

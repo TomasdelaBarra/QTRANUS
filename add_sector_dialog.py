@@ -14,6 +14,7 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.general.Helpers import Helpers
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
 
@@ -35,6 +36,7 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.idScenario = idScenario
+        self.changeLineEditStyle = "color: green; font-weight: bold"
 
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
@@ -79,10 +81,16 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         #Loads
         self.__get_scenarios_data()
         self.evaluate_transportable()
+        self.__loadId()
+
         if self.codeSector is not None:
             self.setWindowTitle("Edit Sector")
             self.load_default_data()
+            
  
+    def __loadId(self):
+        if self.codeSector is None:
+            self.id.setText(str(self.dataBaseSqlite.maxIdTable(" sector ")))
 
     def select_scenario(self, selectedIndex):
         """
@@ -205,22 +213,56 @@ class AddSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def load_default_data(self):
-        data = self.dataBaseSqlite.selectAll('sector', f' where id = {self.codeSector} and id_scenario = {self.idScenario}')
-        self.id.setText(str(data[0][0]))
-        self.name.setText(str(data[0][2]))
-        self.description.setText(str(data[0][3]))
-        transporableValue = True if data[0][4]==1 else False 
-        self.transportable.setChecked(transporableValue)
-        self.location_choice_elasticity.setText(str('' if data[0][5] is None else data[0][5]))
-        self.attractor_factor.setText(str(data[0][6]))
-        self.price_factor.setText(str(data[0][7]))
-        self.sustitute.setText(str(data[0][8]))
-        self.evaluate_transportable()
+        if self.codeSector:
+            data = self.dataBaseSqlite.selectAll('sector', f' where id = {self.codeSector} and id_scenario = {self.idScenario}')
+            id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+            data_prev = None
+            if id_prevScenario:
+                data_prev = self.dataBaseSqlite.selectAll('sector', f' where id = {self.codeSector} and id_scenario = {id_prevScenario[0][0]}')
+
+            self.id.setText(str(data[0][0]))
+            self.name.setText(str(data[0][2]))
+            self.description.setText(str(data[0][3]))
+            transporableValue = True if data[0][4]==1 else False 
+            self.transportable.setChecked(transporableValue)
+            self.location_choice_elasticity.setText(Helpers.decimalFormat(str('' if data[0][5] is None else data[0][5])))
+            self.attractor_factor.setText(Helpers.decimalFormat(str(data[0][6])))
+            self.price_factor.setText(Helpers.decimalFormat(str(data[0][7])))
+            self.sustitute.setText(Helpers.decimalFormat(str(data[0][8])))
+            self.evaluate_transportable()
+
+            if id_prevScenario and data_prev: 
+                if (data[0][5] !=  data_prev[0][5]):
+                    self.location_choice_elasticity.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.location_choice_elasticity.setStyleSheet("")
+
+                if (data[0][6] !=  data_prev[0][6]):
+                    self.attractor_factor.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.attractor_factor.setStyleSheet("")
+
+                if (data[0][7] !=  data_prev[0][7]):
+                    self.price_factor.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.price_factor.setStyleSheet("")
+
+                if (data[0][8] !=  data_prev[0][8]):
+                    self.sustitute.setStyleSheet(self.changeLineEditStyle)
+                else:
+                    self.sustitute.setStyleSheet("")
 
 
     def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
+        result_scenario = self.dataBaseSqlite.selectAll(" scenario ", where=" where id = %s " % self.idScenario )
+
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(result_scenario[0][1], Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
