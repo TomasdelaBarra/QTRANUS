@@ -25,7 +25,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class RunDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, scenarioSelectedIndex=None, parent = None):
+    def __init__(self, project_file, scenarioSelectedIndex=None, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -33,14 +33,13 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(RunDialog, self).__init__(parent)
         self.setupUi(self)
+        self.project_file = project_file
+
+        self.tranus_folder = self.uriSegmentation(project_file)
         self.project = parent.project
         self.copyAdministratorSelected = None
-        self.tranus_folder = tranus_folder
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
         self.file = None
-
-        if self.tranus_folder[-13:]=="""\W_TRANUS.CTL""":
-            self.tranus_folder = self.tranus_folder.replace('\W_TRANUS.CTL','')
         
         self.plugin_dir = os.path.dirname(__file__)
         self.scenarioSelectedIndex = scenarioSelectedIndex
@@ -78,8 +77,6 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixed_transportable = None
         self.statusBar = QStatusBar(self)
         self.layout_status_bar.addWidget(self.statusBar)
-
-        
 
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -126,6 +123,12 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_save_batch.setEnabled(False)
         #Loads
         self.__get_scenarios_data()
+
+
+    def uriSegmentation(self, project_file):
+        project_file_arr = project_file.split("/")
+        return "/".join(project_file_arr[:len(project_file_arr)-1])
+
 
     def validate_fixed_trans(self):
         if self.chck_fixed_transportable.isChecked():
@@ -364,9 +367,10 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
         webbrowser.open_new_tab(filename)
 
+
     def __get_scenarios_data(self):
 
-        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios_model = ScenariosModelSqlite(self.project_file)
         modelSelection = QItemSelectionModel(self.scenarios_model)
         modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.Select)
         self.scenario_tree.setModel(self.scenarios_model)
@@ -403,12 +407,15 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def run_event(self, event):
         if self.__validate_links():
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.generate_single_scenario(self.idScenario)
             
             self.tab_run.setCurrentIndex(1)
-            self.batch_file = BatchFiles(self.tranus_folder, pluginDir=self.plugin_dir, statusBar=self.statusBar, programsListSelected=self.programsListSelected, id_scenario=self.idScenario, fixed_transportable=self.fixed_transportable)
+            self.batch_file = BatchFiles(self.project_file, pluginDir=self.plugin_dir, statusBar=self.statusBar, programsListSelected=self.programsListSelected, id_scenario=self.idScenario, fixed_transportable=self.fixed_transportable)
             self.file = self.batch_file.generate_bath_file()
+
+            # If rum Trans Create Assigment PENDIENTE 
+            self.batch_file.validate_generate_assigment()
 
             if self.file:
                 os.chdir(self.tranus_folder)

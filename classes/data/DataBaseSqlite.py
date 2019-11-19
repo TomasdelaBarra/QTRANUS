@@ -20,18 +20,14 @@ class DataBaseSqlite():
 		"""
         @summary: Class Constructor
     	"""
-		if self.tranus_folder[-13:]=="""\W_TRANUS.CTL""":
-			self.tranus_folder = self.tranus_folder.replace('\W_TRANUS.CTL','')
-		
-		path = "{}/qtranus.db".format(self.tranus_folder)
-		
+		self.tranus_folder = self.tranus_folder if self.tranus_folder[-3:]=='.db' else f"{self.tranus_folder}.db"
+		path = f"{self.tranus_folder}"
 		try:
 			conn = sqlite3.connect(path)
 		except (OperationalError):
 			print("Connection to Database Failed")
 			return False
-
-		return sqlite3.connect(path)
+		return conn
 
 
 	def dataBaseStructure(self, conn):
@@ -42,6 +38,15 @@ class DataBaseSqlite():
 		"""
 		cursor = conn.cursor()
 		tables = ["""
+			CREATE TABLE IF NOT EXISTS project_files (
+				zone_shape_file      TEXT,
+				zone_shape_file_id   TEXT,
+				link_shape_file      TEXT,
+				link_shape_file_id   TEXT,
+				node_shape_file      TEXT,
+				node_shape_file_id   TEXT
+			);""",
+			"""
 			CREATE TABLE IF NOT EXISTS scenario (
 				id 			 INTEGER PRIMARY KEY AUTOINCREMENT,
 				code         CHAR(20) NOT NULL,
@@ -389,6 +394,28 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
+	def insertBaseParameters(self, zone_shape, zone_shape_id, network_shape, network_id, nodes_shape, nodes_shape_id):
+		conn = self.connectionSqlite()
+		sql = f"""select count(*) from project_files"""
+		
+		data = conn.execute(sql)
+		result = data.fetchall()
+		print(result)
+
+		if result[0][0]>0:
+			sql = f""" update project_files set zone_shape_file = '{zone_shape}', zone_shape_file_id =  '{zone_shape_id}', 
+				link_shape_file = '{network_shape}', link_shape_file_id = '{network_id}', node_shape_file = '{nodes_shape}',
+				node_shape_file_id = '{nodes_shape_id}'"""
+		else:
+			sql = f""" insert into project_files (zone_shape_file, zone_shape_file_id, 
+				link_shape_file, link_shape_file_id, node_shape_file, node_shape_file_id) values ('{zone_shape}','{zone_shape_id}',
+				'{network_shape}','{network_id}','{nodes_shape}', '{nodes_shape_id}')"""
+
+		conn.execute(sql)
+		conn.commit()
+		conn.close()
+		return True
+
 	def findDemandSubsXSect(self, id_scenario, id_sector):
 		conn = self.connectionSqlite()
 		sql = f"""select id_input_sector, substitute 
@@ -402,6 +429,8 @@ class DataBaseSqlite():
 		resultString = ''
 		for value in result:
 			resultString += "  "+str(value[0])+"  "+Helpers.decimalFormat(str(value[1]))
+
+		conn.close()
 		return resultString
 
 
@@ -424,7 +453,7 @@ class DataBaseSqlite():
 
 		restricted_turn = "     ".join([str(val[0]) for val in result_res])+' /' if result_res else ' /'
 		routes = "     ".join([str(value[0]) for value in result])+" 0  "+restricted_turn if result else "0  "+restricted_turn
-		#print("Resultado de la tabla ", resultado)
+		
 		return routes
 		
 		
@@ -2236,7 +2265,7 @@ class DataBaseSqlite():
 
 	def selectAll(self, table, where='', columns='*', orderby=''):
 		sql = "select {} from {} {} {}".format(columns,table, where, orderby)
-		
+
 		conn = self.connectionSqlite()
 		try:
 			data = conn.execute(sql)

@@ -9,10 +9,10 @@
         git sha              : $Format:%H$
         copyright            : (C) 2015 by qtranus
         Collaborators        : Tomas de la Barra    - delabarra@gmail.com
+                               Luis Yanez           - yanezblancoluis@gmail.com
                                Omar Valladolid      - omar.valladolidg@gmail.com
                                Pedro Buron          - pedroburonv@gmail.com
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,7 +23,7 @@
  ***************************************************************************/
 """
 
-import os, re, webbrowser
+import os, re, webbrowser, shutil
 
 
 from PyQt5 import QtGui, uic
@@ -43,6 +43,8 @@ from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.CustomExceptions import InputFileSourceError
+from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qtranus_dialog_base.ui'))
@@ -63,7 +65,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.project = project
         self.projectInst = QgsProject.instance()
         self.folder_ws = ''
-
+        self.dataBaseSqlite = None
+        
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtWidgets.QLineEdit, 'layers_group_name')
@@ -78,6 +81,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.data_btn = self.findChild(QtWidgets.QCommandLinkButton, 'data')
         self.results_btn = self.findChild(QtWidgets.QCommandLinkButton, 'results')
         self.run_btn = self.findChild(QtWidgets.QCommandLinkButton, 'run')
+        self.save_btn = self.findChild(QtWidgets.QPushButton, 'save_btn')
+        self.save_as_btn = self.findChild(QtWidgets.QPushButton, 'save_as_btn')
+        self.cancel_btn = self.findChild(QtWidgets.QPushButton, 'cancel_btn')
+        self.run_btn = self.findChild(QtWidgets.QCommandLinkButton, 'run')
         self.tranus_folder_btn = self.findChild(QtWidgets.QToolButton, 'tranus_folder_btn')
         self.zones_shape_btn = self.findChild(QtWidgets.QToolButton, 'zones_shape_btn')
         self.network_links_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_links_shape_btn')
@@ -91,12 +98,17 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
-        self.layers_group_name.textEdited.connect(self.save_layers_group_name)
+        self.layers_group_name.editingFinished.connect(self.project_name)
+        #self.layers_group_name.clicked.connect(self.save_layers_group_name)
         self.db_btn.clicked.connect(self.select_db_file(self.select_db))
         #self.new_db_btn.clicked.connect(self.new_db)
         self.data_btn.clicked.connect(self.data_dialog)
         self.results_btn.clicked.connect(self.results_dialog)
         self.run_btn.clicked.connect(self.run_dialog)
+        self.save_btn.clicked.connect(self.__save_base_info)
+        self.save_as_btn.clicked.connect(self.save_as_db_file(self.select_db))
+        self.cancel_btn.clicked.connect(self.close_event)
+
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_shape(self.select_zones_shape))
         self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
@@ -110,6 +122,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.lbl_loading.setVisible(False)
 
         self.run_btn.setEnabled(True)
+        self.data_btn.setEnabled(True)
 
         # Loads
         self.reload_scenarios()
@@ -118,6 +131,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.projectInst.removeAll.connect(self.deleteObjects)
 
+    def close_event(self):
+        self.accept()
 
     def deleteObjects(self):
         """
@@ -141,14 +156,89 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'index.html')
         webbrowser.open_new_tab(filename)
+
+
+    def select_project_db(self, file_name):
+        """
+            @summary: Loads selected zone shape file
+            @param file_name: Path and name of the shape file
+            @type file_name: String
+        """
+        try:
+            result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
+            if result:
+                self.zone_shape.setText(file_name[0])
+                self.load_zone_shape_fields(zoneShapeFieldNames)
+            else:
+                self.zone_shape.setText('')
+            self.check_configure()
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+
     	
-    def save_layers_group_name(self):
+    def project_name(self):
         """
             @summary: Saves layer group name
         """
         self.project['project_name'] = self.layers_group_name.text()
         self.check_configure()
-    
+        self.__load_base_info()
+
+
+    def __save_base_info(self):
+        if self.tranus_folder.text() != '' and self.layers_group_name.text()!= '':
+            self.project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+        
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        if self.dataBaseSqlite:
+            if self.tranus_folder.text() != '' and self.layers_group_name.text() != '' and self.zone_shape.text() != '' and self.network_links_shape.text() != '' and self.network_nodes_shape.text() != '':
+                self.dataBaseSqlite.insertBaseParameters(self.zone_shape.text(), self.cb_zones_shape_fields.currentText(), self.network_links_shape.text(), self.links_shape_fields.currentText(), self.network_nodes_shape.text(), self.nodes_shape_fields.currentText())
+
+        self.accept()
+        return False
+
+    def __save_as_base_info(self):
+        
+        return False
+
+    def __load_base_info(self):
+        if self.tranus_folder.text() != '' and self.layers_group_name.text()!= '':
+            self.project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+        
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        if self.dataBaseSqlite:
+            self.__load_scenarios()
+
+        result = self.dataBaseSqlite.selectAll(" project_files ", columns=" zone_shape_file, zone_shape_file_id, link_shape_file, link_shape_file_id, node_shape_file, node_shape_file_id ")
+        
+        if result:
+            self.zone_shape.setText(result[0][0])   
+            self.network_links_shape.setText(result[0][2])
+            self.network_nodes_shape.setText(result[0][4])
+
+            result, zoneShapeFieldNames = self.project.load_zones_shape(result[0][0]) 
+            if result:
+                self.load_zone_shape_fields(zoneShapeFieldNames)
+
+            result, networkShapeFields = self.project.load_network_links_shape_file(result[0][2])
+            if result:
+                self.load_network_shape_fields(networkShapeFields)
+
+            result, nodesShapeFields = self.project.load_network_nodes_shape_file(result[0][4])
+            if result:
+                self.load_network_shape_fields(nodesShapeFields)
+
+
+    def __load_scenarios(self):
+        self.scenarios_model = ScenariosModelSqlite(self.project_file)
+        self.scenarios.setModel(self.scenarios_model)
+        self.scenarios.expandAll()
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
+        self.scenarios.setSelectionModel(modelSelection)
+
+
     def __validate_string(self, input):
         """
             @summary: Validates invalid characters
@@ -238,8 +328,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.network_nodes_shape.setText('')
             
     def select_db(self, file_name):
-        return 
-        """self.project.load_db_file(file_name)
+        self.layers_group_name.setText(file_name)
+        """self.database_db.load_db_file(file_name)
         self.layers_group_name.setText(file_name)"""
         #self.data_btn.setEnabled(True)
 
@@ -253,6 +343,18 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.project.load_tranus_folder(self.folder_ws)
             self.reload_scenarios()
         self.check_configure()
+
+
+    def select_database(self, callback):
+        """
+            @summary: Opens selected zone shape file
+        """
+        def select_file():
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption="Select zones shape file", directory=str(self.folder_ws), filter="*.*, *.db")
+            if file_name:
+                callback(file_name)
+
+        return select_file
 
     def select_shape(self, callback):
         """
@@ -292,33 +394,55 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return select_file
     
+
     def select_db_file(self, callback):
         def select_file():
             file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select DB file', directory='', filter='*.*, *.db')
             if file_name:
-                file_name = file_name.replace('/', '\\')
-                print(file_name)
-                callback(file_name)
+                file_name = file_name[0].split('/')
+                file_name = file_name[len(file_name)-1]
+                
+            callback(file_name)
         
         return select_file
+
+
+    def save_as_db_file(self, callback):
+
+        def select_file():
+            old_name = self.layers_group_name.text()
+            
+            if self.tranus_folder.text() != '':
+                self.saveAsfileDialog = QtWidgets.QFileDialog(self)
+                self.saveAsfileDialog.setDefaultSuffix("db")
+                new_name = self.saveAsfileDialog.getSaveFileName(caption='Select DB file', directory=self.tranus_folder.text(), filter='*.db')
+                if new_name:
+                    new_name = new_name[0].split('/')
+                    new_name = new_name[len(new_name)-1]
+                    shutil.copy(f"{self.project['tranus_folder']}/{old_name}", f"{self.project['tranus_folder']}/{new_name}")
+            callback(new_name)
+            
+        return select_file
+
 
     def data_dialog(self):
         """
             @summary: Opens data window
         """
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
-            window = DataWindow(self.layers_group_name, self.tranus_folder.text(), parent = self)
+            project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+            window = DataWindow(project_file, parent = self)
             window.show()
             #result = dialog.exec_()
         else:
             if(self.layers_group_name.text().strip() == ''):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-                print("Please select a DB ZIP file.")
+                
             if(self.tranus_folder.text().strip() ==''):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-                print("Please select workspace path.")
+                
 
     def results_dialog(self):
         """
@@ -337,15 +461,16 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens run window 
         """
-        dialog = RunDialog(self.tranus_folder.text(), parent = self)
+        project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+        dialog = RunDialog(project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         pass
 
     def default_data(self):
-        print(" show zonesIdFieldName {} ".format(self.project['zones_id_field_name']))
         indexZonesIdFieldName = self.zones_shape_fields.findText(self.project['zones_id_field_name'], Qt.MatchFixedString)
         self.zones_shape_fields.setCurrentIndex(indexZonesIdFieldName)
+
 
     def show(self):
         """
@@ -400,7 +525,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Validates configuration
         """
-        #if self.project.is_valid() and self.project.is_valid_network() :
+        file_name = self.layers_group_name
         if self.project.is_valid():
             self.results_btn.setEnabled(True)
             self.data_btn.setEnabled(True)

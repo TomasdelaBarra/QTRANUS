@@ -5,16 +5,20 @@ from .DataBaseSqlite import DataBaseSqlite
 from ..libraries.tabulate import tabulate
 
 class BatchFiles():
-    def __init__(self, tranus_folder, pluginDir, statusBar=None, programsListSelected=None, fixed_transportable=None, id_scenario=None):
-        self.tranus_folder = tranus_folder
+    def __init__(self, project_file, pluginDir, statusBar=None, programsListSelected=None, fixed_transportable=None, id_scenario=None):
+        self.project_file = project_file
+        self.tranus_folder = self.uriSegmentation(project_file)
         self.statusBar = statusBar
         self.programsListSelected = programsListSelected
         self.fixed_transportable = fixed_transportable
         self.id_scenario = id_scenario
         self.plugin_dir = pluginDir
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
 
-          
+
+    def uriSegmentation(self, project_file):
+        project_file_arr = project_file.split("/")
+        return "/".join(project_file_arr[:len(project_file_arr)-1])
 
 
     def listPrograms(self):
@@ -30,7 +34,8 @@ class BatchFiles():
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv']
+                                    f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
+                                    f'imptra {codeScenario} -A -k -f 3 -o assigment_{codeScenario}_tmp.csv']
                         }
         else:
             # Base Sceanario 
@@ -45,7 +50,8 @@ class BatchFiles():
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv']
+                                    f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
+                                    f'imptra {codeScenario} -A -k -f 3 -o assigment_{codeScenario}_tmp.csv']
                         }
 
         resultList = []
@@ -70,7 +76,6 @@ class BatchFiles():
         fh = None
         
         try:
-            
             fh = open("{}/{}".format(self.tranus_folder, filename), "w", encoding="utf-8")
 
             for program in programs:
@@ -83,3 +88,23 @@ class BatchFiles():
             return False
         finally:
             fh.close()
+
+
+    def validate_generate_assigment(self):
+        
+        for value in self.programsListSelected:
+            print(value, value[1])
+            if value[1]=='Assigment':
+                a = ''
+        return 
+
+
+    def read_assigments(self):
+        resultScenario = self.dataBaseSqlite.selectAll(' scenario ', ' where id = {}'.format(self.id_scenario))
+        codeScenario = resultScenario[0][1]
+
+        self.tranus_folder = ""
+
+        fh = open("%s/%s" % (self.tranus_folder, f"assigment_{codeScenario}_tmp.csv"), "r", encoding="utf-8")
+
+        return 

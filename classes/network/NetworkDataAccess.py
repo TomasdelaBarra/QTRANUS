@@ -780,7 +780,7 @@ class NetworkDataAccess(object):
         
         newFile = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         newFile.writerow(['ID', 'Result'])
-        print(" Información: ".format(networkMatrixResult))
+        
         for rowItem in np.nditer(networkMatrixResult):
             newFile.writerow([str(rowItem['Id']).replace("b","").replace("'",""), rowItem['Result']])
 

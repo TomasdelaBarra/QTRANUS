@@ -37,7 +37,6 @@ from .nodes_dialog import NodesDialog
 from .exogenous_trips_dialog import ExogeousTripsDialog
 from .administrators_dialog import AdministratorsDialog
 from .scenarios_select_dialog import ScenariosSelectDialog
-from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_excel_data_dialog import AddExcelDataDialog
 from .imports_network_dialog import ImportsNetworkDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
@@ -48,7 +47,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class DataWindow(QMainWindow, FORM_CLASS):
     
-    def __init__(self, layers_group_name, tranus_folder, parent = None):
+    def __init__(self, project_file,  parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -63,10 +62,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.zone_shape = parent.zone_shape
         self.network_links_shape = parent.network_links_shape
         self.network_nodes_shape = parent.network_nodes_shape
-        self.layers_group_name = layers_group_name
-        self.tranus_folder = tranus_folder
+        self.project_file = project_file
         self.dataBase = DataBase()
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
         self.scenarios =  None
         self.scenariosMatrix = None
         self.scenariosMatrixBackUp = None
@@ -163,8 +161,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
 
         #self.scenario_tree.selectionChanged(item)
-        if self.tranus_folder[-13:]=="""\W_TRANUS.CTL""":
-            self.tranus_folder = self.tranus_folder.replace('\W_TRANUS.CTL','')
+        if self.project_file[-13:]=="""\W_TRANUS.CTL""":
+            self.project_file = self.project_file.replace('\W_TRANUS.CTL','')
 
         #Loads
         #self.__extract_db_files()
@@ -176,7 +174,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
     def generate_input_files(self):
         result = self.dataBaseSqlite.selectAll(' scenario ')
-        self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+        self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
 
         self.scenarios_files.generate_ctl_file()
         self.scenarios_files.generate_l0e_file()
@@ -193,19 +191,19 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
 
     def generate_single_scenario(self):
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.generate_single_scenario(id_scenario)
 
     def generate_ctl_file(self):
         """
             @summary: Set Scenario selected
         """
-        self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+        self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
         self.scenarios_files.generate_ctl_file()
 
 
@@ -213,7 +211,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+        self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
         self.scenarios_files.generate_z1e_file()
 
 
@@ -221,7 +219,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+        self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
         self.scenarios_files.generate_l0e_file()
 
 
@@ -229,12 +227,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_f1e_file(id_scenario)
 
 
@@ -242,12 +240,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_l1e_file(id_scenario)
 
 
@@ -255,12 +253,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_l2e_file(id_scenario)
 
     
@@ -268,12 +266,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_l3e_file(id_scenario)
             
 
@@ -282,12 +280,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_p0e_file(id_scenario)
             
 
@@ -295,12 +293,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_p1e_file(id_scenario)
             
 
@@ -309,12 +307,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Set Scenario selected
         """
-        dialog = ScenariosSelectDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosSelectDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         if dialog.idScenario != None:
             id_scenario = dialog.idScenario
-            self.scenarios_files = ScenariosFiles(self.tranus_folder, statusBar=self.statusBar)
+            self.scenarios_files = ScenariosFiles(self.project_file, statusBar=self.statusBar)
             self.scenarios_files.write_t1e_file(id_scenario)
 
 
@@ -338,7 +336,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ScenariosDialog(self.tranus_folder, parent = self)
+        dialog = ScenariosDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -347,7 +345,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ImportsNetworkDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = ImportsNetworkDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -356,7 +354,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = LinksDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = LinksDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -364,7 +362,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = NodesDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = NodesDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
     
@@ -372,7 +370,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
         @summary: Opens data window
         """
-        dialog = ExogeousTripsDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = ExogeousTripsDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -382,7 +380,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ZonesDialog(self.tranus_folder, parent = self)
+        dialog = ZonesDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -390,7 +388,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = SectorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = SectorsDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -399,7 +397,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens intersectors window
         """
-        dialog = IntersectorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = IntersectorsDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -408,7 +406,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens intersectors window
         """
-        dialog = ZonalDataDialog(self.tranus_folder,  self.scenarioCode, parent = self)
+        dialog = ZonalDataDialog(self.project_file,  self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -417,7 +415,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens categories window
         """
-        dialog = CategoriesDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = CategoriesDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -426,7 +424,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens modes window
         """
-        dialog = ModesDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = ModesDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -435,7 +433,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens modes window
         """
-        dialog = OperatorsDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = OperatorsDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -444,7 +442,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens modes window
         """    
-        dialog = TransfersDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = TransfersDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -453,7 +451,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens modes window
         """
-        dialog = RoutesDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = RoutesDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -463,7 +461,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
             @summary: Opens administrators window
         """
         #print(self.scenarioSelectedIndex)
-        dialog = AdministratorsDialog(self.tranus_folder, self.scenarioCode, self.scenarioSelectedIndex, parent = self)
+        dialog = AdministratorsDialog(self.project_file, self.scenarioCode, self.scenarioSelectedIndex, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -472,7 +470,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens administrators window
         """
-        dialog = LinkTypeDialog(self.tranus_folder, self.scenarioCode, parent = self)
+        dialog = LinkTypeDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         #result = dialog.exec_()
         self.__validate_buttons()
@@ -482,7 +480,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ConfigurationDialog(self.tranus_folder, parent = self)
+        dialog = ConfigurationDialog(self.project_file, parent = self)
         dialog.show()
         result = dialog.exec_()
         self.__validate_buttons()
@@ -544,7 +542,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
 
     def __load_scenarios(self):
-        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        self.scenarios_model = ScenariosModelSqlite(self.project_file)
         self.scenario_tree.setModel(self.scenarios_model)
         self.scenario_tree.expandAll()
         modelSelection = QItemSelectionModel(self.scenarios_model)
@@ -660,7 +658,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.__load_scenarios()
         
     def save_db(self):
-        if(self.dataBase.save_db(self.project['tranus_folder'], self.project.db_path, self.project.db_path, DBFiles.Scenarios, self.scenariosMatrix)):
+        if(self.dataBase.save_db(self.project['project_file'], self.project.db_path, self.project.db_path, DBFiles.Scenarios, self.scenariosMatrix)):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("DB has been saved.")
@@ -672,10 +670,10 @@ class DataWindow(QMainWindow, FORM_CLASS):
         #https://stackoverflow.com/questions/513788/delete-file-from-zipfile-with-the-zipfile-module
         
     def save_db_as(self):
-        file_name = QtGui.QFileDialog.getSaveFileName(parent=self, caption='Choose a file name to save the DB.', directory=self.project['tranus_folder'], filter='*.*, *.zip')
+        file_name = QtGui.QFileDialog.getSaveFileName(parent=self, caption='Choose a file name to save the DB.', directory=self.project['project_file'], filter='*.*, *.zip')
         print(file_name)
         if file_name.strip() != '':
-            if(self.dataBase.save_db(self.project['tranus_folder'], self.project.db_path, file_name, DBFiles.Scenarios, self.scenariosMatrix)):
+            if(self.dataBase.save_db(self.project['project_file'], self.project.db_path, file_name, DBFiles.Scenarios, self.scenariosMatrix)):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 print("DB has been saved.")

@@ -5,10 +5,15 @@ from .DataBaseSqlite import DataBaseSqlite
 from ..libraries.tabulate import tabulate
 
 class ScenariosFiles():
-    def __init__(self, tranus_folder, statusBar=None):
-        self.tranus_folder = tranus_folder
+    def __init__(self, project_file, statusBar=None):
+        self.project_file = project_file
+        self.tranus_folder = self.uriSegmentation(self.project_file)
         self.statusBar = statusBar
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+
+    def uriSegmentation(self, project_file):
+        project_file_arr = project_file.split("/")
+        return "/".join(project_file_arr[:len(project_file_arr)-1])
 
     def generate_single_scenario(self, id_scenario):
         self.generate_ctl_file()
