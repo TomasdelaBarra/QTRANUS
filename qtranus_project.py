@@ -976,8 +976,8 @@ class QTranusProject(object):
             @type folder: String
         """
         folder = folder or self['tranus_folder']
-        path = os.path.join(folder, 'W_TRANUS.CTL')
-
+        # path = os.path.join(folder, 'W_TRANUS.CTL')
+        path = folder
         try:
 
             #Load all indicators (Sectors, Scenarios, Operator, Routes)
@@ -1162,16 +1162,16 @@ class QTranusProject(object):
         return True 
     
     def load_network_links_shape_file(self, file_path):
-        self.network_link_shape_path = file_path[0]
+        self.network_link_shape_path = file_path if isinstance(file_path,str) else file_path[0]
         
         registry = QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path[0], 'Network_Links', 'ogr')
+        layer = QgsVectorLayer(self.network_link_shape_path, 'Network_Links', 'ogr')
         
         if not layer.isValid():
             self['network_links_shape_file_path'] = ''
             self['network_links_shape_id'] = ''
-            return False
+            return False, False
         network_shape_fields = [field.name() for field in layer.fields()]    
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
@@ -1181,10 +1181,10 @@ class QTranusProject(object):
 
 
     def load_network_nodes_shape_file(self, file_path):
-        self.network_nodes_shape_path = file_path
+        self.network_nodes_shape_path = file_path if isinstance(file_path,str) else file_path[0]
         registry = QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path[0], 'Network_Nodes', 'ogr')
+        layer = QgsVectorLayer(self.network_nodes_shape_path, 'Network_Nodes', 'ogr')
 
         if not layer.isValid():
             self['network_nodes_shape_file_path'] = ''

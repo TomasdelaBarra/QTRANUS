@@ -190,7 +190,7 @@ class TranusProject(object):
     identification = None
     model = None
 
-    @staticmethod
+    """@staticmethod
     def load_project(file_path):
         project = TranusProject()
         current_section = None
@@ -208,6 +208,27 @@ class TranusProject(object):
                     section_lines.append(line)
             project.add_lines_to_section(section_lines, current_section)
         project.validate()        
+        project.path = file_path
+        return project"""
+
+    @staticmethod
+    def load_project(file_path):
+        project = TranusProject()
+        current_section = None
+        section_lines = None
+        """with open(file_path, 'r') as project_file:
+            for line in project_file.readlines():
+                section = TranusProject.get_section(line)
+                if section in (SECTION_IDENTIFICATION, SECTION_SCENARIOS, SECTION_MODEL):
+                    #if section_lines is not None:
+                    project.add_lines_to_section(section_lines, current_section)
+                    current_section = section
+                    section_lines = []
+                
+                elif section == SECTION and section_lines is not None:
+                    section_lines.append(line)
+            project.add_lines_to_section(section_lines, current_section)
+        project.validate()        """
         project.path = file_path
         return project
 

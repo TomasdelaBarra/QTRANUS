@@ -35,7 +35,7 @@ class BatchFiles():
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o assigment_{codeScenario}_tmp.csv']
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv']
                         }
         else:
             # Base Sceanario 
@@ -51,7 +51,7 @@ class BatchFiles():
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o assigment_{codeScenario}_tmp.csv']
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv']
                         }
 
         resultList = []

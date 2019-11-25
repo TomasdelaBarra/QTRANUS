@@ -59,7 +59,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        resolution_dict = Helpers.screenResolution(50)
+        resolution_dict = Helpers.screenResolution(70)
         self.resize(resolution_dict['width'], resolution_dict['height'])
 
         self.project = project
@@ -125,7 +125,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.data_btn.setEnabled(True)
 
         # Loads
-        self.reload_scenarios()
+        #self.reload_scenarios()
+        
         if self.project['zones_id_field_name']:
             self.default_data()
 
@@ -210,24 +211,24 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.dataBaseSqlite:
             self.__load_scenarios()
 
-        result = self.dataBaseSqlite.selectAll(" project_files ", columns=" zone_shape_file, zone_shape_file_id, link_shape_file, link_shape_file_id, node_shape_file, node_shape_file_id ")
+        result_qry = self.dataBaseSqlite.selectAll(" project_files ", columns=" zone_shape_file, zone_shape_file_id, link_shape_file, link_shape_file_id, node_shape_file, node_shape_file_id ")
         
-        if result:
-            self.zone_shape.setText(result[0][0])   
-            self.network_links_shape.setText(result[0][2])
-            self.network_nodes_shape.setText(result[0][4])
-
-            result, zoneShapeFieldNames = self.project.load_zones_shape(result[0][0]) 
-            if result:
+        if result_qry:
+            self.zone_shape.setText(result_qry[0][0])   
+            self.network_links_shape.setText(result_qry[0][2])
+            self.network_nodes_shape.setText(result_qry[0][4])
+            
+            result_zones, zoneShapeFieldNames = self.project.load_zones_shape(result_qry[0][0]) 
+            if result_zones:
                 self.load_zone_shape_fields(zoneShapeFieldNames)
 
-            result, networkShapeFields = self.project.load_network_links_shape_file(result[0][2])
-            if result:
+            result_network, networkShapeFields = self.project.load_network_links_shape_file(result_qry[0][2])
+            if result_network:
                 self.load_network_shape_fields(networkShapeFields)
 
-            result, nodesShapeFields = self.project.load_network_nodes_shape_file(result[0][4])
-            if result:
-                self.load_network_shape_fields(nodesShapeFields)
+            result_nodes, nodesShapeFields = self.project.load_network_nodes_shape_file(result_qry[0][4])
+            if result_nodes:
+                self.load_nodes_shape_fields(nodesShapeFields)
 
 
     def __load_scenarios(self):
@@ -340,9 +341,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.folder_ws = QtWidgets.QFileDialog.getExistingDirectory(self, "Select directory")
         if self.folder_ws:
             self.tranus_folder.setText(self.folder_ws)
-            self.project.load_tranus_folder(self.folder_ws)
-            self.reload_scenarios()
-        self.check_configure()
+            # self.project.load_tranus_folder(self.folder_ws)
+            # self.reload_scenarios()
+        # self.check_configure()
 
 
     def select_database(self, callback):
@@ -401,7 +402,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             if file_name:
                 file_name = file_name[0].split('/')
                 file_name = file_name[len(file_name)-1]
-                
+                self.project['project_name'] = file_name
             callback(file_name)
         
         return select_file
@@ -413,9 +414,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             old_name = self.layers_group_name.text()
             
             if self.tranus_folder.text() != '':
+                defaultFolder = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
                 self.saveAsfileDialog = QtWidgets.QFileDialog(self)
                 self.saveAsfileDialog.setDefaultSuffix("db")
-                new_name = self.saveAsfileDialog.getSaveFileName(caption='Select DB file', directory=self.tranus_folder.text(), filter='*.db')
+                new_name = self.saveAsfileDialog.getSaveFileName(caption='Select DB file', directory=defaultFolder, filter='*.db')
                 if new_name:
                     new_name = new_name[0].split('/')
                     new_name = new_name[len(new_name)-1]
@@ -484,19 +486,37 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.layers_group_name.selectAll()
         
         self.project.load_tranus_folder(self.folder_ws)
-        self.reload_scenarios()
+        print(self.project['tranus_folder'])
+        print(self.project['project_name'])
+
+        if self.project['tranus_folder'] and self.project['project_name']:
+            self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
+            self.__load_scenarios()
+
+        # print(" folder_ws ", self.folder_ws)
+        # self.reload_scenarios()
+        # self.project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+        # self.__load_scenarios()
 
         result, zoneShapeFieldNames = self.project.load_project_file_shape_files(self.project['zones_shape'], 'zones')
 
         if self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
+            result, zoneShapeFieldNames = self.project.load_zones_shape(self.project['zones_shape']) 
+            if result:
+                self.load_zone_shape_fields(zoneShapeFieldNames)
+                #indexMode = self.cb_zones_shape_fields.findText(data[0][9], Qt.MatchFixedString)
+                #self.cb_zones_shape_fields.setCurrentIndex(indexMode)
+            else:
+                self.zone_shape.setText('')
+            self.check_configure()
         
         if self.project['centroid_shape_file_path']:
             self.centroid_shape.setText(self.project['centroid_shape_file_path'])
 
         if self.project['network_links_shape_file_path']:
             self.network_links_shape.setText(self.project['network_links_shape_file_path'])
-        
+
         if self.project['network_nodes_shape_file_path']:
             self.network_nodes_shape.setText(self.project['network_nodes_shape_file_path'])
 
