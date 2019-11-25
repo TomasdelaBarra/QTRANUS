@@ -219,6 +219,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.network_nodes_shape.setText(result_qry[0][4])
             
             result_zones, zoneShapeFieldNames = self.project.load_zones_shape(result_qry[0][0]) 
+
             if result_zones:
                 self.load_zone_shape_fields(zoneShapeFieldNames)
 
