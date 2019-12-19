@@ -123,6 +123,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.run_btn.setEnabled(True)
         self.data_btn.setEnabled(True)
+        #self.results_btn.setEnabled(True)
 
         # Loads
         #self.reload_scenarios()
@@ -132,8 +133,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.projectInst.removeAll.connect(self.deleteObjects)
 
+
     def close_event(self):
         self.accept()
+
 
     def deleteObjects(self):
         """
@@ -148,7 +151,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.centroid_shape.setText('')
         self.network_links_shape.setText('')
         self.network_nodes_shape.setText('')
-        self.results_btn.setEnabled(False)
 
 
     def open_help(self):
@@ -288,7 +290,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.load_zone_shape_fields(zoneShapeFieldNames)
             else:
                 self.zone_shape.setText('')
-            self.check_configure()
+            #self.check_configure()
         except:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -314,7 +316,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         #result, networkShapeFields = self.project.load_network_links_shape_file(file_name[0]) 
         if result:
             self.network_links_shape.setText(file_name[0])
-            self.results_btn.setEnabled(self.project.is_valid_network())
+            print(self.project.is_valid_network())
+            self.results_btn.setEnabled(True if self.project.is_valid_network() else False)
             self.load_network_shape_fields(networkShapeFields)
         else:
             self.network_links_shape.setText('')
@@ -324,7 +327,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         result, nodesShapeFields = self.project.load_network_nodes_shape_file(file_name)
         if result:
             self.network_nodes_shape.setText(file_name[0])
-            self.results_btn.setEnabled(self.project.is_valid_network())
+            self.results_btn.setEnabled(True if self.project.is_valid_network() else False)
             self.load_nodes_shape_fields(nodesShapeFields)
         else:
             self.network_nodes_shape.setText('')

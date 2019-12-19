@@ -1115,6 +1115,7 @@ class QTranusProject(object):
         #return not not (self.zones_shape and self.project_name and self.tranus_folder)
     
     def is_valid_network(self):
+        print(self['network_links_shape_file_path'], self['project_name'], self['tranus_folder'])
         return not not (self['network_links_shape_file_path'] and self['project_name'] and self['tranus_folder'])
         #return not not (self.network_links_shape_file_path and self.project_name and self.tranus_folder)
 

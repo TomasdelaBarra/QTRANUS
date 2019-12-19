@@ -177,8 +177,11 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
         self.idScenario = scenarioData[0][0]
-        self.__load_cb_type()
-        self.__load_cb_ori_dest()
+
+        if self.codeLink is None:
+            self.__load_cb_type()
+            self.__load_cb_ori_dest()
+            
         self.__load_tb_operator_aviable()
         self.__load_tb_turns_delay()
 

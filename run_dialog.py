@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from qgis.gui import *
+from zipfile import ZipFile as zf
 
 
 from .classes.general.Helpers import Helpers
@@ -95,6 +96,9 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_save_batch.setIcon(QIcon(self.plugin_dir+"/icons/save.svg"))
         self.btn_load_batch.setIcon(QIcon(self.plugin_dir+"/icons/load-folder.png"))
         
+        # IMPORTANT: Unzip Programs folder
+        self.extractProgramsZip()
+
         # Run process
         self.process = QtCore.QProcess(self)
         self.env = QtCore.QProcessEnvironment.systemEnvironment()
@@ -123,6 +127,13 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_save_batch.setEnabled(False)
         #Loads
         self.__get_scenarios_data()
+
+    def extractProgramsZip(self):
+        #print(self.plugin_dir)
+        #ruta = self.plugin_dir.replace("\\","/")+'/programs.zip'
+        #print(ruta)
+        file = zf(self.plugin_dir.replace("\\","/")+'/programs.zip')
+        file.extractall(self.plugin_dir.replace("\\","/"))
 
 
     def uriSegmentation(self, project_file):
