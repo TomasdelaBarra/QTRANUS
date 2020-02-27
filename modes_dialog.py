@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, re, webbrowser, numpy as np
 from string import *
+from .classes.libraries.tabulate import tabulate
 
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
@@ -69,6 +70,7 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.show_changed_btn.setToolTip("Show Changed Only")
         self.add_mode_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
 
+
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -95,8 +97,18 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
             result = dialog.exec_()
             self.__get_modes_data()
         if opt == remove:
-            self.dataBaseSqlite.removeMode(modeSelected)
-            self.__get_modes_data()
+            validation, categories, operators, exogenous_trips = self.dataBaseSqlite.validateRemoveMode(modeSelected)
+            
+            if validation == False:
+                categories = tabulate(categories, headers=["Scenario Code", "Category"]) if categories else ''
+                operators = tabulate(operators, headers=["Scenario Code", "Operator"])  if operators else ''
+                exogenous_trips = tabulate(exogenous_trips, headers=["Scenario Code", "Zone Origin", "Zone Dest.", "Trip"])  if exogenous_trips else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Cannot delete Element? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {categories} \n {operators} \n {exogenous_trips}")
+                messagebox.exec_()
+
+            else:
+                self.dataBaseSqlite.removeMode(modeSelected)
+                self.__get_modes_data()
             
 
 
@@ -143,6 +155,7 @@ class ModesDialog(QtWidgets.QDialog, FORM_CLASS):
             for y in range(0,3):
                 model.setData(model.index(x, y), result[x][z])
                 z+=1
+
         self.modes_tree.setModel(model)
         self.modes_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)
 

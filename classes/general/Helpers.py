@@ -117,4 +117,32 @@ class Helpers(object):
             RGB_list.append(curr_vector)
 
         return color_dict(RGB_list)
+
+
+class ExceptionGeometryType(Exception):
+    """
+    @summary: Exception for type geometry of the shapes
+    """
+    def __init__(self, shape):
+        super(ExceptionGeometryType, self).__init__()
+        self.shape = shape
+
+    def __str__(self):
+        return f"Incorrect Geometry for shape {self.shape}"
+
+
+class ExceptionFormatID(Exception):
+    """
+    @summary: Exception for type geometry of the shapes
+    """
+    def __init__(self, idFile, typeFile=None):
+        super(ExceptionFormatID, self).__init__()
+        self.idFile = idFile
+        self.typeFile = typeFile
+
+    def __str__(self):
+        return f"{self.typeFile} \nIncorrect Format ID {self.idFile}" if self.typeFile else f"Incorrect Format ID {self.typeFile}"
+
+
+        
                 

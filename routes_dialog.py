@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -121,8 +122,18 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_routes_data()
         if opt == remove:
-            self.dataBaseSqlite.removeRoute(scenarios, routeSelected)
-            self.__get_routes_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, routes = self.dataBaseSqlite.validateRemoveRoutes(routeSelected, scenarios)
+             
+            if validation == False:
+                routes = tabulate(routes, headers=["Scenario Code", "Link Id"])  if routes else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {routes}")
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeRoute(scenarios, routeSelected)
+                self.__get_routes_data()
+            
             
 
 

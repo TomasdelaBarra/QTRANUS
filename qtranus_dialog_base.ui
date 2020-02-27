@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>791</width>
-    <height>404</height>
+    <width>1103</width>
+    <height>391</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -154,16 +154,46 @@
             <bool>true</bool>
            </property>
            <property name="text">
-            <string>Select zones shape Id:</string>
+            <string>Select zones shape Fields:</string>
            </property>
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QComboBox" name="cb_zones_shape_fields">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Id</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="cb_zones_shape_fields"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Name</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="cb_zones_shape_name"/>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
          <item row="6" column="0">
           <widget class="QLabel" name="label_5">
@@ -215,6 +245,90 @@
            </item>
           </layout>
          </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="lbl_links_id">
+           <property name="text">
+            <string>Select links shape Fields:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Id</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_fields"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Name</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_name"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Type</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_type"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_20">
+             <property name="text">
+              <string>Length</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_length"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Direction</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_direction"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Capacity</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="links_shape_capacity"/>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_8">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
          <item row="9" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
@@ -240,25 +354,79 @@
            </item>
           </layout>
          </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="lbl_links_id">
-           <property name="text">
-            <string>Select links shape Id</string>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QComboBox" name="links_shape_fields"/>
-         </item>
          <item row="10" column="0">
           <widget class="QLabel" name="lbl_nodes">
            <property name="text">
-            <string>Select nodes shape Id</string>
+            <string>Select nodes shape Fields:</string>
            </property>
           </widget>
          </item>
          <item row="10" column="1">
-          <widget class="QComboBox" name="nodes_shape_fields"/>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>Id</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nodes_shape_fields"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Name</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nodes_shape_name"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>Type</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nodes_shape_type"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>X</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nodes_shape_x"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_19">
+             <property name="text">
+              <string>Y</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nodes_shape_y"/>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_7">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -396,7 +564,6 @@
   <tabstop>db_btn</tabstop>
   <tabstop>zone_shape</tabstop>
   <tabstop>zones_shape_btn</tabstop>
-  <tabstop>cb_zones_shape_fields</tabstop>
   <tabstop>centroid_shape</tabstop>
   <tabstop>centroid_shape_btn</tabstop>
   <tabstop>network_links_shape</tabstop>

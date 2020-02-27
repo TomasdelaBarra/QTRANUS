@@ -12,7 +12,8 @@ from os.path import isfile, join
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QVariant
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtWidgets import QMessageBox
 
 import qgis.utils
 from qgis.core import QgsMessageLog, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol
@@ -26,10 +27,11 @@ from .classes.ZoneCentroid import ZoneCentroid
 from .classes.TripMatrix import TripMatrix
 from .classes.network.Network import Network
 from .classes.general.QTranusMessageBox import QTranusMessageBox
-from .classes.general.Helpers import Helpers
+from .classes.general.Helpers import Helpers, ExceptionGeometryType
 from .classes.general.FileManagement import FileManagement as FileMXML
 from .classes.ExpressionData import ExpressionData
 from .classes.CustomExceptions import InputFileSourceError
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 class QTranusProject(object):
     def __init__(self, proj, iface):
@@ -47,7 +49,10 @@ class QTranusProject(object):
         self.network_link_shape_path = None
         self.network_nodes_shape_path = None
         self.db_path = None
+        self.networkLayer = None
+        self.networkDPFeatures = []
         self.custom_variables_dict = dict()
+        self.dataBaseSqlite = None
         self.load()
             
 
@@ -168,6 +173,7 @@ class QTranusProject(object):
                     layers.append({"id":values.id(),"text":values.name()})
         
         return layers
+
 
     def addZonesLayer(self, progressBar, layerName, scenariosExpression, fieldName, sectorsExpression, sectorsExpressionText):
         """
@@ -1062,18 +1068,23 @@ class QTranusProject(object):
             @summary: Loads zone shape
             @param shape: Path
             @type shape: String
+            geometryType: 0 Point, 1 Polyline, 2 Polygons
         """
         self.shape = shape
-        #print("self.shape: "+self.shape)
-        #registry = QgsProject.instance()
+
         registry = QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(shape, 'Zonas', 'ogr')
+        layer = QgsVectorLayer(shape, 'Zones', 'ogr')
+
         if not layer.isValid():
             self['zones_shape'] = ''
             self['zones_shape_id'] = ''
             return False, None
         
+        if layer.geometryType() != 2:
+            raise ExceptionGeometryType(self['zones_shape'])
+            return False, None
+
         zones_shape_fields = [field.name() for field in layer.fields()]
         project = shape[0:max(shape.rfind('\\'), shape.rfind('/'))]     
         
@@ -1112,12 +1123,12 @@ class QTranusProject(object):
 
     def is_valid(self):
         return not not (self['zones_shape'] and self['project_name'] and self['tranus_folder'])
-        #return not not (self.zones_shape and self.project_name and self.tranus_folder)
-    
+        
     def is_valid_network(self):
-        print(self['network_links_shape_file_path'], self['project_name'], self['tranus_folder'])
         return not not (self['network_links_shape_file_path'] and self['project_name'] and self['tranus_folder'])
-        #return not not (self.network_links_shape_file_path and self.project_name and self.tranus_folder)
+        
+    def is_valid_nodes(self):
+        return not not (self['network_nodes_shape_file_path'] and self['network_nodes_shape_id'])
 
     def get_layers_group(self):
         """
@@ -1150,7 +1161,7 @@ class QTranusProject(object):
         self.centroids_file_path = file_path
         registry =  QgsProject.instance()
         group = self.get_layers_group()
-        layer = QgsVectorLayer(file_path[0], 'Zonas_Centroids', 'ogr')
+        layer = QgsVectorLayer(file_path[0], 'Zones_Centroids', 'ogr')
         if not layer.isValid():
             self['centroid_shape_file_path'] = ''
             self['centroid_shape_id'] = ''
@@ -1161,6 +1172,7 @@ class QTranusProject(object):
         self['centroid_shape_file_path'] = layer.source()
         self['centroid_shape_id'] = layer.id()
         return True 
+
     
     def load_network_links_shape_file(self, file_path):
         self.network_link_shape_path = file_path if isinstance(file_path,str) else file_path[0]
@@ -1173,27 +1185,97 @@ class QTranusProject(object):
             self['network_links_shape_file_path'] = ''
             self['network_links_shape_id'] = ''
             return False, False
+
+        if layer.geometryType() != 1:
+            raise ExceptionGeometryType(self['network_links_shape_file_path'])
+            return False, None
+
+        if self['network_links_shape_id'] :
+            existing_tree = self.proj.layerTreeRoot().findLayer(self['network_links_shape_id'])
+            if existing_tree:
+                existing = existing_tree.layer()
+                registry.removeMapLayer(existing.id())
+
         network_shape_fields = [field.name() for field in layer.fields()]    
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['network_links_shape_file_path'] = layer.source()
         self['network_links_shape_id'] = layer.id()
+
+        # add listener to layer
+        self.networkLayer = self.proj.mapLayersByName("Network_Links")
+        if self.networkLayer:
+            
+            for value in self.networkLayer[0].dataProvider().getFeatures():
+                self.networkDPFeatures.append((value.id(), value.attributes()[0]))    
+
+            #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
+            self.networkLayer[0].committedFeaturesRemoved.connect(self.featuresDeletedFunct)
+            self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
+
         return True, network_shape_fields
 
+
+    def featuresDeletedFunct(self, featuresList):
+        
+        window = QMessageBox(self.iface.mainWindow())
+        window.setWindowIcon(QIcon(":/plugins/QTranus/icon.png"))
+
+        messageBoxConfirm = window.question(self.iface.mainWindow(), "Qtranus Delete Link", "Are you sure you want to delete Link?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if messageBoxConfirm == QMessageBox.Yes:
+            
+            for value in featuresList:
+                self.dataBaseSqlite = DataBaseSqlite(f"{self['tranus_folder']}/{self['project_name']}")
+                qry = """select * from scenario where cod_previous = ''"""
+                baseScenarioCode = self.dataBaseSqlite.executeSql(qry)
+                scenarios = self.dataBaseSqlite.selectAllScenarios(baseScenarioCode[0][1])
+                linkSelected = self.findLinkIdDPFeatures(value)
+                self.dataBaseSqlite.removeLink(scenarios, linkSelected)
+                self.networkLayer[0].commitChanges()
+
+        else:
+            self.networkLayer[0].rollBack(True)
+
+
+    def featuresAddedFunct(self, featuresList):
+        print("estoy dentro de la vaina")
+
+        
+        
+
+
+    def findLinkIdDPFeatures(self, linkId):
+
+        try:
+            result = map(lambda x: x[1] if x[0] == linkId else False, self.networkDPFeatures)
+            
+            return list(filter(lambda x: x!= False, result))[0]
+        except:
+            return False
 
     def load_network_nodes_shape_file(self, file_path):
         self.network_nodes_shape_path = file_path if isinstance(file_path,str) else file_path[0]
         registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(self.network_nodes_shape_path, 'Network_Nodes', 'ogr')
-
+        
         if not layer.isValid():
             self['network_nodes_shape_file_path'] = ''
             self['network_nodes_shape_id'] = ''
-            return False
+            return False, None
+
+        if layer.geometryType() != 0:
+            raise ExceptionGeometryType(self['network_nodes_shape_file_path'])
+            return False, None
+
+        if self['network_nodes_shape_id'] :
+            existing_tree = self.proj.layerTreeRoot().findLayer(self['network_nodes_shape_id'])
+            if existing_tree:
+                existing = existing_tree.layer()
+                registry.removeMapLayer(existing.id())
 
         nodes_shape_fields = [field.name() for field in layer.fields()]    
-
         registry.addMapLayer(layer, False)
         group.insertLayer(0, layer)
         self['network_nodes_shape_file_path'] = layer.source()
@@ -1207,9 +1289,8 @@ class QTranusProject(object):
 
         if shape == 'zones':
             self.shape = file_path
-            print("SHAPE FILE PATH {} ".format(file_path))
             shape = file_path
-            layer = QgsVectorLayer(file_path, 'Zonas', 'ogr')
+            layer = QgsVectorLayer(file_path, 'Zones', 'ogr')
             if not layer.isValid():
                 self['zones_shape'] = ''
                 self['zones_shape_id'] = ''
@@ -1225,7 +1306,7 @@ class QTranusProject(object):
         
         if shape == 'centroids':
             self.centroids_file_path = file_path
-            layer_name = 'Zonas_Centroids'
+            layer_name = 'Zones_Centroids'
             shape_path = 'centroid_shape_file_path'
             shape_id = 'centroid_shape_id'
        
@@ -1255,7 +1336,7 @@ class QTranusProject(object):
             @summary: Loads centroids information from file
         """
         filePath = self.centroids_file_path[0:max(self.centroids_file_path[0].rfind('\\'), self.centroids_file_path[0].rfind('/'))]
-        layer = QgsProject.instance().mapLayersByName('Zonas_Centroids')[0]
+        layer = QgsProject.instance().mapLayersByName('Zones_Centroids')[0]
         epsg = layer.crs().postgisSrid()
         prov =  layer.dataProvider()
         group = self.get_layers_group()
@@ -1268,33 +1349,28 @@ class QTranusProject(object):
             zoneCentroid.latitude = pt.y()
             self.map_data.zoneCentroids.append(zoneCentroid)
         
-        #self.map_data.create_trip_matrix_csv_file(filePath)
-#         tripMatrixFileUri = ("file:///%s?crs=%s&delimiter=%s&wktField=%s" % (filePath + "/trips_map.csv", str(epsg), ",", "Geom")).encode('utf-8') 
-#         tripsMatrixLayer = QgsVectorLayer(tripMatrixFileUri, layer.name() + '_trips_map', 'delimitedtext')
-#         QgsProject.instance().addMapLayer( tripsMatrixLayer, False )
-#         group.insertLayer(len(QgsProject.instance().mapLayers())+1, tripsMatrixLayer)
-    
+
     def load_zones_centroids(self):
         """
             @summary: Loads centroids file information from centroid layer and creates a csv file
         """
         
-        layer = QgsProject.instance().mapLayersByName('Zonas')[0]
+        layer = QgsProject.instance().mapLayersByName('Zones')[0]
         filePath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
         group = self.get_layers_group()
-        print(layer.name())
+        
         
         if layer is not None:
             epsg = layer.crs().postgisSrid()
             uri = ("Point?crs=epsg:" + str(epsg) + "&field=zoneID:long&field=zoneName:string&field=posX:double&field=posY:double&index=yes")
-            print("Proyecto: {}".format(type(uri), uri))
+            
             mem_layer = QgsVectorLayer(uri, layer.name() + '_Centroids', 'memory')
             prov = mem_layer.dataProvider()
             
             for f in layer.getFeatures():
                 feat = QgsFeature()
                 pt = f.geometry().centroid().asPoint()
-                print(pt)
+                
                 feat.setAttributes([f.attributes()[0], f.attributes()[1], pt.x(), pt.y()])
                 feat.setGeometry(QgsGeometry.fromPointXY(pt))
                 prov.addFeatures([feat])

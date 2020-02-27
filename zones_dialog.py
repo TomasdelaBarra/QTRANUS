@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
@@ -21,7 +22,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent = None):
+    def __init__(self, tranus_folder, scenarioCode, parent = None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -42,11 +43,14 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_zone_btn = self.findChild(QtWidgets.QPushButton, 'add_zone_btn')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
-        
+        self.scenarioCode = scenarioCode
+        self.idScenario = None
+
         # Control Actions
         self.help.clicked.connect(self.open_help)
         self.add_zone_btn.clicked.connect(self.open_add_zone_window)
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scenario_tree.clicked.connect(self.select_scenario)
         self.zones_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.zones_tree.customContextMenuRequested.connect(self.open_menu_zones)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
@@ -64,6 +68,19 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_zone_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         
 
+    def __get_scenarios_data(self):
+        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
+        modelSelection = QItemSelectionModel(self.scenarios_model)
+        itemsList = self.scenarios_model.findItems(self.scenarioCode, Qt.MatchContains | Qt.MatchRecursive, 0)
+        indexSelected = self.scenarios_model.indexFromItem(itemsList[0])
+        modelSelection.setCurrentIndex(indexSelected, QItemSelectionModel.Select)
+        self.scenario_tree.setModel(self.scenarios_model)
+        self.scenario_tree.expandAll()
+        self.scenario_tree.setSelectionModel(modelSelection)
+        
+        self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+
+
     def open_help(self):
         """
             @summary: Opens QTranus users help
@@ -79,6 +96,10 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
         indexes = self.zones_tree.selectedIndexes()
         zoneSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Zones')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Zones')
 
@@ -89,10 +110,30 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog.show()
             result = dialog.exec_()
             self.__get_zones_data()
+
         if opt == remove:
-            self.dataBaseSqlite.removeZone(zoneSelected)
-            self.__get_zones_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, exogenous_trips, zonal_data = self.dataBaseSqlite.validateRemoveZones(zoneSelected, scenarios)
             
+            if validation == False:
+                exogenous_trips = tabulate(exogenous_trips, headers=["Scenario Code", "Origin Zone", "Destination Zone", "Trip"])  if exogenous_trips else ''
+                zonal_data = tabulate(zonal_data, headers=["Scenario Code", "Zone", "Sector"])  if zonal_data else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n Exogenous Trips \n {exogenous_trips} \n Zonal data \n {zonal_data}")
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeZone(zoneSelected)
+                self.__get_zones_data()
+            
+
+    def select_scenario(self, selectedIndex):
+        """
+            @summary: Set Scenario selected
+        """
+        self.scenarioSelectedIndex = selectedIndex
+        self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+        scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
+        self.idScenario = scenarioData[0][0]
 
 
     def open_add_zone_window(self):
@@ -140,14 +181,6 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_()
                 print("Scenarios file could not be extracted.")
               
-
-    def __get_scenarios_data(self):
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Scenarios'])
-
-        self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
-        self.scenario_tree.setModel(self.scenarios_model)
-        self.scenario_tree.expandAll()
 
 
     def __get_zones_data(self):

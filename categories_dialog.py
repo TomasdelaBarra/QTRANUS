@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import os, re, webbrowser, numpy as np
 from string import *
+import os, re, webbrowser, numpy as np
 
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -123,8 +124,18 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
             result = dialog.exec_()
             self.__get_categories_data()
         if opt == remove:
-            self.dataBaseSqlite.removeCategory(scenarios, categorySelected)
-            self.__get_categories_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, operators, exogenous_trips = self.dataBaseSqlite.validateRemoveCategory(categorySelected, scenarios)
+             
+            if validation == False:
+                operators = tabulate(operators, headers=["Scenario Code", "Operator"]) if operators else ''
+                exogenous_trips = tabulate(exogenous_trips, headers=["Scenario Code", "Origin", "Destination","Trip"])  if exogenous_trips else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {operators} \n {exogenous_trips}")   
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeCategory(scenarios, categorySelected)
+                self.__get_categories_data()
             
 
 

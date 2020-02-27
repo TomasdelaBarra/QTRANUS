@@ -7,6 +7,7 @@ from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from qgis.core import QgsProject
 
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
@@ -39,7 +40,8 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.idScenario = None
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
-        
+        self.networkDPFeatures = []
+
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
@@ -139,9 +141,49 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
             
             self.dataBaseSqlite.removeLink(scenarios, linkSelected)
+
+            resultLink = self.dataBaseSqlite.selectAll( ' link ', where=f" linkid = '{linkSelected}' ")
+
+            if not resultLink:
+                if not self.deleteLinkShape(linkSelected):
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+
             self.__get_links_data()
             
 
+    def deleteLinkShape(self, linkId):
+        
+        try:
+
+            self.networkLayer = QgsProject.instance().mapLayersByName("Network_Links")
+            #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
+            if self.networkLayer:
+                # print(" Estoy dentro del link ")
+                self.networkLayer[0]
+                for value in self.networkLayer[0].dataProvider().getFeatures():
+                    self.networkDPFeatures.append((value.id(), str(value.attributes()[0])))   
+
+                featureId = self.findLinkIdDPFeatures(linkId)
+                self.networkLayer[0].startEditing()
+                bloquer = QSignalBlocker(self.networkLayer[0])
+
+                self.networkLayer[0].deleteFeature(featureId)
+                bloquer.unblock()
+                self.networkLayer[0].commitChanges()
+
+            return True
+
+        except:
+            return False
+
+
+    def findLinkIdDPFeatures(self, linkId):
+        
+        result = map(lambda x: x[0] if x[1] == linkId else False, self.networkDPFeatures)
+        
+        return list(filter(lambda x: x!= False, result))[0]
+        
 
     def open_add_link_window(self):
         """

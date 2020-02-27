@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -123,8 +124,18 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_administrators_data()
         if opt == remove:
-            self.dataBaseSqlite.removeAdministrator(scenarios, administratorSelected)
-            self.__get_administrators_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, link_types = self.dataBaseSqlite.validateRemoveAdministrator(administratorSelected, scenarios)
+             
+            if validation == False:
+                link_types = tabulate(link_types, headers=["Scenario Code", "Link Type"])  if link_types else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {link_types}")
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeAdministrator(scenarios, administratorSelected)
+                self.__get_administrators_data()
+            
             
 
 

@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -93,6 +94,10 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         """copy = menu.addAction(QIcon(self.plugin_dir+"/icons/copy-scenario.svg"),'Copy Sector')
         paste = menu.addAction(QIcon(self.plugin_dir+"/icons/paste-scenario.svg"),'Paste Sector')"""
 
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
         opt = menu.exec_(self.sectors_tree.viewport().mapToGlobal(position))
 
         if opt == edit:
@@ -100,8 +105,18 @@ class SectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             dialog.show()
             result = dialog.exec_()
         if opt == remove:
-            self.dataBaseSqlite.removeSector(sectorSelected)
-            self.__get_sectors_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, sectors, zonal_data = self.dataBaseSqlite.validateRemoveSector(sectorSelected, scenarios)
+             
+            if validation == False:
+                sectors = tabulate(sectors, headers=["Scenario Code", "Sector"])  if sectors else ''
+                zonal_data = tabulate(zonal_data, headers=["Scenario Code", "Sector"])  if zonal_data else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n Sectors \n {sectors} \n Zonal Data \n {zonal_data}")
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeSector(sectorSelected)
+                self.__get_sectors_data()
             
 
 
