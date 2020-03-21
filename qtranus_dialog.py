@@ -379,9 +379,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def select_db(self, file_name):
         self.layers_group_name.setText(file_name)
-        print("Seleccionando la BD Variable")
-        print("1 ",self.tranus_folder.text())
-        print("2 ",self.layers_group_name.text())
         if self.tranus_folder.text() and self.layers_group_name.text():
             self.__load_scenarios()
             self.qtranus.addScenariosSection()

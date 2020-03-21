@@ -285,7 +285,6 @@ class QTranus:
 
     def load_routes(self):
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
-        print("Load rutas Qtranus ", self.project_file)
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
 
         # TODO: Importante validar el scenario seleccionado o el por defecto

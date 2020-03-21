@@ -619,14 +619,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 self.dataBaseSqlite.addZoneFFShape(data_list)
 
                 return True
-        except ExceptionFormatID as e:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            return False
         except Exception as e:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in zone Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
+
 
 
     def __load_network_data(self):
