@@ -10,15 +10,18 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import *
 
+from qgis.core import QgsMessageLog, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsPointXY
+
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
-from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Helpers import Helpers
+from .classes.network.Network import Network
 from .classes.general.Validators import * # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_routes_links_dialog import AddRoutesLinksDialog
 from .add_linktype_dialog import AddLinkTypeDialog
 
@@ -45,7 +48,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
         self.idScenario = idScenario
         resolution_dict = Helpers.screenResolution(70)
-        self.resize(resolution_dict['width'], resolution_dict['height'])
+        self.resize(resolution_dict['width'], 0)
         self.plugin_dir = os.path.dirname(__file__)
         self.modelRoutes = QtGui.QStandardItemModel()
 
@@ -506,21 +509,37 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             delay = self.tbl_turns.item(index, 0).text() if  self.tbl_turns.item(index, 0).text() != 'Inf' else -1
             self.turns_delays_arr.append((turn_to, delay))
 
-        #print(f"arreglos de rutas con tipos {self.id_routes_arr_selected}")
 
         if self.codeLink is None:
             newLink = self.dataBaseSqlite.addLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
+            # Add Link to Shape
+            project = QgsProject.instance()
+            layerIds = [layer.id() for layer in project.mapLayers().values()]
+            layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]
+
+            originNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = '{id_origin}'")
+            destinationNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = '{id_destination}'")
+            originPoint = QgsPointXY(originNode[0][5], originNode[0][6])
+            destinationPoint = QgsPointXY(destinationNode[0][5], destinationNode[0][6])
+            
+            if not Network.addLinkFeatureShape(layerNetId, originPoint, destinationPoint, id_origin, id_destination, two_way):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Errors when the figure was being added to layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
+
             if not newLink:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_() 
                 return False
         else:
             newLink = self.dataBaseSqlite.updateLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
+        
 
         if newLink is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Please Verify information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
+        
         self.close()
         return True
 

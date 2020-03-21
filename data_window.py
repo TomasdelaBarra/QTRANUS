@@ -10,7 +10,7 @@ from PyQt5.QtCore import *
 
 from qgis.core import QgsVectorLayer
 
-from .classes.general.Helpers import Helpers
+from .classes.general.Helpers import *
 from .classes.libraries.tabulate import tabulate
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.data.DBFiles import DBFiles
@@ -34,6 +34,7 @@ from .routes_dialog import RoutesDialog
 from .link_type_dialog import LinkTypeDialog
 from .links_dialog import LinksDialog
 from .nodes_dialog import NodesDialog
+from .databaseerror_dialog import DatabaseErrorsDialog
 from .exogenous_trips_dialog import ExogeousTripsDialog
 from .administrators_dialog import AdministratorsDialog
 from .scenarios_select_dialog import ScenariosSelectDialog
@@ -60,8 +61,20 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.resize(resolution_dict['width'], 0)
         self.project = parent.project
         self.zone_shape = parent.zone_shape
+        self.zones_shape_id = parent.zones_shape_fields
+        self.zones_shape_name = parent.zones_shape_name
         self.network_links_shape = parent.network_links_shape
+        self.links_shape_fields = parent.links_shape_fields
+        self.links_shape_name = parent.links_shape_name
+        self.links_shape_type = parent.links_shape_type
+        self.links_shape_direction = parent.links_shape_direction
+        self.links_shape_capacity = parent.links_shape_capacity
         self.network_nodes_shape = parent.network_nodes_shape
+        self.nodes_shape_fields = parent.nodes_shape_fields
+        self.nodes_shape_name = parent.nodes_shape_name
+        self.nodes_shape_type = parent.nodes_shape_type
+        self.nodes_shape_x = parent.nodes_shape_x
+        self.nodes_shape_y = parent.nodes_shape_y
         self.project_file = project_file
         self.dataBase = DataBase()
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
@@ -70,8 +83,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.scenariosMatrixBackUp = None
         self.scenarioSelectedIndex = None
         self.scenarioCode = None
-        
-        
+        self.linktypesList = []
+
         self.mainWindow = QMainWindow()
         self.myToolBar = QToolBar()
         self.mainWindow.addToolBar(self.myToolBar)
@@ -79,7 +92,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.layout = QHBoxLayout();
         self.layout.addWidget(self.mainWindow)
         self.setLayout(self.layout)
-
+        
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         #self.progressBar = self.findChild(QtWidgets.QProgressBar, 'progressBar')
@@ -122,6 +135,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         #self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).setText('Save as...')
 
         # Control Actions
+        self.help.clicked.connect(self.open_help)
         self.btn_options.clicked.connect(self.open_configuration_window)
         self.btn_scenarios.clicked.connect(self.open_scenarios_window)
         self.btn_zones.clicked.connect(self.open_zones_window)
@@ -170,7 +184,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.__load_scenarios()
         self.load_data()
         self.__validate_buttons()
-
+        self.validate_database()
+        
 
     def generate_input_files(self):
         result = self.dataBaseSqlite.selectAll(' scenario ')
@@ -328,7 +343,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens QTranus users help
         """
-        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'data.html')
         webbrowser.open_new_tab(filename)
         
         
@@ -380,7 +395,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ZonesDialog(self.project_file, parent = self)
+        dialog = ZonesDialog(self.project_file, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
 
@@ -574,27 +589,45 @@ class DataWindow(QMainWindow, FORM_CLASS):
         shape = self.zone_shape.text()
         layer = QgsVectorLayer(shape, 'Zonas', 'ogr')
 
-        if not layer.isValid():
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Zone is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+        try:
+            if not layer.isValid():
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Zone is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
+            else:
+                zones_shape_fields = [field.name() for field in layer.fields()]
+                features = layer.getFeatures()
+                result_a = self.dataBaseSqlite.selectAll('zone', " where id = 0")
+                if len(result_a)==0:
+                    self.dataBaseSqlite.addZone(0, 'Global Increments')
+                data_list = []
+
+                zoneIdField = self.zones_shape_id.currentText()
+                zoneNameField = self.zones_shape_name.currentText()
+                
+                for feature in features:
+                    zoneId = feature.attribute(zoneIdField)
+                    zoneName = feature.attribute(zoneNameField) if feature.attribute(zoneNameField) else None
+                    result = self.dataBaseSqlite.selectAll('zone', " where id = {}".format(zoneId))
+                    if not (isinstance(zoneId, QVariant) and zoneId.isNull()):
+                        if re.findall(r'\d+',str(zoneId)):
+                            if len(result) == 0:
+                                data_list.append((zoneId, zoneName))
+                        else:
+                            raise ExceptionFormatID(zoneId, typeFile='Import error in Zone shape file')
+
+                self.dataBaseSqlite.addZoneFFShape(data_list)
+
+                return True
+        except ExceptionFormatID as e:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
-        else:
-            zones_shape_fields = [field.name() for field in layer.fields()]
-            features = layer.getFeatures()
-            result_a = self.dataBaseSqlite.selectAll('zone', " where id = 0")
-            if len(result_a)==0:
-                self.dataBaseSqlite.addZone(0, 'Global Increments')
-            data_list = []
+        except Exception as e:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in zone Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
 
-            for feature in features:
-                zoneId = feature.attribute('zoneID')
-                zoneName = feature.attribute('zoneName')
-                result = self.dataBaseSqlite.selectAll('zone', " where id = {}".format(zoneId))
-                if len(result) == 0:
-                    data_list.append((zoneId, zoneName))
-            self.dataBaseSqlite.addZoneFFShape(data_list)
-
-            return True
 
     def __load_network_data(self):
         shape = self.network_links_shape.text()
@@ -602,61 +635,125 @@ class DataWindow(QMainWindow, FORM_CLASS):
         result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
         scenarios_arr = self.dataBaseSqlite.selectAllScenarios(result[0][0])
 
-        if not layer.isValid():
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Network is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            return False
-        else:
-            network_shape_fields = [field.name() for field in layer.fields()]
-            features = layer.getFeatures()
-            parent = self.parent()
-            data_list = []
-            for feature in layer.getFeatures():
-                linkId = feature.attribute('LinkId')
-                Or_node = feature.attribute('Or_node')
-                Des_node = feature.attribute('Des_node')
-            
-                resultOrNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Or_node}")
-                resultDesNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Des_node}")
-                if resultOrNode and resultDesNode:
-                    data_list.append((f"{Or_node}-{Des_node}", Or_node, Des_node))
-            
-            self.dataBaseSqlite.addLinkFFShape(scenarios_arr, data_list)
-
-            return True
-
-    def __load_nodes_data(self):
-        shape = self.network_nodes_shape.text()
-        layer = QgsVectorLayer(shape, 'Network_Nodes', 'ogr')
-        result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
-        if result:
-            scenarios_arr = self.dataBaseSqlite.selectAllScenarios(result[0][0])
+        try:
             if not layer.isValid():
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Layers is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Network is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
             else:
                 network_shape_fields = [field.name() for field in layer.fields()]
                 features = layer.getFeatures()
-                
+                parent = self.parent()
                 data_list = []
-                for feature in features:
-                    _id = feature.attribute('Id')
-                    id_type = feature.attribute('Zone') if feature.attribute('Zone') else None
-                    name = feature.attribute('name') if feature.attribute('name') else None
-                    description = feature.attribute('descriptio') if feature.attribute('descriptio') else None
-                    x = feature.attribute('X') if feature.attribute('X') else None
-                    y = feature.attribute('Y') if feature.attribute('Y') else None
+                for feature in layer.getFeatures():
                     
-                    data_list.append((_id, x, y, id_type, name, description))
+                    linkIdField = self.links_shape_fields.currentText()
+                    linkNameField = self.links_shape_name.currentText()
+                    typeField = self.links_shape_type.currentText()
+                    directionField = self.links_shape_direction.currentText()
+                    capacityField = self.links_shape_capacity.currentText()
+                   
+                    linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
+                    # print(linkId.typeName())
+                    if not (isinstance(linkId, QVariant) and linkId.isNull()): 
+                        if re.findall(r'\d+-\d+',linkId):
+                           
+                            Or_node = linkId.split('-')[0]
+                            Des_node = linkId.split('-')[1]
+                            name = feature.attribute(linkNameField) if linkNameField != 'Select' else None
+                            idType = feature.attribute(typeField) if typeField != 'Select' else None
+                            two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
+                            capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
 
-                self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list)
+                            # Optional parameter
+                            name = None if isinstance(name, QVariant) and name.isNull() else name
+                            resultOrNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Or_node}")
+                            resultDesNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Des_node}")
+                            name = None if isinstance(name, QVariant) else name
+                            idType = None if isinstance(idType, QVariant) else idType
+                            two_way = None if isinstance(two_way, QVariant) else two_way
+                            capacity = None if isinstance(capacity, QVariant) else capacity
+
+                            if resultOrNode and resultDesNode:
+                                data_list.append((f"{Or_node}-{Des_node}", Or_node, Des_node, idType, two_way, capacity, name))
+                        else:
+                            raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')
+                                
+                qry = """select 
+                        distinct linkid, node_from, node_to, id_linktype, two_way, capacity, name
+                        from link"""
+
+                result = self.dataBaseSqlite.executeSql(qry)
+
+                if len(data_list) >= len(result):
+                    resultList = list(set(data_list) - set(result))
+                else:
+                    resultList = list(set(result) - set(data_list))
+                
+                self.dataBaseSqlite.addLinkFFShape(scenarios_arr, resultList)
 
                 return True
+        except ExceptionFormatID as e:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+        except Exception as e:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in network Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
+
+    def __load_nodes_data(self):
+        shape = self.network_nodes_shape.text()
+        layer = QgsVectorLayer(shape, 'Network_Nodes', 'ogr')
+        result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
+        try:
+            if result:
+                scenarios_arr = self.dataBaseSqlite.selectAllScenarios(result[0][0])
+                if not layer.isValid():
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Layers is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    return False
+                else:
+                    network_shape_fields = [field.name() for field in layer.fields()]
+                    features = layer.getFeatures()
+                    idNode = self.nodes_shape_fields.currentText() if self.nodes_shape_fields.currentText() != 'Select' else None
+                    typeNode = self.nodes_shape_type.currentText()  if self.nodes_shape_type.currentText() != 'Select' else None
+                    nameNode = self.nodes_shape_name.currentText()  if self.nodes_shape_name.currentText() != 'Select' else None
+                    xNode = self.nodes_shape_x.currentText()  if self.nodes_shape_x.currentText() != 'Select' else None
+                    yNode = self.nodes_shape_y.currentText()  if self.nodes_shape_y.currentText() != 'Select' else None
+
+                    data_list = []
+                    for feature in features:
+                        _id = feature.attribute(idNode) if idNode else None
+                        if not (isinstance(_id, QVariant) and _id.isNull()): 
+                            if re.findall(r'\d+',str(_id)):
+                                id_type = feature.attribute(typeNode) if typeNode else None
+                                name = feature.attribute(nameNode) if nameNode else None
+                                name = None if str(name) == 'NULL' else name
+                                description = None
+                                x = feature.attribute(xNode) if xNode else None
+                                y = feature.attribute(yNode) if yNode else None
+                                data_list.append((_id, x, y, id_type, name, description))
+                            else:
+                                raise ExceptionFormatID(_id, typeFile='Import error in Nodes shape file')
+                    self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list)
+
+                    return True
+        except ExceptionFormatID as e:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
+        except Exception as e:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in node Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
         
     def load_scenarios(self):
         self.__load_scenarios()
         
+
     def save_db(self):
         if(self.dataBase.save_db(self.project['project_file'], self.project.db_path, self.project.db_path, DBFiles.Scenarios, self.scenariosMatrix)):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -666,9 +763,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "There was a problem trying to save DB, please verify and try again.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             print("There was a problem trying to save DB, please verify and try again.")
-            
-        #https://stackoverflow.com/questions/513788/delete-file-from-zipfile-with-the-zipfile-module
-        
+
+
     def save_db_as(self):
         file_name = QtGui.QFileDialog.getSaveFileName(parent=self, caption='Choose a file name to save the DB.', directory=self.project['project_file'], filter='*.*, *.zip')
         print(file_name)
@@ -689,3 +785,44 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
     def close_event(self, event):
         self.close()
+
+    def linktypeWithoutDefinitions(self):
+        sql = """
+            select distinct a.id_linktype
+            from link a
+            left join link_type  b on (a.id_linktype = b.id)
+            where b.id is null or b.id = ''
+            order by 1
+            """
+        result = self.dataBaseSqlite.executeSql(sql)
+        
+        self.linktypesList = []
+        for value in result:
+            self.linktypesList.append(str(value[0]))
+
+        return result
+
+        
+    def validate_database(self):
+        result = self.linktypeWithoutDefinitions()
+
+        if result:
+            buttonDetail = QtWidgets.QPushButton("Info...")
+            buttonDetail.clicked.connect(self.open_database_errors)
+            mensaje = QtWidgets.QLabel()
+            mensaje.setText( "<b>Warning:</b> Inconsistencies in database" )
+            mensaje.setStyleSheet( "color : #D68910;" )
+            
+            self.statusbar.addWidget(mensaje)
+            self.statusbar.addWidget(buttonDetail)
+            
+
+    def open_database_errors(self):
+        """
+            @summary: Scenario Errors Window
+        """
+        self.linktypeWithoutDefinitions()
+
+        dialog = DatabaseErrorsDialog(self.project_file, self.linktypesList, self.scenarioCode, parent = self)
+        dialog.show()
+        result = dialog.exec_()

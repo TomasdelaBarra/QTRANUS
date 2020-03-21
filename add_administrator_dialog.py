@@ -55,12 +55,7 @@ class AddAdministratorDialog(QtWidgets.QDialog, FORM_CLASS):
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
-        """
-        self.name.setValidator(validatorExpr('alphaNum'))
-        self.name.textChanged.connect(self.check_state)
-        self.description.setValidator(validatorExpr('alphaNum'))
-        self.description.textChanged.connect(self.check_state)
-        """
+        
         self.name.setMaxLength(25)
         self.description.setMaxLength(55)
         self.changeLineEditStyle = "color: green; font-weight: bold"

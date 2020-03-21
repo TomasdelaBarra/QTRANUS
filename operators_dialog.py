@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -100,6 +101,10 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
         indexes = self.operators_tree.selectedIndexes()
         operatorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Operator')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Operator')
 
@@ -115,8 +120,20 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_operators_data()
         if opt == remove:
-            self.dataBaseSqlite.removeOperator(operatorSelected)
-            self.__get_operators_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, transfers, routes, link_types = self.dataBaseSqlite.validateRemoveOperator(operatorSelected, scenarios)
+             
+            if validation == False:
+                transfers = tabulate(transfers, headers=["Scenario Code", "Origin Operator", "Destination Operator","Cost"])  if transfers else ''
+                routes = tabulate(routes, headers=["Scenario Code", "Ruta"]) if routes else ''
+                link_types = tabulate(link_types, headers=["Scenario Code", "Link Type"])  if link_types else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {transfers} \n {routes} \n {link_types}")
+
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeOperator(operatorSelected)
+                self.__get_operators_data()
             
 
 

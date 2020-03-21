@@ -14,7 +14,11 @@ class DataBaseSqlite():
 		self.conn = self.connectionSqlite()
 
 	def __del__(self):
-		self.conn.close()
+		try:
+			if self.conn:
+				self.conn.close()
+		except:
+			print("There is no Connection")
 
 	def connectionSqlite(self):
 		"""
@@ -1220,18 +1224,16 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-
 	def addLinkFFShape(self, scenarios, data_list):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		sql_arr = []
-		sql = """INSERT OR IGNORE INTO link (id_scenario, linkid, node_from, node_to) 
-			values (?, ?, ?, ?);"""
-
+		sql = """INSERT OR IGNORE INTO link (id_scenario, linkid, node_from, node_to, id_linktype, two_way, capacity, name) 
+			values (?, ?, ?, ?, ?, ?, ?, ?);"""
+		
 		for row in data_list:
 			for id_scenario in scenarios:
-				sql_arr.append((id_scenario[0], row[0], row[1], row[2]))
-		
+				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
 		cursor.executemany(sql, sql_arr)
 		conn.commit()
 		conn.close()
@@ -1774,6 +1776,212 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
+
+	def validateRemoveMode(self, id_mode):
+
+		sql = f"""select  b.code scenario, a.name category
+			from category a 
+			join scenario b on (a.id_scenario = b.id) 
+			where id_mode = {id_mode}"""
+		categories = self.executeSql(sql)
+
+		sql = f"""select  b.code scenario, a.name operator, a.id id_operator
+				from operator a 
+				join scenario b on (a.id_scenario = b.id) 
+				where id_mode = {id_mode}"""
+		operators = self.executeSql(sql)
+
+		sql = f"""select distinct b.code, c.name origin, d.name destination, a.trip
+				from exogenous_trips a
+				join scenario b on (a.id_scenario = b.id)
+				join zone c on (a.id_zone_from = c.id)
+				join zone d on (a.id_zone_from = d.id)
+				where id_mode = {id_mode}"""
+		exogenous_trips = self.executeSql(sql)
+
+		if categories or operators:
+			return False, categories, operators, exogenous_trips
+		else:
+			return True, categories, operators, exogenous_trips
+
+
+	def validateRemoveCategory(self, id_category, scenarios):
+		
+		sql = f"""select 
+				distinct c.code, a.name operator
+				from 
+				operator a 
+				join operator_category b on (a.id = b.id_operator) 
+				join scenario c on (b.id_scenario = c.id)
+				where b.id_category = {id_category} and b.id_scenario in ({scenarios})"""
+
+		operators = self.executeSql(sql)
+
+		sql = f"""select b.code, c.name origin, d.name destination, a.trip
+				from exogenous_trips a
+				join scenario b on (a.id_scenario = b.id)
+				join zone c on (a.id_zone_from = c.id)
+				join zone d on (a.id_zone_from = d.id)
+				where id_category = {id_category} and id_scenario in ({scenarios})"""
+		exogenous_trips = self.executeSql(sql)
+
+		if operators or exogenous_trips:
+			return False, operators, exogenous_trips
+		else:
+			return True, operators, exogenous_trips
+
+
+	def validateRemoveOperator(self, id_operator, scenarios):
+		
+		sql = f"""select distinct b.code scenario, 
+			c.name origin_ope, d.name destination_ope, cost
+			from transfer_operator_cost a
+			join scenario b on (a.id_scenario = b.id)
+			join operator c on (a.id_operator_from = c.id)
+			join operator d on (a.id_operator_to = d.id)
+			where a.id_scenario in (1,2,3,4,5) 
+			and (id_operator_from = {id_operator} or id_operator_from = {id_operator}) 
+			and b.id_scenario in ({scenarios})"""
+
+		transfers = self.executeSql(sql)
+
+		sql = f"""select distinct b.code, a.name
+				from route a
+				join scenario b on (a.id_scenario = b.id)
+				where a.id_scenario in ({scenarios}) 
+				and id_operator = {id_operator}"""
+		routes = self.executeSql(sql)
+
+		sql = f"""select c.code, a.name link_type 
+			from link_type a
+			join link_type_operator b on (a.id = b.id_operator)
+			join scenario c on (b.id_scenario = c.id)
+			where b.id_scenario in ({scenarios}) and id_operator = {id_operator}"""
+		link_types = self.executeSql(sql)
+
+		if transfers or routes or link_types:
+			return False, transfers, routes, link_types
+		else:
+			return True, transfers, routes, link_types
+
+
+	def validateRemoveAdministrator(self, id_administrator, scenarios):
+		
+		sql = f"""select distinct c.code, b.name adm
+			from link_type a
+			join administrator b on (a.id_administrator = b.id)
+			join scenario c on (b.id_scenario = c.id)
+			where b.id_scenario in ({scenarios}) and b.id = {id_administrator}"""
+
+		link_types = self.executeSql(sql)
+
+		if link_types:
+			return False, link_types
+		else:
+			return True, link_types
+	
+
+	def validateRemoveLinkType(self, id_linktype, scenarios):
+		
+		sql = f"""select distinct c.code, a.linkid
+			from link a
+			join link_type b on (a.id_linktype = b.id) 
+			join scenario c on (a.id_scenario = c.id)
+			where c.id in ({scenarios}) and b.id = {id_linktype} """
+			
+		links = self.executeSql(sql)
+
+		if links:
+			return False, links
+		else:
+			return True, links
+
+
+	def validateRemoveRoutes(self, id_route, scenarios):
+		
+		sql = f"""select distinct c.code, id_link
+			from link_route a 
+			join route b on a.id_route = b.id
+			join scenario c on b.id_scenario = c.id
+			where a.id_scenario in ({scenarios}) and a.id_route = {id_route}"""
+			
+		links = self.executeSql(sql)
+
+		if links:
+			return False, links
+		else:
+			return True, links
+
+
+	def validateRemoveNodes(self, id_node, scenarios):
+		
+		sql = f"""select distinct b.code, linkid
+			from link a
+			join scenario b on (a.id_scenario = b.id)
+			where (node_from = {id_node} or node_to = {id_node}) 
+			and id_scenario in ({scenarios})"""
+			
+		links = self.executeSql(sql)
+
+		if links:
+			return False, links
+		else:
+			return True, links
+
+
+	def validateRemoveSector(self, id_sector, scenarios):
+		
+		sql = f"""select distinct  c.code scenario, b.name sector
+			from inter_sector_transport_cat a
+			join sector b on (a.id_sector = b.id) 
+			join scenario c on (a.id_scenario = c.id) 
+			where time_factor != 0 or 
+			a.volume_factor != 0.0 or a.flow_to_product != 0.0 or flow_to_consumer != 0
+			and a.id_scenario in ({scenarios}) and a.id_sector = {id_sector}"""
+			
+		sector = self.executeSql(sql)
+
+
+		sql = f"""select distinct c.code, b.name sector
+			from zonal_data a
+			join scenario c on (a.id_scenario = c.id)
+			join sector b on (a.id_sector = b.id) 
+			where b.id = {id_sector} and a.id_scenario in ({scenarios}) and (induced_production != 0.0 )"""
+			
+		zonal_data = self.executeSql(sql)
+
+		if sector or zonal_data:
+			return False, sector, zonal_data 
+		else:
+			return True, sector, zonal_data
+
+
+	def validateRemoveZones(self, id_zone, scenarios):
+		
+		sql = f"""select distinct b.code, c.name origin, d.name destination, a.trip
+				from exogenous_trips a
+				join scenario b on (a.id_scenario = b.id)
+				join zone c on (a.id_zone_from = c.id)
+				join zone d on (a.id_zone_from = d.id)
+				where b.id in ({scenarios}) and (c.id = {id_zone} or d.id = {id_zone})"""
+			
+		exogenous_trips = self.executeSql(sql)
+
+		sql = f"""select distinct c.code, b.name zone, d.name sector
+			from zonal_data a
+			join zone b on (a.id_zone = b.id)
+			join scenario c on (a.id_scenario = c.id)
+			join sector d on (a.id_zone = d.id) 
+			where b.id = {id_zone} and a.id_scenario in ({scenarios}) and (induced_production != 0.0 )"""
+			
+		zonal_data = self.executeSql(sql)
+
+		if exogenous_trips or zonal_data:
+			return False, exogenous_trips, zonal_data
+		else:
+			return True, exogenous_trips, zonal_data
+
+
 	def removeMode(self, id):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
@@ -1782,10 +1990,6 @@ class DataBaseSqlite():
 		cursor.execute(sql)
 		conn.commit()
 
-		sql = "delete from scenario_mode where id_mode = {}".format(id)
-		cursor.execute(sql)
-		conn.commit()	
-		conn.close()
 		return True
 
 
@@ -2294,7 +2498,7 @@ class DataBaseSqlite():
 			data = conn.execute(sql)
 			result = data.fetchone()
 			conn.close()
-			return result[0]+1
+			return result[0]+1 if result[0] else 1
 		except Exception as e:
 			return False
 

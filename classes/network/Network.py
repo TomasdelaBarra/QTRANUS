@@ -4,7 +4,7 @@ import numpy as np
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
 
-from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase
+from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint
 
 from ..general.FileManagement import FileManagement as FileMXML
 from ..general.Helpers import Helpers as HP
@@ -558,3 +558,46 @@ class Network(object):
             progressBar.setValue(100)
 
         return True
+
+    @staticmethod
+    def addLinkFeatureShape(layerId, originPoint, destinationPoint, originIdNode, destinationIdNode, twoWay=0):
+        """
+            @summary: Build link to Shape Network
+            @param originPoint: Layer name
+            @type originPoint: QgsPointXY
+            @param destinationPoint: Layer name
+            @type destinationPoint: QgsPointXY
+            @param originIdNode: Origin Node
+            @type originIdNode: Integer
+            @param destinationIdNode: Destination Node
+            @type destinationIdNode: Integer
+            @param twoWay: Flag to mark two-way links
+            @type twoWay: Integer
+            @return: Result of the layer creation
+        """
+        try:
+            project = QgsProject.instance()
+            layer = project.mapLayer(layerId)
+            layer.startEditing()
+
+            geom = QgsGeometry()
+            geom.addPoints([QgsPoint(originPoint), QgsPoint(destinationPoint)], QgsWkbTypes.LineGeometry)
+
+            feat = QgsFeature()
+            feat.setGeometry(geom)
+            feat.setAttributes([f'{originIdNode}-{destinationIdNode}', originIdNode, destinationIdNode])
+
+            layer.dataProvider().addFeature(feat)
+            if twoWay:
+                geom = QgsGeometry()
+                geom.addPoints([QgsPoint(destinationPoint), QgsPoint(originPoint)], QgsWkbTypes.LineGeometry)
+
+                feat = QgsFeature()
+                feat.setGeometry(geom)
+                feat.setAttributes([f'{destinationIdNode}-{originIdNode}', destinationIdNode, originIdNode])            
+                layer.dataProvider().addFeature(feat)
+
+            layer.commitChanges()
+            return True
+        except:
+            return False

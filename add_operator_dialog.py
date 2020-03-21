@@ -529,11 +529,12 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
 		
 		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
-		
+		self.cb_type.clear()
 		for index, valor in enumerate(types):
 			self.cb_type.addItem(types[index],index+1)
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
+		self.cb_mode.clear()
 		for value in mode_result:
 			self.cb_mode.addItem(value[1], value[0])
 

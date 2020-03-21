@@ -135,6 +135,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             if action == editLayer:
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
+                print(f"Layer ID:  {layerId}")
                 dialog = ZoneLayerDialog(parent=self,layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(parent=self, layerId=layerId) if source is self.layer_network else MatrixLayerDialog(parent=self, layerId=layerId)
                 dialog.show()
                 result = dialog.exec_()

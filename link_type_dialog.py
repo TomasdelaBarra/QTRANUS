@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .classes.libraries.tabulate import tabulate
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -100,6 +101,10 @@ class LinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
         indexes = self.linktype_tree.selectedIndexes()
         linkTypeSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
+        id_scenario = self.idScenario
+        scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Link Type')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Link Type')
 
@@ -115,8 +120,18 @@ class LinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_linktype_data()
         if opt == remove:
-            self.dataBaseSqlite.removeLinkType(linkTypeSelected)
-            self.__get_linktype_data()
+            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = ','.join(scenarios)
+            validation, links = self.dataBaseSqlite.validateRemoveLinkType(linkTypeSelected, scenarios)
+             
+            if validation == False:
+                links = tabulate(links, headers=["Scenario Code", "Link"])  if links else ''
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {links}")
+                messagebox.exec_()
+            else:
+                self.dataBaseSqlite.removeAdministrator(scenarios, administratorSelected)
+                self.__get_administrators_data()
+            
             
 
 

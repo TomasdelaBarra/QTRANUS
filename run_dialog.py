@@ -375,7 +375,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens QTranus users help
         """
-        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'network.html')
+        filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'run.html')
         webbrowser.open_new_tab(filename)
 
 
