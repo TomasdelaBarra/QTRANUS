@@ -45,10 +45,20 @@ class DataBaseSqlite():
 			CREATE TABLE IF NOT EXISTS project_files (
 				zone_shape_file      TEXT,
 				zone_shape_file_id   TEXT,
+				zone_shape_file_name   TEXT,
 				link_shape_file      TEXT,
 				link_shape_file_id   TEXT,
+				link_shape_file_name   TEXT,
+				link_shape_file_type   TEXT,
+				link_shape_file_length   TEXT,
+				link_shape_file_direction   TEXT,
+				link_shape_file_capacity   TEXT,
 				node_shape_file      TEXT,
-				node_shape_file_id   TEXT
+				node_shape_file_id   TEXT,
+				node_shape_file_name   TEXT,
+				node_shape_file_type   TEXT,
+				node_shape_file_x   TEXT,
+				node_shape_file_y   TEXT
 			);""",
 			"""
 			CREATE TABLE IF NOT EXISTS scenario (
@@ -398,22 +408,32 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def insertBaseParameters(self, zone_shape, zone_shape_id, network_shape, network_id, nodes_shape, nodes_shape_id):
+	#def insertBaseParameters(self, zone_shape, zone_shape_id, network_shape, network_id, nodes_shape, nodes_shape_id):
+	def insertBaseParameters(self, dataList):
 		conn = self.connectionSqlite()
 		sql = f"""select count(*) from project_files"""
 		
 		data = conn.execute(sql)
 		result = data.fetchall()
-		print(result)
-
 		if result[0][0]>0:
-			sql = f""" update project_files set zone_shape_file = '{zone_shape}', zone_shape_file_id =  '{zone_shape_id}', 
-				link_shape_file = '{network_shape}', link_shape_file_id = '{network_id}', node_shape_file = '{nodes_shape}',
-				node_shape_file_id = '{nodes_shape_id}'"""
+			sql = f""" update project_files set zone_shape_file = '{dataList['zone_shape_file']}', zone_shape_file_id =  '{dataList['zone_shape_file_id']}', zone_shape_file_name = '{dataList['zone_shape_file_name']}',
+				link_shape_file = '{dataList['link_shape_file']}', link_shape_file_id = '{dataList['link_shape_file_id']}', link_shape_file_name = '{dataList['link_shape_file_name']}',
+				link_shape_file_type = '{dataList['link_shape_file_type']}', link_shape_file_length = '{dataList['link_shape_file_length']}', link_shape_file_direction = '{dataList['link_shape_file_direction']}',
+				link_shape_file_capacity = '{dataList['link_shape_file_capacity']}',
+				node_shape_file = '{dataList['node_shape_file']}', node_shape_file_id = '{dataList['node_shape_file_id']}', 
+				node_shape_file_name = '{dataList['node_shape_file_name']}', node_shape_file_type = '{dataList['node_shape_file_type']}', 
+				node_shape_file_x = '{dataList['node_shape_file_x']}', node_shape_file_y = '{dataList['node_shape_file_y']}'"""
 		else:
-			sql = f""" insert into project_files (zone_shape_file, zone_shape_file_id, 
-				link_shape_file, link_shape_file_id, node_shape_file, node_shape_file_id) values ('{zone_shape}','{zone_shape_id}',
-				'{network_shape}','{network_id}','{nodes_shape}', '{nodes_shape_id}')"""
+			sql = f""" insert into project_files (zone_shape_file, zone_shape_file_id, zone_shape_file_name, link_shape_file, 
+				link_shape_file_id, link_shape_file_name, link_shape_file_type, link_shape_file_length, link_shape_file_direction, 
+				link_shape_file_capacity, node_shape_file, node_shape_file_id, node_shape_file_name, node_shape_file_type,
+				node_shape_file_x, node_shape_file_y) values (
+				'{dataList['zone_shape_file']}','{dataList['zone_shape_file_id']}','{dataList['zone_shape_file_name']}',
+				'{dataList['link_shape_file']}','{dataList['link_shape_file_id']}','{dataList['link_shape_file_name']}',
+				'{dataList['link_shape_file_type']}','{dataList['link_shape_file_length']}','{dataList['link_shape_file_direction']}',
+				'{dataList['link_shape_file_capacity']}','{dataList['node_shape_file']}','{dataList['node_shape_file_id']}',
+				'{dataList['node_shape_file_name']}','{dataList['node_shape_file_type']}','{dataList['node_shape_file_x']}', 
+				'{dataList['node_shape_file_y']}')"""
 
 		conn.execute(sql)
 		conn.commit()

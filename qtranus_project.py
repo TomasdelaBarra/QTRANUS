@@ -1176,7 +1176,7 @@ class QTranusProject(object):
 
     
     def load_network_links_shape_file(self, file_path):
-        self.network_link_shape_path = file_path if isinstance(file_path,str) else file_path[0]
+        self.network_link_shape_path = file_path
         
         registry = QgsProject.instance()
         group = self.get_layers_group()
@@ -1240,7 +1240,7 @@ class QTranusProject(object):
 
 
     def featuresAddedFunct(self, featuresList):
-        print("estoy dentro de la vaina")
+        print("In fewtures Added")
 
         
         
@@ -1256,7 +1256,7 @@ class QTranusProject(object):
             return False
 
     def load_network_nodes_shape_file(self, file_path):
-        self.network_nodes_shape_path = file_path if isinstance(file_path,str) else file_path[0]
+        self.network_nodes_shape_path = file_path
         registry = QgsProject.instance()
         group = self.get_layers_group()
         layer = QgsVectorLayer(self.network_nodes_shape_path, 'Network_Nodes', 'ogr')

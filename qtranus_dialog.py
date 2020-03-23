@@ -151,8 +151,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         #self.run_btn.setEnabled(True)
         #self.data_btn.setEnabled(True)
         # Loads
-        if self.project['zones_id_field_name']:
-            self.default_data()
+        """if self.project['zones_id_field_name']:
+            self.default_data()"""
 
         self.projectInst.removeAll.connect(self.deleteObjects)
 
@@ -215,16 +215,33 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __save_base_info(self):
+        data_list = dict()
+
         if self.tranus_folder.text() != '' and self.layers_group_name.text()!= '':
             self.project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
         
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
         if self.dataBaseSqlite:
             if self.tranus_folder.text() != '' and self.layers_group_name.text() != '' and self.zone_shape.text() != '' and self.network_links_shape.text() != '' and self.network_nodes_shape.text() != '':
-                self.dataBaseSqlite.insertBaseParameters(self.zone_shape.text(), self.cb_zones_shape_fields.currentText(), self.network_links_shape.text(), self.links_shape_fields.currentText(), self.network_nodes_shape.text(), self.nodes_shape_fields.currentText())
+                data_list['zone_shape_file'] = self.zone_shape.text()
+                data_list['zone_shape_file_id'] = self.cb_zones_shape_fields.currentText()
+                data_list['zone_shape_file_name'] = self.cb_zones_shape_name.currentText()
+                data_list['link_shape_file'] = self.network_links_shape.text()
+                data_list['link_shape_file_id'] = self.links_shape_fields.currentText()
+                data_list['link_shape_file_name'] = self.links_shape_name.currentText()
+                data_list['link_shape_file_type'] = self.links_shape_type.currentText()
+                data_list['link_shape_file_length'] = self.links_shape_length.currentText()
+                data_list['link_shape_file_direction'] = self.links_shape_direction.currentText()
+                data_list['link_shape_file_capacity'] = self.links_shape_capacity.currentText()
+                data_list['node_shape_file'] = self.network_nodes_shape.text()
+                data_list['node_shape_file_id'] = self.nodes_shape_fields.currentText()
+                data_list['node_shape_file_name'] = self.nodes_shape_name.currentText()
+                data_list['node_shape_file_type'] = self.nodes_shape_type.currentText()
+                data_list['node_shape_file_x'] = self.nodes_shape_x.currentText()
+                data_list['node_shape_file_y'] = self.nodes_shape_y.currentText()
+                self.dataBaseSqlite.insertBaseParameters(data_list)
 
         self.accept()
-        return False
 
     def __save_as_base_info(self):
         
@@ -302,10 +319,11 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @type file_name: String
         """
         try:
-            result, zoneShapeFieldNames = self.project.load_zones_shape(file_name[0]) 
+            file_name = file_name if isinstance(file_name,str) else file_name[0]
+            result, zoneShapeFieldNames = self.project.load_zones_shape(file_name) 
 
             if result:
-                self.zone_shape.setText(file_name[0])
+                self.zone_shape.setText(file_name)
                 self.load_zone_shape_fields(zoneShapeFieldNames)
             else:
                 self.zone_shape.setText('')
@@ -338,10 +356,12 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
     def select_network_links_shape(self, file_name):
         # TODO: Descomentar esto al final de la labor
         try:
+            file_name = file_name if isinstance(file_name,str) else file_name[0]
+            
             result, networkShapeFields = self.project.load_network_links_shape_file(file_name)
         
             if result:
-                self.network_links_shape.setText(file_name[0])
+                self.network_links_shape.setText(file_name)
                 self.load_network_shape_fields(networkShapeFields)
             else:
                 self.network_links_shape.setText('')
@@ -358,10 +378,12 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             
     def select_network_nodes_shape(self, file_name):
         try:
-            result, nodesShapeFields = self.project.load_network_nodes_shape_file(file_name[0])
+            file_name = file_name if isinstance(file_name,str) else file_name[0]
+
+            result, nodesShapeFields = self.project.load_network_nodes_shape_file(file_name)
         
             if result:
-                self.network_nodes_shape.setText(file_name[0])
+                self.network_nodes_shape.setText(file_name)
                 self.load_nodes_shape_fields(nodesShapeFields)
             else:
                 self.network_nodes_shape.setText('')
@@ -382,6 +404,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.tranus_folder.text() and self.layers_group_name.text():
             self.__load_scenarios()
             self.qtranus.addScenariosSection()
+            self.load_info_shapes()
 
 
     def select_tranus_folder(self):
@@ -551,9 +574,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         result = dialog.exec_()
         pass
 
-    def default_data(self):
+    """def default_data(self):
         indexZonesIdFieldName = self.zones_shape_fields.findText(self.project['zones_id_field_name'], Qt.MatchFixedString)
-        self.zones_shape_fields.setCurrentIndex(indexZonesIdFieldName)
+        self.zones_shape_fields.setCurrentIndex(indexZonesIdFieldName)"""
 
     def show(self):
         """
@@ -768,3 +791,57 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.project.zonesIdFieldName = self.zones_shape_fields.currentText()
             self.project['zones_id_field_name'] = self.project.zonesIdFieldName
             
+    def load_info_shapes(self):
+        try:
+            self.project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+            self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+            result = self.dataBaseSqlite.selectAll(" project_files ")
+
+            if result:
+                print(result)
+                # Set Path Shapes
+                self.zone_shape.setText(result[0][0])
+                self.network_links_shape.setText(result[0][3])
+                self.network_nodes_shape.setText(result[0][10])
+
+                # Load Shapes Info and Combos
+                self.select_zones_shape(result[0][0])
+                self.select_network_links_shape(result[0][3])
+                self.select_network_nodes_shape(result[0][10])
+
+                # Select Default Values of Combos
+                zoneId = self.cb_zones_shape_fields.findText(result[0][1])
+                self.cb_zones_shape_fields.setCurrentIndex(zoneId)
+                zoneName = self.cb_zones_shape_name.findText(result[0][2])
+                self.cb_zones_shape_name.setCurrentIndex(zoneName)
+
+                linkId = self.links_shape_fields.findText(result[0][4])
+                self.links_shape_fields.setCurrentIndex(linkId)
+                linkName = self.links_shape_name.findText(result[0][5])
+                self.links_shape_name.setCurrentIndex(linkName)
+                linkType = self.links_shape_type.findText(result[0][6])
+                self.links_shape_type.setCurrentIndex(linkType)
+                linkLength = self.links_shape_length.findText(result[0][7])
+                self.links_shape_length.setCurrentIndex(linkLength)
+                linkDirection = self.links_shape_direction.findText(result[0][8])
+                self.links_shape_direction.setCurrentIndex(linkDirection)
+                linkCapacity = self.links_shape_capacity.findText(result[0][9])
+                self.links_shape_capacity.setCurrentIndex(linkCapacity)
+
+                nodeId = self.nodes_shape_fields.findText(result[0][11])
+                self.nodes_shape_fields.setCurrentIndex(nodeId)
+                nodeName = self.nodes_shape_name.findText(result[0][12])
+                self.nodes_shape_name.setCurrentIndex(nodeName)
+                nodeType = self.nodes_shape_type.findText(result[0][13])
+                self.nodes_shape_type.setCurrentIndex(nodeType)
+                nodeX = self.nodes_shape_x.findText(result[0][14])
+                self.nodes_shape_x.setCurrentIndex(nodeX)
+                nodeY = self.nodes_shape_y.findText(result[0][15])
+                self.nodes_shape_y.setCurrentIndex(nodeY)
+            else:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Empty database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+        except:
+            print("Read database error")
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
