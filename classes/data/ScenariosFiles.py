@@ -463,7 +463,7 @@ class ScenariosFiles():
         # 2.3
         trans_route_head =["No","'Name'","Oper","MinFreq","MaxFreq","Tartet Occ","MaxFleet","Scheduled"]
         qry_route = """select a.id, a.name, a.id_operator, a.frequency_from, 
-                    a.frequency_to, a.target_occ/100, a.max_fleet, a.follows_schedule
+                    a.frequency_to, 0.70, a.max_fleet, a.follows_schedule
                     from route a
                     where id_scenario = {} and used = 1""".format(id_scenario)
         result_route = self.dataBaseSqlite.executeSql(qry_route) 

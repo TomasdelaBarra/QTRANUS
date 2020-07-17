@@ -261,7 +261,11 @@ class TranusProject(object):
             self.model = Model.load(lines)
 
     def __str__(self):
-        return self.identification.name
+        try:
+            return self.identification.name
+        except Exception as e:
+            print("ERROR: Load plugin name")
+        
 
     def __repr__(self):
         return "<TranusProject: {0}>".format(self.identification)

@@ -19,3 +19,32 @@ class QTranusMessageBox(object):
             messagebox.setDetailedText(detailedText)
         
         return messagebox
+
+    @staticmethod
+    def set_new_message_box_base(messageIcon, windowTitle, message, windowIcon, buttons, detailedText = None):
+        """
+            @summary: Constructor
+        """
+        messagebox = QtWidgets.QMessageBox(messageIcon, windowTitle, message, buttons)
+        messagebox.setWindowIcon(QtGui.QIcon(windowIcon))
+        messagebox.resize(1200, 1200)
+        if detailedText:
+            messagebox.setDetailedText(detailedText)
+        
+        return messagebox
+    
+    @staticmethod
+    def set_new_message_box_confirm(messageIcon, windowTitle, message, windowIcon, buttons=None, detailedText = None):
+        """
+            @summary: Constructor
+        """
+        messagebox = QtWidgets.QMessageBox(messageIcon, windowTitle, message)
+        messagebox.setWindowIcon(QtGui.QIcon(windowIcon))
+        messagebox.resize(1200, 1200)
+        #messagebox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        if not buttons:
+            messagebox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        if detailedText:
+            messagebox.setDetailedText(detailedText)
+        
+        return messagebox

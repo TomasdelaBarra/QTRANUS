@@ -64,9 +64,13 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.zones_shape_id = parent.zones_shape_fields
         self.zones_shape_name = parent.zones_shape_name
         self.network_links_shape = parent.network_links_shape
+        self.links_shape_codscenario = parent.links_shape_codscenario
+        self.links_shape_origin = parent.links_shape_origin
+        self.links_shape_destination = parent.links_shape_destination
         self.links_shape_fields = parent.links_shape_fields
         self.links_shape_name = parent.links_shape_name
         self.links_shape_type = parent.links_shape_type
+        self.links_shape_length = parent.links_shape_length
         self.links_shape_direction = parent.links_shape_direction
         self.links_shape_capacity = parent.links_shape_capacity
         self.network_nodes_shape = parent.network_nodes_shape
@@ -115,10 +119,15 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.btn_zonal_data = self.findChild(QtWidgets.QPushButton, 'btn_zonal_data')
         self.btn_exogenous_trips = self.findChild(QtWidgets.QPushButton, 'btn_exogenous_trips')
         
-        """self.actn_scenarios = self.findChild(QtWidgets.QAction, 'actionScenarios')
+        """
+        self.actn_scenarios = self.findChild(QtWidgets.QAction, 'actionScenarios')
         self.actn_options = self.findChild(QtWidgets.QAction, 'actionOptions')
-        self.actn_zones = self.findChild(QtWidgets.QAction, 'actionZones')"""
+        self.actn_zones = self.findChild(QtWidgets.QAction, 'actionZones')
+        """
         self.actn_imp_network = self.findChild(QtWidgets.QAction, 'actionImportNetwork')
+        self.actn_overwrite_zones = self.findChild(QtWidgets.QAction, 'actionOverwriteZones')
+        self.actn_overwrite_nodes = self.findChild(QtWidgets.QAction, 'actionOverwriteNodes')
+        self.actn_overwrite_links = self.findChild(QtWidgets.QAction, 'actionOverwriteLinks')
         self.actn_generate_input_files = self.findChild(QtWidgets.QAction, 'actionGenerate_Input_Files')
         self.actn_generate_single_scenario = self.findChild(QtWidgets.QAction, 'actionGenerate_Single_Scenario')
         self.actn_ctl_scenario_definitions = self.findChild(QtWidgets.QAction, 'actionCTL_Scenario_Definitions')
@@ -156,7 +165,11 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_scenarios.triggered.connect(self.open_scenarios_window)
         self.actn_options.triggered.connect(self.open_configuration_window)
         self.actn_zones.triggered.connect(self.open_zones_window)"""
+
         self.actn_imp_network.triggered.connect(self.open_import_network)
+        self.actn_overwrite_zones.triggered.connect(self.open_overwrite_zones)
+        self.actn_overwrite_nodes.triggered.connect(self.open_overwrite_nodes)
+        self.actn_overwrite_links.triggered.connect(self.open_overwrite_links)
         self.actn_generate_input_files.triggered.connect(self.generate_input_files)
         self.actn_generate_single_scenario.triggered.connect(self.generate_single_scenario)
         self.actn_ctl_scenario_definitions.triggered.connect(self.generate_ctl_file)
@@ -171,10 +184,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_t1e_assignment_parameters.triggered.connect(self.generate_t1e_file)
 
         self.scenario_tree.clicked.connect(self.select_scenario)
-        #self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_db)
+
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
 
-        #self.scenario_tree.selectionChanged(item)
         if self.project_file[-13:]=="""\W_TRANUS.CTL""":
             self.project_file = self.project_file.replace('\W_TRANUS.CTL','')
 
@@ -186,6 +198,28 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.__validate_buttons()
         self.validate_database()
         
+
+    def network_data_fields(self):
+        links_shape_codscenario = self.links_shape_codscenario.currentText()
+        links_shape_origin = self.links_shape_origin.currentText()
+        links_shape_destination = self.links_shape_destination.currentText()
+        link_shape_id = self.links_shape_fields.currentText()
+        links_shape_name = self.links_shape_name.currentText()
+        links_shape_type = self.links_shape_type.currentText() 
+        links_shape_length = self.links_shape_length.currentText()
+        links_shape_direction = self.links_shape_direction.currentText()
+        links_shape_capacity = self.links_shape_capacity.currentText()
+        return dict(scenario=links_shape_codscenario, origin=links_shape_origin, destination=links_shape_destination, id=link_shape_id, name=links_shape_name, type=links_shape_type, 
+                    length=links_shape_length, direction=links_shape_direction, capacity=links_shape_capacity)
+
+    def node_data_fields(self):
+        nodes_shape_fields = self.nodes_shape_fields.currentText()
+        nodes_shape_name = self.nodes_shape_name.currentText()
+        nodes_shape_type = self.nodes_shape_type.currentText()
+        nodes_shape_x = self.nodes_shape_x.currentText()
+        nodes_shape_y = self.nodes_shape_y.currentText()
+        return dict(id=nodes_shape_fields, name=nodes_shape_name, typeNode=nodes_shape_type, x=nodes_shape_x, y=nodes_shape_y)
+
 
     def generate_input_files(self):
         result = self.dataBaseSqlite.selectAll(' scenario ')
@@ -365,11 +399,44 @@ class DataWindow(QMainWindow, FORM_CLASS):
         result = dialog.exec_()
 
 
+    def open_overwrite_nodes(self):
+        """
+            @summary: Opens data window
+        """
+        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite nodes data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        selected = messagebox.exec_()
+        
+        if selected == QtWidgets.QMessageBox.Yes:
+            self.__load_nodes_data("REPLACE")
+        
+
+    def open_overwrite_zones(self):
+        """
+            @summary: Opens data window
+        """
+        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite zones data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        selected = messagebox.exec_()
+
+        if selected == QtWidgets.QMessageBox.Yes:
+            self.__load_zones_data("REPLACE")
+        
+
+    def open_overwrite_links(self):
+        """
+            @summary: Opens data window
+        """
+        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite links data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        selected = messagebox.exec_()
+        
+        if selected == QtWidgets.QMessageBox.Yes:
+            self.__load_network_data("REPLACE")
+        
+
     def open_links_window(self):
         """
             @summary: Opens data window
         """
-        dialog = LinksDialog(self.project_file, self.scenarioCode, parent = self)
+        dialog = LinksDialog(self.project_file, self.scenarioCode, parent = self, networkShapeFields=self.network_data_fields())
         dialog.show()
         result = dialog.exec_()
 
@@ -377,7 +444,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = NodesDialog(self.project_file, self.scenarioCode, parent = self)
+        dialog = NodesDialog(self.project_file, self.scenarioCode, parent = self, nodeShapeFields=self.node_data_fields())
         dialog.show()
         result = dialog.exec_()
     
@@ -585,7 +652,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
             
 
 
-    def __load_zones_data(self):
+    def __load_zones_data(self, typeSql="IGNORE"):
         shape = self.zone_shape.text()
         layer = QgsVectorLayer(shape, 'Zonas', 'ogr')
 
@@ -609,14 +676,19 @@ class DataWindow(QMainWindow, FORM_CLASS):
                     zoneId = feature.attribute(zoneIdField)
                     zoneName = feature.attribute(zoneNameField) if feature.attribute(zoneNameField) else None
                     result = self.dataBaseSqlite.selectAll('zone', " where id = {}".format(zoneId))
-                    if not (isinstance(zoneId, QVariant) and zoneId.isNull()):
+                    if typeSql == 'IGNORE':
+                        if not (isinstance(zoneId, QVariant) and zoneId.isNull()):
+                            if re.findall(r'\d+',str(zoneId)):
+                                if len(result) == 0:
+                                    data_list.append((zoneId, zoneName))
+                            else:
+                                raise ExceptionFormatID(zoneId, typeFile='Import error in Zone shape file')
+                    elif typeSql == 'REPLACE':
                         if re.findall(r'\d+',str(zoneId)):
-                            if len(result) == 0:
-                                data_list.append((zoneId, zoneName))
-                        else:
-                            raise ExceptionFormatID(zoneId, typeFile='Import error in Zone shape file')
-
-                self.dataBaseSqlite.addZoneFFShape(data_list)
+                            data_list.append((zoneId, zoneName))
+                        #else:
+                        #    raise ExceptionFormatID(zoneId, typeFile='Import error in Zone shape file')                     
+                self.dataBaseSqlite.addZoneFFShape(data_list, typeSql=typeSql)
 
                 return True
         except Exception as e:
@@ -626,7 +698,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
 
 
-    def __load_network_data(self):
+    def __load_network_data(self, typeSql='IGNORE'):
         shape = self.network_links_shape.text()
         layer = QgsVectorLayer(shape, 'Network_Links', 'ogr')
         result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
@@ -644,41 +716,47 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 data_list = []
                 for feature in layer.getFeatures():
                     
+                    scenarioField = self.links_shape_codscenario.currentText()
                     linkIdField = self.links_shape_fields.currentText()
                     linkNameField = self.links_shape_name.currentText()
                     typeField = self.links_shape_type.currentText()
+                    lengthField = self.links_shape_length.currentText()
                     directionField = self.links_shape_direction.currentText()
                     capacityField = self.links_shape_capacity.currentText()
-                   
+                    
                     linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
                     # print(linkId.typeName())
                     if not (isinstance(linkId, QVariant) and linkId.isNull()): 
                         if re.findall(r'\d+-\d+',linkId):
-                           
+                            
                             Or_node = linkId.split('-')[0]
                             Des_node = linkId.split('-')[1]
                             name = feature.attribute(linkNameField) if linkNameField != 'Select' else None
+                            codScenario = feature.attribute(scenarioField) if scenarioField != 'Select' else None
                             idType = feature.attribute(typeField) if typeField != 'Select' else None
                             two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
+                            length = feature.attribute(lengthField) if lengthField != 'Select' else None
                             capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
 
                             # Optional parameter
+                            codScenario = None if isinstance(codScenario, QVariant) else codScenario
                             name = None if isinstance(name, QVariant) and name.isNull() else name
                             resultOrNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Or_node}")
                             resultDesNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Des_node}")
                             name = None if isinstance(name, QVariant) else name
                             idType = None if isinstance(idType, QVariant) else idType
+                            length = None if isinstance(length, QVariant) else length
                             two_way = None if isinstance(two_way, QVariant) else two_way
                             capacity = None if isinstance(capacity, QVariant) else capacity
-
                             if resultOrNode and resultDesNode:
-                                data_list.append((f"{Or_node}-{Des_node}", Or_node, Des_node, idType, two_way, capacity, name))
+                                data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
                         else:
                             raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')
                                 
                 qry = """select 
-                        distinct linkid, node_from, node_to, id_linktype, two_way, capacity, name
-                        from link"""
+                        distinct b.code, linkid, node_from, node_to, id_linktype, length, two_way, capacity, a.name
+                        from link a
+                        join scenario b on (a.id_scenario = b.id)"""
 
                 result = self.dataBaseSqlite.executeSql(qry)
 
@@ -686,21 +764,27 @@ class DataWindow(QMainWindow, FORM_CLASS):
                     resultList = list(set(data_list) - set(result))
                 else:
                     resultList = list(set(result) - set(data_list))
-                
-                self.dataBaseSqlite.addLinkFFShape(scenarios_arr, resultList)
+
+                if typeSql=='REPLACE':
+                    # self.dataBaseSqlite.executeDML('delete from link')
+                    resultList = data_list
+
+                self.dataBaseSqlite.addLinkFFShape(scenarios_arr, resultList, typeSql=typeSql)
 
                 return True
         except ExceptionFormatID as e:
+            print("Error: ", e)
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
         except Exception as e:
+            print("Error: ", e)
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in network Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
 
 
-    def __load_nodes_data(self):
+    def __load_nodes_data(self, typeSql="IGNORE"):
         shape = self.network_nodes_shape.text()
         layer = QgsVectorLayer(shape, 'Network_Nodes', 'ogr')
         result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
@@ -734,7 +818,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                                 data_list.append((_id, x, y, id_type, name, description))
                             else:
                                 raise ExceptionFormatID(_id, typeFile='Import error in Nodes shape file')
-                    self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list)
+                    self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list, typeSql=typeSql)
 
                     return True
         except ExceptionFormatID as e:

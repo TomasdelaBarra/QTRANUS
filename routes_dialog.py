@@ -5,6 +5,7 @@ from string import *
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
@@ -50,6 +51,7 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_route_btn = self.findChild(QtWidgets.QPushButton, 'add_route_btn')
         self.show_used_btn = self.findChild(QtWidgets.QPushButton, 'show_used')
         self.show_changed_btn = self.findChild(QtWidgets.QPushButton, 'show_changed')
+        
         
         # Control Actions
         self.help.clicked.connect(self.open_help)
@@ -102,10 +104,10 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
 
         id_scenario = self.idScenario
         scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
-        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        id_scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
         indexes = self.routes_tree.selectedIndexes()
-        routeSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
+        routeSelected = indexes[1].model().itemFromIndex(indexes[1]).text()
 
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Route')
         remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Route')
@@ -122,16 +124,16 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_routes_data()
         if opt == remove:
-            scenarios = [str(value[0]) for value in scenarios]
+            scenarios = [str(value[0]) for value in id_scenarios]
             scenarios = ','.join(scenarios)
             validation, routes = self.dataBaseSqlite.validateRemoveRoutes(routeSelected, scenarios)
-             
+            print(validation, routes)
             if validation == False:
                 routes = tabulate(routes, headers=["Scenario Code", "Link Id"])  if routes else ''
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {routes}")
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can't remove elements \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {routes}")
                 messagebox.exec_()
             else:
-                self.dataBaseSqlite.removeRoute(scenarios, routeSelected)
+                self.dataBaseSqlite.removeRoute(id_scenarios, routeSelected)
                 self.__get_routes_data()
             
             
@@ -178,20 +180,24 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
     def __get_routes_data(self):
 
         if self.idScenario:
-            qry = """select a.id, a.name, a.description 
+            qry = """select a.color, a.id, a.name, a.description 
                      from route a
-                     where id_scenario = %s order by 1 asc """ % (self.idScenario)
+                     where id_scenario = %s order by 2 asc """ % (self.idScenario)
             result = self.dataBaseSqlite.executeSql(qry)
         else:
             result = self.dataBaseSqlite.selectAll('route', columns='id, name, description')
 
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Id','Name', 'Description'])
+        model.setHorizontalHeaderLabels(['Color', 'Id','Name', 'Description'])
         for x in range(0, len(result)):
             model.insertRow(x)
             z=0
             for y in range(0,3):
-                model.setData(model.index(x, y), result[x][z])
+                # model.setData(model.index(x, y), result[x][z])
+                if y == 0:
+                    model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+                else:
+                    model.setData(model.index(x, y), result[x][z])
                 z+=1
         self.routes_tree.setModel(model)
         self.routes_tree.setColumnWidth(0, QtWidgets.QHeaderView.Stretch)

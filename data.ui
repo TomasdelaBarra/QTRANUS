@@ -328,7 +328,16 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string>Overwrite Shapes Files Data</string>
+     </property>
+     <addaction name="actionOverwriteZones"/>
+     <addaction name="actionOverwriteNodes"/>
+     <addaction name="actionOverwriteLinks"/>
+    </widget>
     <addaction name="actionImportNetwork"/>
+    <addaction name="menu"/>
    </widget>
    <addaction name="menuProject"/>
    <addaction name="menuFiles"/>
@@ -427,6 +436,21 @@
   <action name="actionImportNetwork">
    <property name="text">
     <string>Import Network...</string>
+   </property>
+  </action>
+  <action name="actionOverwriteZones">
+   <property name="text">
+    <string>Zones</string>
+   </property>
+  </action>
+  <action name="actionOverwriteNodes">
+   <property name="text">
+    <string>Node</string>
+   </property>
+  </action>
+  <action name="actionOverwriteLinks">
+   <property name="text">
+    <string>Links</string>
    </property>
   </action>
  </widget>

@@ -47,6 +47,9 @@ class DataBaseSqlite():
 				zone_shape_file_id   TEXT,
 				zone_shape_file_name   TEXT,
 				link_shape_file      TEXT,
+				link_shape_file_codscenario   TEXT,
+				link_shape_file_origin   TEXT,
+				link_shape_file_destination   TEXT,
 				link_shape_file_id   TEXT,
 				link_shape_file_name   TEXT,
 				link_shape_file_type   TEXT,
@@ -252,7 +255,8 @@ class DataBaseSqlite():
 				target_occ     REAL,
 				max_fleet      REAL,
 				used 		   BLOB,
-				follows_schedule BLOB	
+				follows_schedule BLOB,
+				color          INTEGER	
 			);
 			""",
 			"""
@@ -343,7 +347,9 @@ class DataBaseSqlite():
 			);
 			"""]
 	
-		indexes = ["""CREATE UNIQUE INDEX if NOT EXISTS idx_link_linkid_id_scenario 
+		indexes = ["""CREATE UNIQUE INDEX if NOT EXISTS idx_zone_id 
+					ON zone (id);""",
+					"""CREATE UNIQUE INDEX if NOT EXISTS idx_link_linkid_id_scenario 
 					ON link (id_scenario, linkid);""",
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_node_id_id_scenario 
 					ON node (id_scenario, id);""",
@@ -369,8 +375,8 @@ class DataBaseSqlite():
 				   ON link_type (id, id_scenario);""",
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_link_linkid_id_scenario
 				   ON link (linkid, id_scenario);""",
-				   """CREATE UNIQUE INDEX if NOT EXISTS idx_exogenoustrip_id_from_to_id_scenario
-				   ON exogenous_trips (id_scenario, id_zone_from, id_zone_to);""",
+				   """CREATE UNIQUE INDEX if NOT EXISTS idx_exogenoustrip_id_from_to_id_scenario_id_category
+				   ON exogenous_trips (id_scenario, id_zone_from, id_zone_to, id_category);""",
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_sector_id_id_scenario
 				   ON sector (id, id_scenario);""",
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_intersector_id_scenario_id_sector_id_input_sector
@@ -412,12 +418,13 @@ class DataBaseSqlite():
 	def insertBaseParameters(self, dataList):
 		conn = self.connectionSqlite()
 		sql = f"""select count(*) from project_files"""
-		
+
 		data = conn.execute(sql)
 		result = data.fetchall()
 		if result[0][0]>0:
 			sql = f""" update project_files set zone_shape_file = '{dataList['zone_shape_file']}', zone_shape_file_id =  '{dataList['zone_shape_file_id']}', zone_shape_file_name = '{dataList['zone_shape_file_name']}',
-				link_shape_file = '{dataList['link_shape_file']}', link_shape_file_id = '{dataList['link_shape_file_id']}', link_shape_file_name = '{dataList['link_shape_file_name']}',
+				link_shape_file = '{dataList['link_shape_file']}', link_shape_file_origin = '{dataList['link_shape_file_origin']}', link_shape_file_destination = '{dataList['link_shape_file_destination']}', 
+				link_shape_file_codscenario = '{dataList['link_shape_file_codscenario']}', link_shape_file_id = '{dataList['link_shape_file_id']}', link_shape_file_name = '{dataList['link_shape_file_name']}',
 				link_shape_file_type = '{dataList['link_shape_file_type']}', link_shape_file_length = '{dataList['link_shape_file_length']}', link_shape_file_direction = '{dataList['link_shape_file_direction']}',
 				link_shape_file_capacity = '{dataList['link_shape_file_capacity']}',
 				node_shape_file = '{dataList['node_shape_file']}', node_shape_file_id = '{dataList['node_shape_file_id']}', 
@@ -425,12 +432,12 @@ class DataBaseSqlite():
 				node_shape_file_x = '{dataList['node_shape_file_x']}', node_shape_file_y = '{dataList['node_shape_file_y']}'"""
 		else:
 			sql = f""" insert into project_files (zone_shape_file, zone_shape_file_id, zone_shape_file_name, link_shape_file, 
-				link_shape_file_id, link_shape_file_name, link_shape_file_type, link_shape_file_length, link_shape_file_direction, 
+				link_shape_file_codscenario, link_shape_file_origin, link_shape_file_destination, link_shape_file_id, link_shape_file_name, link_shape_file_type, link_shape_file_length, link_shape_file_direction, 
 				link_shape_file_capacity, node_shape_file, node_shape_file_id, node_shape_file_name, node_shape_file_type,
 				node_shape_file_x, node_shape_file_y) values (
 				'{dataList['zone_shape_file']}','{dataList['zone_shape_file_id']}','{dataList['zone_shape_file_name']}',
-				'{dataList['link_shape_file']}','{dataList['link_shape_file_id']}','{dataList['link_shape_file_name']}',
-				'{dataList['link_shape_file_type']}','{dataList['link_shape_file_length']}','{dataList['link_shape_file_direction']}',
+				'{dataList['link_shape_file']}','{dataList['link_shape_file_codscenario']}','{dataList['link_shape_file_origin']}','{dataList['link_shape_file_destination']}','{dataList['link_shape_file_id']}',
+				'{dataList['link_shape_file_name']}','{dataList['link_shape_file_type']}','{dataList['link_shape_file_length']}','{dataList['link_shape_file_direction']}',
 				'{dataList['link_shape_file_capacity']}','{dataList['node_shape_file']}','{dataList['node_shape_file_id']}',
 				'{dataList['node_shape_file_name']}','{dataList['node_shape_file_type']}','{dataList['node_shape_file_x']}', 
 				'{dataList['node_shape_file_y']}')"""
@@ -778,21 +785,54 @@ class DataBaseSqlite():
 		else: 
 			return False
 
-	def addExogenousData(self, scenarios, id_zone_from, id_zone_to, id_mode, id_category, column=None, value=None):
+	def addExogenousData(self, scenarios, id_zone_from, id_zone_to, id_category, column=None, value=None):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
 		for valor in scenarios:
 			sql = "insert into exogenous_trips \
-				(id_scenario, id_zone_from, id_zone_to, id_category, id_mode,  {5}) \
-				values ({0},{1},{2},{3},{4},{6});".format(valor[0], id_zone_from, id_zone_to, id_category, id_mode, column, value)
-			
+				(id_scenario, id_zone_from, id_zone_to, id_category, {4}) \
+				values ({0},{1},{2},{3},{5});".format(valor[0], id_zone_from, id_zone_to, id_category, column, value)
+		
 			cursor.execute(sql)
 			conn.commit()
 
 		conn.close()
 		return True
 
+	
+	def add_route_link(self, scenarios, links_list):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql = """INSERT OR REPLACE INTO  link_route (id_scenario, id_link, id_route, type_route) 
+			VALUES (?, ?, ?, ?)"""
+		sql_arr = []
+
+		for id_scenario in scenarios:		
+			for link in links_list:
+				sql_arr.append((id_scenario[0], link[0], link[1], link[2]))
+
+		cursor.executemany(sql, sql_arr)
+		conn.commit()			
+		conn.close()
+		return True
+
+	
+	def remove_route_link(self, scenarios, links_list):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		for scenario in scenarios:
+			for link in links_list:
+				sql = f"""delete from link_route 
+					where id_scenario = {scenario[0]} and id_route = {link[1]} and id_link = '{link[0]}'"""
+				cursor.execute(sql)
+				conn.commit()
+		
+		conn.close()
+		return True
+		
 
 	def addLinkFDialog(self, scenarios, id_origin, id_destination, id_linktype, name, description, two_way, used_in_scenario, length, capacity, delay, id_routes_arr_selected, turns_delays_arr):
 		conn = self.connectionSqlite()
@@ -962,7 +1002,21 @@ class DataBaseSqlite():
 							conn.commit()
 
 		return True
-		
+						
+
+	def updateLinkFShape(self, scenarios, linkId, column, value):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		columns_values = ''
+
+		for id_scenario in scenarios:
+			sql = f"""update link set {column}='{value}'
+					 where linkid = '{linkId}' and id_scenario = {id_scenario[0]}"""
+
+			cursor.execute(sql)
+			conn.commit()
+
+
 	def removeLink(self, scenarios, linkid):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
@@ -999,18 +1053,18 @@ class DataBaseSqlite():
 		return True
 
 
-	def updateExogenousData(self, id_scenario, id_zone_from, id_zone_to, id_mode, id_category, column=None, value=None):
+	def updateExogenousData(self, id_scenario, id_zone_from, id_zone_to, id_category, column=None, value=None):
 		
 		if value !='':
 			sql = """
-				update exogenous_trips set {5}={6}
-				where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_mode={3} and id_category={4} ;
-				""".format(id_scenario, id_zone_from, id_zone_to, id_mode, id_category, column, value)
+				update exogenous_trips set {4}={5}
+				where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_category={3} ;
+				""".format(id_scenario, id_zone_from, id_zone_to, id_category, column, value)
 		else: 
 			sql = """
 				delete from exogenous_trips
-				where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_mode={3} and id_category={4} ;
-				""".format(id_scenario, id_zone_from, id_zone_to, id_mode, id_category)	
+				where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_category={3} ;
+				""".format(id_scenario, id_zone_from, id_zone_to, id_category)	
 
 		try:
 			conn = self.connectionSqlite()
@@ -1021,6 +1075,26 @@ class DataBaseSqlite():
 			return True
 		except Exception as e:
 			return False
+
+
+	def bulkLoadExogenousTrips(self, scenarios, data_arr):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql_arr_trips = []
+
+		sql_exogenous = f"""INSERT OR REPLACE INTO exogenous_trips ( id_scenario, id_zone_from, id_zone_to, id_category, trip) 
+			VALUES (?, ?, ?, ?, ?)"""
+ 		
+		for id_scenario in scenarios:
+			for row in data_arr:
+				sql_arr_trips.append((id_scenario[0], row[0], row[1], row[2], row[3]))
+
+		cursor.executemany(sql_exogenous, sql_arr_trips)
+
+		conn.commit()			
+		conn.close()
+
 
 
 	def addScenario(self, code, name, cod_previous=''):
@@ -1118,15 +1192,15 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def addRoute(self, scenarios, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used=None, follows_schedule=None):
+	def addRoute(self, scenarios, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, color, used=None, follows_schedule=None):
 		#try:
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
 		try:
 			for id_scenario in scenarios:
-				sql = """insert into route (id, id_scenario, name, description, id_operator, frequency_from, frequency_to, max_fleet,  target_occ, used, follows_schedule)
-			 	values ({},{},'{}','{}',{},{},{},{},{},{},{});""".format(id, id_scenario[0], name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used, follows_schedule)
+				sql = """insert into route (id, id_scenario, name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color)
+			 	values ({},{},'{}','{}',{},{},{},{},{},{},{});""".format(id, id_scenario[0], name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color)
 				
 				cursor.execute(sql)
 				conn.commit()
@@ -1155,13 +1229,13 @@ class DataBaseSqlite():
 		return True
 		
 
-	def updateRoute(self, scenarios, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used=None, follows_schedule=None):
+	def updateRoute(self, scenarios, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, color, used=None, follows_schedule=None):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
 		for id_scenario in scenarios:
-			sql = """update route set name='{}', description='{}', id_operator={}, frequency_from={}, frequency_to={}, max_fleet={}, target_occ={}, used={}, follows_schedule={}
-				where id={} and id_scenario = {}""".format(name, description, id_operator, frequency_from, frequency_to, max_fleet, target_occ, used, follows_schedule, id, id_scenario[0])
+			sql = """update route set name='{}', description='{}', id_operator={}, frequency_from={}, frequency_to={}, max_fleet={},  used={}, follows_schedule={}, color={}
+				where id={} and id_scenario = {}""".format(name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color, id, id_scenario[0])
 			cursor.execute(sql)
 			conn.commit()
 
@@ -1199,13 +1273,12 @@ class DataBaseSqlite():
 		return True	
 
 
-	def addZoneFFShape(self, data_list):
+	def addZoneFFShape(self, data_list, typeSql='IGNORE'):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		sql_arr = []
-		sql = """INSERT OR REPLACE INTO zone (id, name) 
+		sql = """INSERT OR """+str(typeSql)+""" INTO zone (id, name) 
 			values (?, ?);"""
-
 		for row in data_list:
 			sql_arr.append((row[0], row[1]))
 		
@@ -1244,20 +1317,34 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	def addLinkFFShape(self, scenarios, data_list):
+
+	def addLinkFFShape(self, scenarios, data_list, typeSql='IGNORE'):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		sql_arr = []
-		sql = """INSERT OR IGNORE INTO link (id_scenario, linkid, node_from, node_to, id_linktype, two_way, capacity, name) 
-			values (?, ?, ?, ?, ?, ?, ?, ?);"""
-		
+
+		sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name) 
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
+
+		if typeSql=='REPLACE':
+			sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name, used_in_scenario) 
+				values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
 		for row in data_list:
+			scenarios = self.selectAllScenarios(row[0], columns='id')
+			
 			for id_scenario in scenarios:
-				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
+				if typeSql=='REPLACE':
+					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], row[8], 1))
+				else:
+					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], str(row[8])))
+		
 		cursor.executemany(sql, sql_arr)
 		conn.commit()
 		conn.close()
 		return True
+
 
 	def truncateLinkTable(self):
 		conn = self.connectionSqlite()
@@ -1271,46 +1358,49 @@ class DataBaseSqlite():
 		return True
 
 	def addNode(self, scenarios, _id, id_type, name, description, x, y):
-		conn = self.connectionSqlite()
-		cursor = conn.cursor()
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
 
-		column = 'id'
-		value = "%s " % _id
+			column = 'id'
+			value = "%s " % _id
+			
+			if id_type:
+				column += ", id_type"
+				value += ", %s" % id_type
+			if name:
+				column += ", name"
+				value += ", '%s'" % name
+			if description:
+				column += ", description"
+				value += ", '%s'" % description
+			if x:
+				column += ", x"
+				value += ", %s" % x
+			if y:
+				column += ", y"
+				value += ", %s" % y
+
+			for id_scenario in scenarios:
+				sql = "insert into node ({}, id_scenario) values ({}, {});".format(column, value, id_scenario[0])
+				cursor.execute(sql)
+				conn.commit()
+
+			conn.close()
+			return True
+		except Exception as e:
+			return False
 		
-		if id_type:
-			column += ", id_type"
-			value += ", %s" % id_type
-		if name:
-			column += ", name"
-			value += ", '%s'" % name
-		if description:
-			column += ", description"
-			value += ", '%s'" % description
-		if x:
-			column += ", x"
-			value += ", %s" % x
-		if y:
-			column += ", y"
-			value += ", %s" % y
-
-		for id_scenario in scenarios:
-			sql = "insert into node (id_scenario, {}) values ({}, {});".format(column, value, id_scenario[0])
-		
-			cursor.execute(sql)
-			conn.commit()
-
-		conn.close()
-		return True
 
 
-	def addNodeFShape(self, scenarios, data_list):
+	def addNodeFShape(self, scenarios, data_list, typeSql="IGNORE"):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		sql_arr = []
 
-		sql = """INSERT OR REPLACE INTO node (id_scenario, id, x, y, id_type, name, description) 
+		sql = """INSERT OR """+str(typeSql)+""" INTO node (id_scenario, id, x, y, id_type, name, description) 
 			values (?, ?, ?, ?, ?, ?, ?);"""
-
+			
 		for row in data_list:
 			for id_scenario in scenarios:
 				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
@@ -1373,7 +1463,7 @@ class DataBaseSqlite():
 		
 		for id_scenario in scenarios:
 			sql = "delete from node where id={} and id_scenario = {};".format(_id, id_scenario[0])
-		
+			print(sql)
 			cursor.execute(sql)
 			conn.commit()
 		conn.close()
@@ -2504,6 +2594,18 @@ class DataBaseSqlite():
 		try:
 			data = conn.execute(sql)
 			result = data.fetchall()
+			conn.close()
+			return result
+		except Exception as e:
+			return False
+
+
+	def executeDML(self,sql):
+		try:
+			data = conn.execute(sql)
+			cursor = conn.cursor()
+			cursor.execute(sql)
+			conn.commit()
 			conn.close()
 			return result
 		except Exception as e:

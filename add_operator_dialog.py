@@ -404,7 +404,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		
 		operator_result = self.dataBaseSqlite.selectAll(' operator ', " where id = {} and id_scenario = {}".format(self.operatorSelected, self.idScenario))
 		if operator_result and self.operatorSelected:
-
+			
 			self.id.setText(str(operator_result[0][0]))
 			self.name.setText(str(operator_result[0][2]))
 			self.description.setText(str(operator_result[0][3]))
@@ -412,7 +412,8 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			indexMode = self.cb_mode.findText(self.dataBaseSqlite.selectAll(' mode ', ' where id = {}'.format(operator_result[0][4]))[0][1], Qt.MatchFixedString)
 			self.cb_mode.setCurrentIndex(indexMode)
 
-			self.cb_type.itemData(operator_result[0][5])
+			indexType = self.cb_type.findText(types[operator_result[0][5]-1])
+			self.cb_type.setCurrentIndex(indexType)
 
 			self.basics_modal_constant.setText(Helpers.decimalFormat(str(operator_result[0][6])))
 			self.basics_occupency.setText(Helpers.decimalFormat(str(operator_result[0][7])))
@@ -565,7 +566,6 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			operator_only
 			where category not in (select category from base)""".format(operatorSql, self.idScenario)
 		
-		print(sql)
 		result_cat = self.dataBaseSqlite.executeSql(sql) 
 		result_cat_prev = ''
 		if id_prevScenario and self.operatorSelected:

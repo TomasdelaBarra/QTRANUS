@@ -3,8 +3,10 @@ import numpy as np
 
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
-from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint
+from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest, QgsPointXY
 
 from ..general.FileManagement import FileManagement as FileMXML
 from ..general.Helpers import Helpers as HP
@@ -560,7 +562,8 @@ class Network(object):
         return True
 
     @staticmethod
-    def addLinkFeatureShape(layerId, originPoint, destinationPoint, originIdNode, destinationIdNode, twoWay=0):
+    def addLinkFeatureShape(layerId, originPoint, destinationPoint, scenarioCode, linkId, name, fromNode, toNode, idType, length, direction, capacity, networkShapeFields=None):
+        
         """
             @summary: Build link to Shape Network
             @param originPoint: Layer name
@@ -569,15 +572,31 @@ class Network(object):
             @type destinationPoint: QgsPointXY
             @param originIdNode: Origin Node
             @type originIdNode: Integer
-            @param destinationIdNode: Destination Node
+            @destinationIdNode: Destination Node
             @type destinationIdNode: Integer
             @param twoWay: Flag to mark two-way links
             @type twoWay: Integer
             @return: Result of the layer creation
         """
         try:
+            if not networkShapeFields:
+                raise Exception("networkShapeFields is None")
+
             project = QgsProject.instance()
             layer = project.mapLayer(layerId)
+            fields = [value.name() for value in layer.fields()]
+            values = [None] * len(fields)
+            
+            values[fields.index(networkShapeFields['scenario'])] = scenarioCode
+            values[fields.index(networkShapeFields['name'])] = name
+            values[fields.index(networkShapeFields['id'])] = linkId
+            values[fields.index(networkShapeFields['origin'])] = fromNode
+            values[fields.index(networkShapeFields['destination'])] = toNode
+            values[fields.index(networkShapeFields['type'])] = idType
+            values[fields.index(networkShapeFields['length'])] = length
+            values[fields.index(networkShapeFields['direction'])] = direction
+            values[fields.index(networkShapeFields['capacity'])] = capacity
+
             layer.startEditing()
 
             geom = QgsGeometry()
@@ -585,19 +604,108 @@ class Network(object):
 
             feat = QgsFeature()
             feat.setGeometry(geom)
-            feat.setAttributes([f'{originIdNode}-{destinationIdNode}', originIdNode, destinationIdNode])
+            #feat.setAttributes([f'name',f'{originIdNode}-{destinationIdNode}', originIdNode, destinationIdNode])
+            feat.setAttributes(values)
 
             layer.dataProvider().addFeature(feat)
-            if twoWay:
+
+            if direction:
                 geom = QgsGeometry()
                 geom.addPoints([QgsPoint(destinationPoint), QgsPoint(originPoint)], QgsWkbTypes.LineGeometry)
-
+                values[fields.index(networkShapeFields['id'])] = f'{toNode}-{fromNode}'
                 feat = QgsFeature()
                 feat.setGeometry(geom)
-                feat.setAttributes([f'{destinationIdNode}-{originIdNode}', destinationIdNode, originIdNode])            
+                feat.setAttributes(values)            
                 layer.dataProvider().addFeature(feat)
 
             layer.commitChanges()
             return True
+        except:
+            return False
+
+
+    @staticmethod
+    def updateLinkFeatureShape(layerId, scenarioCode, linkId, name, fromNode, toNode, idType, length, direction, capacity, networkShapeFields=None):
+        
+        """
+            @summary: Build link to Shape Network
+            @param originPoint: Layer name
+            @type originPoint: QgsPointXY
+            @param destinationPoint: Layer name
+            @type destinationPoint: QgsPointXY
+            @param originIdNode: Origin Node
+            @type originIdNode: Integer
+            @destinationIdNode: Destination Node
+            @type destinationIdNode: Integer
+            @param twoWay: Flag to mark two-way links
+            @type twoWay: Integer
+            @return: Result of the layer creation
+        """
+        try:
+        
+            if not networkShapeFields:
+                return False
+                raise Exception("networkShapeFields is None")
+
+            project = QgsProject.instance()
+            layer = project.mapLayer(layerId)
+            fields = [value.name() for value in layer.fields()]
+            values = [None] * len(fields)
+
+            features = layer.getFeatures(QgsFeatureRequest().setFilterExpression(f"linkID = '{linkId}'"))
+            features = list(features)
+
+            layer.startEditing()
+            #layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['scenario']), scenarioCode)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['name']), name)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['id']), linkId)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['origin']), fromNode)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['destination']), toNode)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['type']), idType)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['length']), length)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['direction']), direction)
+            layer.changeAttributeValue(features[0].id(), fields.index(networkShapeFields['capacity']), capacity)
+            layer.commitChanges()
+
+            return True
+        except:
+            return False
+
+
+    @staticmethod
+    def deleteLinkFeatureShape(layerId, scenarioCode, linkId, networkShapeFields=None):
+        
+        """
+            @summary: Build link to Shape Network
+            @param originPoint: Layer name
+            @type originPoint: QgsPointXY
+            @param destinationPoint: Layer name
+            @type destinationPoint: QgsPointXY
+            @param originIdNode: Origin Node
+            @type originIdNode: Integer
+            @destinationIdNode: Destination Node
+            @type destinationIdNode: Integer
+            @param twoWay: Flag to mark two-way links
+            @type twoWay: Integer
+            @return: Result of the layer creation
+        """
+        try:
+
+            project = QgsProject.instance()
+            layer = project.mapLayer(layerId)
+            fields = [value.name() for value in layer.fields()]
+            values = [None] * len(fields)
+
+            features = layer.getFeatures(QgsFeatureRequest().setFilterExpression(f"{networkShapeFields['id']} = '{linkId}'"))
+            feature = list(features)
+
+            layer.startEditing()
+            result = layer.dataProvider().deleteFeatures([feature[0].id()])
+            layer.commitChanges()
+            
+            if result:
+                return True
+            else:
+                return False    
         except:
             return False

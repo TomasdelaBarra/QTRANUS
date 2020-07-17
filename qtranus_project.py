@@ -44,6 +44,7 @@ class QTranusProject(object):
         self.map_data = MapData()
         self.shape = None
         self.zonesIdFieldName = None
+        self.links_shape_field_id = None
         self.network_model = Network()
         self.centroids_file_path = None
         self.network_link_shape_path = None
@@ -101,7 +102,11 @@ class QTranusProject(object):
         """
         config = self.proj.customVariables()
         layers = self.proj.mapLayers()
-        projectPath = config['project_qtranus_folder'] or None
+        # If not exist config['project_qtranus_folder']
+        try:
+            projectPath = config['project_qtranus_folder'] or None
+        except:
+            projectPath = None
 
         if FileMXML.if_exist_xml_layers(projectPath):
             self.load_tranus_folder(projectPath)
@@ -1066,10 +1071,9 @@ class QTranusProject(object):
     
     def load_zones_shape(self, shape):
         """
-            @summary: Loads zone shape
+            @summary: Loads zone shape 0 Point, 1 Polyline, 2 Polygons
             @param shape: Path
             @type shape: String
-            geometryType: 0 Point, 1 Polyline, 2 Polygons
         """
         self.shape = shape
 
@@ -1211,8 +1215,8 @@ class QTranusProject(object):
                 self.networkDPFeatures.append((value.id(), value.attributes()[0]))    
 
             #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
-            self.networkLayer[0].committedFeaturesRemoved.connect(self.featuresDeletedFunct)
-            self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
+            #self.networkLayer[0].committedFeaturesRemoved.connect(self.featuresDeletedFunct)
+            #self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
 
         return True, network_shape_fields
 
@@ -1240,7 +1244,8 @@ class QTranusProject(object):
 
 
     def featuresAddedFunct(self, featuresList):
-        print("In fewtures Added")
+        a=1
+        #print("In fewtures Added")
 
         
         
@@ -1254,6 +1259,7 @@ class QTranusProject(object):
             return list(filter(lambda x: x!= False, result))[0]
         except:
             return False
+
 
     def load_network_nodes_shape_file(self, file_path):
         self.network_nodes_shape_path = file_path

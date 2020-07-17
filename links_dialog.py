@@ -15,6 +15,7 @@ from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.network.Network import Network
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_link_dialog import AddLinkDialog
 
@@ -23,7 +24,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None):
+    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None, networkShapeFields=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -38,6 +39,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioSelectedIndex = scenarioSelectedIndex
         self.scenarioCode = scenarioCode
         self.idScenario = None
+        self.network_shape_fields = networkShapeFields if networkShapeFields else None
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], resolution_dict['height'])
         self.networkDPFeatures = []
@@ -84,6 +86,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         self.add_link_btn.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         self.btn_search.setIcon(QIcon(self.plugin_dir+"/icons/search.svg"))
         self.btn_search.setToolTip("Search Link ID")
+        
 
     def __search_link(self):
         le_searchTxt = self.le_search.text()
@@ -131,7 +134,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             else:
-                dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeLink=linkSelected)
+                dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeLink=linkSelected, networkShapeFields=self.network_shape_fields)
                 dialog.show()
                 result = dialog.exec_()
                 self.__get_links_data()
@@ -144,8 +147,16 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
 
             resultLink = self.dataBaseSqlite.selectAll( ' link ', where=f" linkid = '{linkSelected}' ")
 
-            if not resultLink:
-                if not self.deleteLinkShape(linkSelected):
+            if not resultLink:   
+                try:
+                    project = QgsProject.instance()
+                    layerIds = [layer.id() for layer in project.mapLayers().values()]
+                    layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]    
+                    
+                    if not Network.deleteLinkFeatureShape(layerNetId, scenario_code, linkSelected, networkShapeFields=self.network_shape_fields):
+                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                        messagebox.exec_()
+                except:
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                     messagebox.exec_()
 
@@ -154,28 +165,28 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def deleteLinkShape(self, linkId):
         
-        try:
+        #try:
 
-            self.networkLayer = QgsProject.instance().mapLayersByName("Network_Links")
-            #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
-            if self.networkLayer:
-                # print(" Estoy dentro del link ")
-                self.networkLayer[0]
-                for value in self.networkLayer[0].dataProvider().getFeatures():
-                    self.networkDPFeatures.append((value.id(), str(value.attributes()[0])))   
+        self.networkLayer = QgsProject.instance().mapLayersByName("Network_Links")
+        #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
+        if self.networkLayer:
+            # print(" Estoy dentro del link ")
+            self.networkLayer[0]
+            for value in self.networkLayer[0].dataProvider().getFeatures():
+                self.networkDPFeatures.append((value.id(), str(value.attributes()[0])))   
 
-                featureId = self.findLinkIdDPFeatures(linkId)
-                self.networkLayer[0].startEditing()
-                bloquer = QSignalBlocker(self.networkLayer[0])
+            featureId = self.findLinkIdDPFeatures(linkId)
+            self.networkLayer[0].startEditing()
+            bloquer = QSignalBlocker(self.networkLayer[0])
 
-                self.networkLayer[0].deleteFeature(featureId)
-                bloquer.unblock()
-                self.networkLayer[0].commitChanges()
+            self.networkLayer[0].deleteFeature(featureId)
+            bloquer.unblock()
+            self.networkLayer[0].commitChanges()
 
-            return True
+        return True
 
-        except:
-            return False
+        #except:
+        #    return False
 
 
     def findLinkIdDPFeatures(self, linkId):
@@ -193,7 +204,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
+            dialog = AddLinkDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self, networkShapeFields=self.network_shape_fields)
             dialog.show()
             result = dialog.exec_()
             self.__get_links_data()

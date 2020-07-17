@@ -9,22 +9,25 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import *
 
+from qgis.core import QgsMessageLog, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsPointXY
+
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
-from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .classes.node.Node import Node
 from .classes.general.Helpers import Helpers
 from .classes.general.Validators import * # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+from .scenarios_model_sqlite import ScenariosModelSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_node.ui'))
 
 class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, idScenario = None, parent = None, codeNode=None):
+    def __init__(self, tranus_folder, idScenario = None, parent = None, codeNode=None, nodeShapeFields=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -36,6 +39,8 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         self.codeNode = codeNode
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
+        self.node_shape_fields = nodeShapeFields if nodeShapeFields else None
+        print("Dentrod de ADD NODE", self.node_shape_fields)
         self.idScenario = idScenario
         resolution_dict = Helpers.screenResolution(40)
         self.resize(resolution_dict['width'], resolution_dict['height'])
@@ -168,10 +173,18 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
         id_type = self.cb_type.itemData(self.cb_type.currentIndex())
         name = self.name.text() if self.name.text() else None
         description = self.description.text() if self.description.text() else None
-
+        
         if self.codeNode is None:
             newNode = self.dataBaseSqlite.addNode(scenarios, self.id.text(), id_type, name, description, self.le_x.text(),  self.le_y.text())
-            if not newNode:
+            if newNode:
+                project = QgsProject.instance()
+                layerIds = [layer.id() for layer in project.mapLayers().values()]
+                layerId = [ value for value in layerIds if re.match('Network_Nodes',value)][0]
+                if not Node.addNodeFeatureShape(layerId, self.le_x.text(), self.le_y.text(), self.id.text(), name, id_type, nodeShapeFields=self.node_shape_fields):
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_() 
+                    return False
+            else:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_() 
                 return False

@@ -19,6 +19,7 @@ from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_mode_dialog import AddModeDialog
 from .add_category_dialog import AddCategoryDialog
 from .classes.general.Validators import validatorRegex
+from .add_excel_data_dialog import AddExcelDataDialog
 
 #import pandas
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -51,18 +52,19 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.zones = []
         self.header_trips = ['Origin Zone','Destination Zone', 'Trips']
-        self.header_factor = ['Origin Zone','Destination Zone', 'Factor']
+        #self.header_factor = ['Origin Zone','Destination Zone', 'Factor']
         
 
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        self.btn_import = self.findChild(QtWidgets.QPushButton, 'btn_import')
         self.add_trip = self.findChild(QtWidgets.QPushButton, 'add_trip')
-        self.add_factor = self.findChild(QtWidgets.QPushButton, 'add_factor')
+        #self.add_factor = self.findChild(QtWidgets.QPushButton, 'add_factor')
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenarios_tree')
         self.scenario_tree.clicked.connect(self.select_scenario)
         self.lb_total_items_exotrips = self.findChild(QtWidgets.QLabel, 'total_items_exotrips')
         self.trips_tbl = self.findChild(QtWidgets.QTableWidget, 'trips_tbl')
-        self.factor_tbl = self.findChild(QtWidgets.QTableWidget, 'factor_tbl')
+        #self.factor_tbl = self.findChild(QtWidgets.QTableWidget, 'factor_tbl')
         self.cb_category = self.findChild(QtWidgets.QComboBox, 'cb_category')
         self.cb_mode = self.findChild(QtWidgets.QComboBox, 'cb_mode')
         self.cb_tr_zone_origin = self.findChild(QtWidgets.QComboBox, 'cb_tr_zone_origin')
@@ -70,26 +72,27 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cb_fc_zone_origin = self.findChild(QtWidgets.QComboBox, 'cb_fc_zone_origin')
         self.cb_fc_zone_destination = self.findChild(QtWidgets.QComboBox, 'cb_fc_zone_destination')
         self.le_trip = self.findChild(QtWidgets.QLineEdit, 'le_trip')
-        self.le_factor = self.findChild(QtWidgets.QLineEdit, 'le_factor')
+        #self.le_factor = self.findChild(QtWidgets.QLineEdit, 'le_factor')
         self.btn_category = self.findChild(QtWidgets.QPushButton, 'btn_category')
-        self.btn_mode = self.findChild(QtWidgets.QPushButton, 'btn_mode')
+        #self.btn_mode = self.findChild(QtWidgets.QPushButton, 'btn_mode')
 
         # Control Actions
         self.help.clicked.connect(self.open_help)
+        self.btn_import.clicked.connect(self.import_data)
         self.add_trip.clicked.connect(self.save_trip)
-        self.add_factor.clicked.connect(self.save_factor)
+        #self.add_factor.clicked.connect(self.save_factor)
         self.btn_category.clicked.connect(self.open_category)
-        self.btn_mode.clicked.connect(self.open_mode)
+        #self.btn_mode.clicked.connect(self.open_mode)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close_event)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_event)
         
         self.le_trip.setValidator(doubleValidator)
-        self.le_factor.setValidator(doubleValidator)
+        #self.le_factor.setValidator(doubleValidator)
 
         self.add_trip.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
-        self.add_factor.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+        #self.add_factor.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         self.btn_category.setIcon(QIcon(self.plugin_dir+"/icons/category.jpg"))
-        self.btn_mode.setIcon(QIcon(self.plugin_dir+"/icons/bus-icon.png"))
+        # self.btn_mode.setIcon(QIcon(self.plugin_dir+"/icons/bus-icon.png"))
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         
         # Set scenarioIndex
@@ -97,15 +100,26 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             self.__find_scenario_data(self.scenarioCode)
         
         self.__load_zones_cb_data()
-        self.__load_mode_data()
+        #self.__load_mode_data()
         self.__get_scenarios_data()
         self.__load_zones_tb_data()
 
         self.cb_category.currentIndexChanged[int].connect(self.category_changed)
-        self.cb_mode.currentIndexChanged[int].connect(self.mode_changed)
+        #self.cb_mode.currentIndexChanged[int].connect(self.mode_changed)
         self.trips_tbl.itemChanged.connect(self.__validate_trips)
-        self.factor_tbl.itemChanged.connect(self.__validate_factor)
+        #self.factor_tbl.itemChanged.connect(self.__validate_factor)
     
+
+    def import_data(self):
+        """
+            @summary: Set Scenario selected
+        """
+        id_category = self.cb_category.itemData(self.cb_category.currentIndex())
+        dialog = AddExcelDataDialog(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='exogenous_trips', _idCategory=id_category)
+        dialog.show()
+        result = dialog.exec_()
+        self.__load_zones_tb_data()
+
 
     def __validate_trips(self, item):
         if item.text()!=None and item.text()!='' and item.column() > 1:
@@ -158,22 +172,24 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def save_event(self):
         id_category = self.cb_category.itemData(self.cb_category.currentIndex())
-        id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
+        #id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
         id_scenario = self.idScenario
         rowsTrips = self.trips_tbl.rowCount()
-        rowsfactor = self.factor_tbl.rowCount()
+        #rowsfactor = self.factor_tbl.rowCount()
 
         for index in range(0,rowsTrips):
             id_origin = self.trips_tbl.item(index, 0).text().split(" ")[0]
             id_destination = self.trips_tbl.item(index, 1).text().split(" ")[0]
             tariff = self.trips_tbl.item(index, 2).text()
-            self.dataBaseSqlite.updateExogenousData(id_scenario, id_origin, id_destination, id_mode, id_category,  'trip', tariff)
+            self.dataBaseSqlite.updateExogenousData(id_scenario, id_origin, id_destination, id_category,  'trip', tariff)
         
+        """
         for index in range(0,rowsfactor):
             id_origin = self.factor_tbl.item(index, 0).text().split(" ")[0]
             id_destination = self.factor_tbl.item(index, 1).text().split(" ")[0]
             factor = self.factor_tbl.item(index, 2).text()
             self.dataBaseSqlite.updateExogenousData(id_scenario, id_origin, id_destination, id_mode, id_category,  'factor', factor)
+        """
 
         self.close()
   
@@ -219,7 +235,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __load_zones_tb_data(self):
         id_category = self.cb_category.itemData(self.cb_category.currentIndex())
-        id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
+        #id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
         id_scenario = self.idScenario
         if id_scenario:
             qry = """
@@ -228,27 +244,21 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
                 from exogenous_trips a
                 join zone b on a.id_zone_from = b.id
                 join zone c on a.id_zone_to = c.id
-                where a.id_scenario = {} and a.id_mode = {} and a.id_category = {} and trip is not null""".format(id_scenario, id_mode, id_category)
-
-            qry_b = """
-                select b.id||' '||b.name zone_from, 
-                c.id|| ' ' ||c.name zone_to, factor
-                from exogenous_trips a
-                join zone b on a.id_zone_from = b.id
-                join zone c on a.id_zone_to = c.id
-                where  a.id_scenario = {} and a.id_mode = {} and a.id_category = {} and factor is not null""".format(id_scenario, id_mode, id_category)
+                where a.id_scenario = {} and a.id_category = {} and trip is not null""".format(id_scenario, id_category)
 
             result = self.dataBaseSqlite.executeSql(qry)
-            result_b = self.dataBaseSqlite.executeSql(qry_b)
+            #result_b = self.dataBaseSqlite.executeSql(qry_b)
             self.trips_tbl.setRowCount(len(result))
             self.trips_tbl.setColumnCount(3)
             self.trips_tbl.setHorizontalHeaderLabels(self.header_trips)
             self.trips_tbl.horizontalHeader().setStretchLastSection(True)
 
+            """
             self.factor_tbl.setRowCount(len(result_b))
             self.factor_tbl.setColumnCount(3)
             self.factor_tbl.setHorizontalHeaderLabels(self.header_factor)
             self.factor_tbl.horizontalHeader().setStretchLastSection(True)
+            """
             #self.trips_tbl.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)
             for indice,valor in enumerate(result):
                 x = 0
@@ -257,12 +267,14 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.trips_tbl.setItem(indice, x, QTableWidgetItem(Helpers.decimalFormat(str(data))))
                     x+=1
 
+            """
             for indice,valor in enumerate(result_b):
                 x = 0
                 for z in range(0,len(valor)):
                     data = result_b[indice][z] if result_b[indice][z] is not None else ''
                     self.factor_tbl.setItem(indice, x, QTableWidgetItem(Helpers.decimalFormat(str(data))))
                     x+=1
+            """
 
             self.lb_total_items_exotrips.setText(" %s Items " % len(result))
 
@@ -272,7 +284,7 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         id_from = self.cb_tr_zone_origin.itemData(self.cb_tr_zone_origin.currentIndex())
         id_to = self.cb_tr_zone_destination.itemData(self.cb_tr_zone_destination.currentIndex())
         id_category = self.cb_category.itemData(self.cb_category.currentIndex())
-        id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
+        #id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
         trips = self.le_trip.text()
         id_scenario = self.idScenario
 
@@ -296,11 +308,11 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
 
             qry = """select * from exogenous_trips
             where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_mode={} and id_category={}  and trip is not null""".format(id_scenario, id_from, id_to, id_mode, id_category)
+            and id_category={}  and trip is not null""".format(id_scenario, id_from, id_to, id_category)
             
             qry_b = """select * from exogenous_trips
             where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_mode={} and id_category={} """.format(id_scenario, id_from, id_to, id_mode, id_category)
+            and id_category={} """.format(id_scenario, id_from, id_to, id_category)
             
             result = self.dataBaseSqlite.executeSql(qry)
             result_b = self.dataBaseSqlite.executeSql(qry_b)
@@ -310,9 +322,9 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_()
             else:
                 if result_b:
-                    self.dataBaseSqlite.updateExogenousData(scenarios, id_from, id_to, id_mode, id_category, 'trip', trips)
+                    self.dataBaseSqlite.updateExogenousData(scenarios, id_from, id_to, id_category, 'trip', trips)
                 else:
-                    self.dataBaseSqlite.addExogenousData(scenarios, id_from, id_to, id_mode, id_category, 'trip', trips)
+                    self.dataBaseSqlite.addExogenousData(scenarios, id_from, id_to, id_category, 'trip', trips)
                 self.__load_zones_tb_data()
     
 
@@ -359,12 +371,12 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             for value in result:
                 self.cb_category.addItem("%s %s" % (value[0],value[3]),str(value[0]))
 
-
+    """
     def __load_mode_data(self):
         result = self.dataBaseSqlite.selectAll( ' mode ', orderby=' order by 1 asc')
         for value in result:
             self.cb_mode.addItem("%s %s" % (value[0],value[1]),str(value[0]))
-
+    """
 
     def __load_zones_cb_data(self):
         result = self.dataBaseSqlite.selectAll( 'zone ', ' where id > 0',orderby=' order by 1 asc')
@@ -372,8 +384,8 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
         for value in result:
             self.cb_tr_zone_origin.addItem(str(value[0])+" "+str(value[1]), value[0])
             self.cb_tr_zone_destination.addItem(str(value[0])+" "+str(value[1]), value[0])
-            self.cb_fc_zone_origin.addItem(str(value[0])+" "+str(value[1]), value[0])
-            self.cb_fc_zone_destination.addItem(str(value[0])+" "+str(value[1]), value[0])
+            #self.cb_fc_zone_origin.addItem(str(value[0])+" "+str(value[1]), value[0])
+            #self.cb_fc_zone_destination.addItem(str(value[0])+" "+str(value[1]), value[0])
 
 
     def load_scenarios(self):

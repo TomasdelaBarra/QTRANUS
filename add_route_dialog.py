@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.Qt import QDialogButtonBox
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
+from PyQt5.QtGui import QColor
 
 from .classes.data.DataBase import DataBase
 from .classes.data.DataBaseSqlite import DataBaseSqlite
@@ -17,6 +18,7 @@ from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Helpers import Helpers
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 
+from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_route.ui'))
@@ -31,13 +33,14 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         super(AddRouteDialog, self).__init__(parent)
         self.setupUi(self)
-        self.project = parent.project
+        #self.project = parent.project 
         self.codeRoute = codeRoute
         self.tranus_folder = tranus_folder
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.idScenario = idScenario
-
-
+        self.button_color = QgsColorButton(self, 'Color')
+        self.label_color = QLabel("Color") 
+        
         # Linking objects with controls
         self.scenario_tree = self.findChild(QtWidgets.QTreeView, 'scenario_tree')
         self.scenario_tree.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -50,10 +53,12 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.frequency_from = self.findChild(QtWidgets.QLineEdit, 'frequecy_from')
         self.frequency_to = self.findChild(QtWidgets.QLineEdit, 'frequency_to')
         self.max_fleet = self.findChild(QtWidgets.QLineEdit, 'max_fleet')
-        self.target_occ = self.findChild(QtWidgets.QLineEdit, 'target_occ')
+
+        #self.target_occ = self.findChild(QtWidgets.QLineEdit, 'target_occ')
         self.used = self.findChild(QtWidgets.QCheckBox, 'used')
         self.follows_schedule = self.findChild(QtWidgets.QCheckBox, 'follows_schedule')
-
+        self.layout_data = self.findChild(QtWidgets.QFormLayout, 'formLayout_data')
+        self.layout_data.addRow(self.label_color, self.button_color)
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         
         # Control Actions
@@ -77,9 +82,8 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         self.frequency_to.textChanged.connect(self.check_state)
         self.max_fleet.setValidator(validatorExpr('decimal'))
         self.max_fleet.textChanged.connect(self.check_state)
-        self.target_occ.setValidator(validatorExpr('decimal'))
-        self.target_occ.textChanged.connect(self.check_state)
-
+        #self.target_occ.setValidator(validatorExpr('decimal'))
+        #self.target_occ.textChanged.connect(self.check_state)
         self.changeLineEditStyle = "color: green; font-weight: bold"
 
         #Loads
@@ -169,8 +173,8 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
             return False
 
-        if self.target_occ is None or self.target_occ.text().strip() == '':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please write Target occ.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+        if self.button_color.isNull():
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Route", "Please select Color.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
 
@@ -184,14 +188,16 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
         id_operator = self.cb_operator.itemData(self.cb_operator.currentIndex())
 
         if self.codeRoute is None:
-            newRoute = self.dataBaseSqlite.addRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.target_occ.text(), used, follows_schedule)
+            newRoute = self.dataBaseSqlite.addRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.button_color.color().rgb(), used, follows_schedule)
             if not newRoute:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new route", "Warning Error while saving database route.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
+            self.accept()
         else:
-            newRoute = self.dataBaseSqlite.updateRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.target_occ.text(), used, follows_schedule)
-        self.accept()
+            newRoute = self.dataBaseSqlite.updateRoute(scenarios, self.id.text(), self.name.text(), self.description.text(), id_operator, self.frequency_from.text(), self.frequency_to.text(), self.max_fleet.text(), self.button_color.color().rgb(), used, follows_schedule)
+            self.accept()
+
 
     def load_scenarios(self):
         self.__get_scenarios_data()
@@ -213,12 +219,18 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.frequency_from.setText(Helpers.decimalFormat(str(data[0][5])))
             self.frequency_to.setText(Helpers.decimalFormat(str(data[0][6])))
-            self.target_occ.setText(Helpers.decimalFormat(str(data[0][7])))
+            #self.target_occ.setText(Helpers.decimalFormat(str(data[0][7])))
             self.max_fleet.setText(Helpers.decimalFormat(str(data[0][8])))
             used = True if data[0][9]==1 else False 
             follows_schedule = True if data[0][10]==1 else False 
             self.used.setChecked(used)
             self.follows_schedule.setChecked(follows_schedule)
+            
+            if len(data[0]) == 12:
+                if data[0][11]: 
+                    qcolor = QColor()
+                    qcolor.setRgb(data[0][11])
+                    self.button_color.setColor(qcolor)
 
             if id_prevScenario and data_prev: 
                 if (data[0][5] !=  data_prev[0][5]):
@@ -231,10 +243,10 @@ class AddRouteDialog(QtWidgets.QDialog, FORM_CLASS):
                 else:
                     self.frequency_to.setStyleSheet("")
 
-                if (data[0][7] !=  data_prev[0][7]):
+                """if (data[0][7] !=  data_prev[0][7]):
                     self.target_occ.setStyleSheet(self.changeLineEditStyle)
                 else:
-                    self.target_occ.setStyleSheet("")
+                    self.target_occ.setStyleSheet("")"""
 
                 if (data[0][8] !=  data_prev[0][8]):
                     self.max_fleet.setStyleSheet(self.changeLineEditStyle)

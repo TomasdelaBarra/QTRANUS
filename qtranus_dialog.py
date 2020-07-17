@@ -30,7 +30,7 @@ from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QMessageBox
 from PyQt5.QtCore import *
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsFeatureRequest
 
 from .zonelayer_dialog import ZoneLayerDialog
 from .scenarios_model import ScenariosModel
@@ -68,7 +68,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBaseSqlite = None
         self.project_file = None
         self.qtranus = qtranus
-        
+        self.layerNetworkProperties = []
+        self.networklayer = None
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
         self.layers_group_name = self.findChild(QtWidgets.QLineEdit, 'layers_group_name')
@@ -95,6 +96,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_fields')
         self.zones_shape_name = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_name')
+        self.links_shape_codscenario = self.findChild(QtWidgets.QComboBox, 'links_shape_codscenario')
+        self.links_shape_origin = self.findChild(QtWidgets.QComboBox, 'links_shape_origin')
+        self.links_shape_destination = self.findChild(QtWidgets.QComboBox, 'links_shape_destination')
         self.links_shape_fields = self.findChild(QtWidgets.QComboBox, 'links_shape_fields')
         self.links_shape_length = self.findChild(QtWidgets.QComboBox, 'links_shape_length')
         self.links_shape_name = self.findChild(QtWidgets.QComboBox, 'links_shape_name')
@@ -132,7 +136,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_shape_name.currentIndexChanged.connect(self.check_configure)
         # self.zones_shape_name.currentIndexChanged.connect(self.validate_fields_zones_layer)
         
-        self.links_shape_fields.currentIndexChanged.connect(self.check_configure)
+        self.links_shape_fields.currentIndexChanged.connect(self.links_shape_fields_changed)
+        #self.links_shape_fields.currentIndexChanged.connect(self.check_configure)
         self.links_shape_length.currentIndexChanged.connect(self.check_configure)
         self.links_shape_name.currentIndexChanged.connect(self.check_configure)
         self.links_shape_type.currentIndexChanged.connect(self.check_configure)
@@ -158,6 +163,142 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #self.parent.addScenariosSection()
 
+    def add_feature_db_from_shape(self, idFeature, layer):
+        fields = [value.name() for value in layer.fields()]
+        values = [None] * len(fields)
+
+        try:
+            if idFeature > 0:
+
+                codscenario_field = self.links_shape_codscenario.currentText()
+                origin_field = self.links_shape_origin.currentText()
+                destination_field = self.links_shape_destination.currentText()
+                id_field = self.links_shape_fields.currentText()
+                name_field = self.links_shape_name.currentText()
+                type_field = self.links_shape_type.currentText()
+                length_field = self.links_shape_length.currentText()
+                direction_field = self.links_shape_direction.currentText()
+                capacity_field = self.links_shape_capacity.currentText()
+
+                feature = layer.getFeature(idFeature)
+
+                codscenario = feature.attribute(fields.index(codscenario_field))
+                origin = feature.attribute(fields.index(origin_field))
+                destination = feature.attribute(fields.index(destination_field))
+                linkid = feature.attribute(fields.index(id_field))
+                name = feature.attribute(fields.index(name_field))
+                type_link = feature.attribute(fields.index(type_field))
+                length = feature.attribute(fields.index(length_field))
+                direction = feature.attribute(fields.index(direction_field))
+                capacity = feature.attribute(fields.index(capacity_field))
+
+                data_list = [(codscenario, linkid, origin, destination, type_link, length, direction, capacity, name)]
+                scenarios = []
+                
+                self.dataBaseSqlite.addLinkFFShape(scenarios, data_list)
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while adding link.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+    
+
+    def modify_feature_db_from_shape(self, layer):
+
+        try:
+            fields = [value.name() for value in layer.fields()]
+            linkIdIdx = fields.index(self.links_shape_fields.currentText())
+            codScenarioIdx = fields.index(self.links_shape_codscenario.currentText())
+            originIdx = fields.index(self.links_shape_origin.currentText())
+            destinationIdx = fields.index(self.links_shape_destination.currentText())
+            nameIdx = fields.index(self.links_shape_name.currentText())
+            type_linkIdx = fields.index(self.links_shape_type.currentText())
+            lengthIdx = fields.index(self.links_shape_length.currentText())
+            directionIdx = fields.index(self.links_shape_direction.currentText())
+            capacityIdx = fields.index(self.links_shape_capacity.currentText())
+
+            attributes = []
+            if layer.editBuffer():
+                featuresDeletedIds = layer.editBuffer().deletedFeatureIds()
+                attributesChanged = layer.editBuffer().changedAttributeValues()
+                if featuresDeletedIds:
+                    for feature in layer.dataProvider().getFeatures(QgsFeatureRequest().setFilterFids( featuresDeletedIds )):
+                        attributes = feature.attributes()
+                    linkId = attributes[linkIdIdx]
+                    codScenario = attributes[codScenarioIdx]
+                    scenarios = self.dataBaseSqlite.selectAllScenarios(codScenario)
+                    self.dataBaseSqlite.removeLink(scenarios, linkId)
+
+            """if attributesChanged:
+                for featureUpdatedId in attributesChanged.keys():
+                    for feature in layer.dataProvider().getFeatures(QgsFeatureRequest().setFilterFid( featureUpdatedId )):
+                        attributesUpdate = feature.attributes()
+
+                    codScenario = attributesUpdate[codScenarioIdx]
+                    linkId = attributesUpdate[linkIdIdx]
+                    id_from = attributesUpdate[originIdx]
+                    id_to = attributesUpdate[destinationIdx]
+                    name = attributesUpdate[nameIdx]
+                    length = attributesUpdate[lengthIdx]
+                    idLinktype = attributesUpdate[type_linkIdx]
+                    direction = attributesUpdate[directionIdx]
+                    capacity = attributesUpdate[capacityIdx]
+                    scenarios = self.dataBaseSqlite.selectAllScenarios(codScenario)
+                    self.dataBaseSqlite.updateLinkFShape(scenarios, linkId, id_from, id_to, name, length, idLinktype, direction, capacity)"""
+
+
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while deleting.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+
+
+
+    def update_values(self, layer, featureId, index, value):
+        try:
+            fields = [value.name() for value in layer.fields()]
+
+            values = []
+            values.append((fields.index(self.links_shape_name.currentText()),'name'))
+            values.append((fields.index(self.links_shape_type.currentText()),'id_linktype'))
+            values.append((fields.index(self.links_shape_direction.currentText()),'two_way'))
+            values.append((fields.index(self.links_shape_length.currentText()),'length'))
+            values.append((fields.index(self.links_shape_capacity.currentText()),'capacity'))
+            values.append((fields.index(self.links_shape_origin.currentText()),'node_from'))
+            values.append((fields.index(self.links_shape_destination.currentText()),'node_to'))
+
+            features = layer.dataProvider().getFeatures(QgsFeatureRequest(featureId))
+            for feature in features:
+                attributes = feature.attributes()
+
+            column = list(filter(lambda info, index=index: info[1] if info[0] == index else None, values))[0][1]
+
+            codScenario = attributes[fields.index(self.links_shape_codscenario.currentText())]
+            linkId = attributes[fields.index(self.links_shape_fields.currentText())]
+            scenarios = self.dataBaseSqlite.selectAllScenarios(codScenario)
+
+            self.dataBaseSqlite.updateLinkFShape(scenarios, linkId, column, value)
+        except Exception:
+            print("Insert error")
+
+
+    def listener_network_shape(self):
+        """
+            @summary: Listener Network Shape
+        """
+        project = QgsProject.instance()
+        layerIds = [layer.id() for layer in project.mapLayers().values()]
+        try:
+            layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]    
+            layer = project.mapLayer(layerNetId)
+            self.networklayer = project.mapLayer(layerNetId)
+
+            ##layer.featureAdded.connect(self.add_feature_db_from_shape(layer))
+            #layer.featureAdded.connect(lambda idFeature, layer=layer: self.add_feature_db_from_shape(idFeature, layer))
+            ##layer.featureDeleted.connect(lambda idFeature, layer=layer: self.delete_feature_db_from_shape(idFeature,layer))
+            #layer.beforeCommitChanges.connect(lambda layer=layer: self.modify_feature_db_from_shape(layer))
+            #layer.attributeValueChanged.connect(lambda featureId, index, value, layer=layer: self.update_values(layer, featureId, index, value))
+        except Exception as e:
+            print("Network Shape not listener")
+            
+        
 
     def close_event(self):
         self.accept()
@@ -184,6 +325,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'index.html')
         webbrowser.open_new_tab(filename)
+
+    
+
+
 
 
     def select_project_db(self, file_name):
@@ -227,6 +372,9 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 data_list['zone_shape_file_id'] = self.cb_zones_shape_fields.currentText()
                 data_list['zone_shape_file_name'] = self.cb_zones_shape_name.currentText()
                 data_list['link_shape_file'] = self.network_links_shape.text()
+                data_list['link_shape_file_codscenario'] = self.links_shape_codscenario.currentText()
+                data_list['link_shape_file_origin'] = self.links_shape_origin.currentText()
+                data_list['link_shape_file_destination'] = self.links_shape_destination.currentText()
                 data_list['link_shape_file_id'] = self.links_shape_fields.currentText()
                 data_list['link_shape_file_name'] = self.links_shape_name.currentText()
                 data_list['link_shape_file_type'] = self.links_shape_type.currentText()
@@ -240,8 +388,8 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 data_list['node_shape_file_x'] = self.nodes_shape_x.currentText()
                 data_list['node_shape_file_y'] = self.nodes_shape_y.currentText()
                 self.dataBaseSqlite.insertBaseParameters(data_list)
-
         self.accept()
+
 
     def __save_as_base_info(self):
         
@@ -354,7 +502,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
             
     def select_network_links_shape(self, file_name):
-        # TODO: Descomentar esto al final de la labor
         try:
             file_name = file_name if isinstance(file_name,str) else file_name[0]
             
@@ -405,7 +552,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             self.__load_scenarios()
             self.qtranus.addScenariosSection()
             self.load_info_shapes()
-
+            self.listener_network_shape()
 
     def select_tranus_folder(self):
         """
@@ -536,6 +683,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens data window
         """
+
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
             project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
             window = DataWindow(project_file, parent = self)
@@ -594,7 +742,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.project['tranus_folder'] and self.project['project_name']:
             self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
             self.__load_scenarios()
-
 
         if  self.project['zones_shape']:
             self.zone_shape.setText(self.project['zones_shape'])
@@ -703,6 +850,24 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             print ("There are no fields to load.")
         else:
             fields.insert(0,'Select')
+            self.links_shape_codscenario.setEnabled(True)
+            self.links_shape_codscenario.clear()
+            self.links_shape_codscenario.addItems(fields)
+            linkScenarioTxt = self.links_shape_codscenario.findText('scenario', Qt.MatchContains) if self.links_shape_codscenario.findText('scenario', Qt.MatchContains) != -1 else 0
+            self.links_shape_codscenario.setCurrentIndex(linkScenarioTxt)
+
+            self.links_shape_origin.setEnabled(True)
+            self.links_shape_origin.clear()
+            self.links_shape_origin.addItems(fields)
+            linkOriginTxt = self.links_shape_origin.findText('origin', Qt.MatchContains) if self.links_shape_origin.findText('origin', Qt.MatchContains) != -1 else 0
+            self.links_shape_origin.setCurrentIndex(linkOriginTxt)
+
+            self.links_shape_destination.setEnabled(True)
+            self.links_shape_destination.clear()
+            self.links_shape_destination.addItems(fields)
+            linkDestinationTxt = self.links_shape_destination.findText('destination', Qt.MatchContains) if self.links_shape_destination.findText('destination', Qt.MatchContains) != -1 else 0
+            self.links_shape_destination.setCurrentIndex(linkDestinationTxt)
+
             self.links_shape_fields.setEnabled(True)
             self.links_shape_fields.clear()
             self.links_shape_fields.addItems(fields)
@@ -746,7 +911,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             @param fields: Zone shape fields
             @type fields: List object
         """
-        
         if fields is None:
             QMessageBox.warning(None, "Zone Shape Fields", "There are no fields to load.")
             print ("There are no fields to load.")
@@ -790,6 +954,15 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.zones_shape_fields.currentText() != '':
             self.project.zonesIdFieldName = self.zones_shape_fields.currentText()
             self.project['zones_id_field_name'] = self.project.zonesIdFieldName
+    
+    def links_shape_fields_changed(self):
+        """
+            @summary: Detects when the zones shape fields combo change
+        """
+        if self.links_shape_fields.currentText() != '':
+            self.project.links_shape_field_id = self.links_shape_fields.currentText()
+            self.project['links_shape_field_id'] = self.project.links_shape_field_id
+        
             
     def load_info_shapes(self):
         try:
@@ -798,7 +971,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
             result = self.dataBaseSqlite.selectAll(" project_files ")
 
             if result:
-                print(result)
                 # Set Path Shapes
                 self.zone_shape.setText(result[0][0])
                 self.network_links_shape.setText(result[0][3])
@@ -807,7 +979,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Load Shapes Info and Combos
                 self.select_zones_shape(result[0][0])
                 self.select_network_links_shape(result[0][3])
-                self.select_network_nodes_shape(result[0][10])
+                self.select_network_nodes_shape(result[0][13])
 
                 # Select Default Values of Combos
                 zoneId = self.cb_zones_shape_fields.findText(result[0][1])
@@ -815,28 +987,34 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 zoneName = self.cb_zones_shape_name.findText(result[0][2])
                 self.cb_zones_shape_name.setCurrentIndex(zoneName)
 
-                linkId = self.links_shape_fields.findText(result[0][4])
+                linkCodScenario = self.links_shape_codscenario.findText(result[0][4])
+                self.links_shape_codscenario.setCurrentIndex(linkCodScenario)
+                linkOriginText = self.links_shape_origin.findText(result[0][5])
+                self.links_shape_origin.setCurrentIndex(linkOriginText)
+                linkDestination = self.links_shape_destination.findText(result[0][6])
+                self.links_shape_destination.setCurrentIndex(linkDestination)
+                linkId = self.links_shape_fields.findText(result[0][7])
                 self.links_shape_fields.setCurrentIndex(linkId)
-                linkName = self.links_shape_name.findText(result[0][5])
+                linkName = self.links_shape_name.findText(result[0][8])
                 self.links_shape_name.setCurrentIndex(linkName)
-                linkType = self.links_shape_type.findText(result[0][6])
+                linkType = self.links_shape_type.findText(result[0][9])
                 self.links_shape_type.setCurrentIndex(linkType)
-                linkLength = self.links_shape_length.findText(result[0][7])
+                linkLength = self.links_shape_length.findText(result[0][10])
                 self.links_shape_length.setCurrentIndex(linkLength)
-                linkDirection = self.links_shape_direction.findText(result[0][8])
+                linkDirection = self.links_shape_direction.findText(result[0][11])
                 self.links_shape_direction.setCurrentIndex(linkDirection)
-                linkCapacity = self.links_shape_capacity.findText(result[0][9])
+                linkCapacity = self.links_shape_capacity.findText(result[0][12])
                 self.links_shape_capacity.setCurrentIndex(linkCapacity)
 
-                nodeId = self.nodes_shape_fields.findText(result[0][11])
+                nodeId = self.nodes_shape_fields.findText(result[0][14])
                 self.nodes_shape_fields.setCurrentIndex(nodeId)
-                nodeName = self.nodes_shape_name.findText(result[0][12])
+                nodeName = self.nodes_shape_name.findText(result[0][15])
                 self.nodes_shape_name.setCurrentIndex(nodeName)
-                nodeType = self.nodes_shape_type.findText(result[0][13])
+                nodeType = self.nodes_shape_type.findText(result[0][16])
                 self.nodes_shape_type.setCurrentIndex(nodeType)
-                nodeX = self.nodes_shape_x.findText(result[0][14])
+                nodeX = self.nodes_shape_x.findText(result[0][17])
                 self.nodes_shape_x.setCurrentIndex(nodeX)
-                nodeY = self.nodes_shape_y.findText(result[0][15])
+                nodeY = self.nodes_shape_y.findText(result[0][18])
                 self.nodes_shape_y.setCurrentIndex(nodeY)
             else:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Empty database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)

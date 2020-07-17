@@ -23,7 +23,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None):
+    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None, nodeShapeFields=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -37,6 +37,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
         self.scenarioSelectedIndex = scenarioSelectedIndex
+        self.node_shape_fields = nodeShapeFields if nodeShapeFields else None
         self.scenarioCode = scenarioCode
         self.idScenario = None
         resolution_dict = Helpers.screenResolution(60)
@@ -119,7 +120,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
             else:
-                dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeNode=nodeSelected)
+                dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario, parent = self, codeNode=nodeSelected, nodeShapeFields=self.node_shape_fields)
                 dialog.show()
                 result = dialog.exec_()
                 self.__get_nodes_data()
@@ -133,6 +134,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {links}")
                 messagebox.exec_()
             else:
+                scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
                 self.dataBaseSqlite.removeNode(scenarios, nodeSelected)
                 self.__get_nodes_data()
             
@@ -146,7 +148,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Please Select Scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self)
+            dialog = AddNodeDialog(self.tranus_folder, idScenario=self.idScenario,  parent = self, nodeShapeFields=self.node_shape_fields)
             dialog.show()
             result = dialog.exec_()
             self.__get_nodes_data()

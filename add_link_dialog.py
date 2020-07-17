@@ -30,7 +30,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, idScenario = None, parent = None, codeLink=None):
+    def __init__(self, tranus_folder, idScenario=None, parent=None, codeLink=None, networkShapeFields=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -42,6 +42,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.turns_delays_arr = []
         self.id_operators_arr = []
         self.id_routes_arr_selected = []
+        self.network_shape_fields = networkShapeFields if networkShapeFields else None
         self.project = parent.project
         self.codeLink = codeLink
         self.tranus_folder = tranus_folder
@@ -521,8 +522,9 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             destinationNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = '{id_destination}'")
             originPoint = QgsPointXY(originNode[0][5], originNode[0][6])
             destinationPoint = QgsPointXY(destinationNode[0][5], destinationNode[0][6])
-            
-            if not Network.addLinkFeatureShape(layerNetId, originPoint, destinationPoint, id_origin, id_destination, two_way):
+            linkId = f'{id_origin}-{id_destination}'
+
+            if not Network.addLinkFeatureShape(layerNetId, originPoint, destinationPoint, scenario_code, linkId, name, id_origin, id_destination, id_type, self.length.text(), two_way, self.capacity.text(), networkShapeFields=self.network_shape_fields):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Errors when the figure was being added to layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
@@ -533,7 +535,20 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
                 return False
         else:
             newLink = self.dataBaseSqlite.updateLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
-        
+            try:
+                project = QgsProject.instance()
+                layerIds = [layer.id() for layer in project.mapLayers().values()]
+                layerNetId = [value for value in layerIds if re.match('Network_Links',value)][0]
+                linkId = f'{id_origin}-{id_destination}'
+
+                if not Network.updateLinkFeatureShape(layerNetId, scenario_code, linkId, name, id_origin, id_destination, id_type, self.length.text(), two_way, self.capacity.text(), networkShapeFields=self.network_shape_fields):
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Update Link", "Errors when the figure was being updated.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    return False
+            except:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Update Link", "Errors when the figure was being updated.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
 
         if newLink is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Please Verify information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -629,8 +644,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.name.setText(str(data[0][4] if data[0][4] else ''))
             self.description.setText(str(data[0][5] if data[0][5] else ''))
-
-            self.length.setText(Helpers.decimalFormat(str(round(data[0][6],2) if data[0][6] else '')))
+            self.length.setText(Helpers.decimalFormat(str(round(data[0][6],3) if data[0][6] else '')))
             self.capacity.setText(Helpers.decimalFormat(str(data[0][7] if data[0][7] else '')))
             self.delay.setText(Helpers.decimalFormat(str(data[0][8] if data[0][8] else '')))
 

@@ -22,7 +22,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class AddExcelDataDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, parent=None, idScenario=None, _type=None):
+    def __init__(self, tranus_folder, parent=None, idScenario=None, _type=None, _idCategory=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -34,6 +34,7 @@ class AddExcelDataDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.idScenario = idScenario
         self._type = _type
+        self._idCategory = _idCategory
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.filename_path = None
 
@@ -75,7 +76,11 @@ class AddExcelDataDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Please Write Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            loc = self.filename_path
+            if self._type == 'transfers':
+                self.import_transfers()
+            elif self._type == 'exogenous_trips':
+                self.import_exogenous_trips()
+            """loc = self.filename_path
             wb = xlrd.open_workbook(loc) 
             sheet_names = wb.sheet_names()
             if self.ln_sheetname.text() in sheet_names:
@@ -107,7 +112,81 @@ class AddExcelDataDialog(QtWidgets.QDialog, FORM_CLASS):
                         resultado = self.dataBaseSqlite.addTransferOperator(scenarios, id_origin, id_destination, tariff)
             else:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Invalid Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
+                messagebox.exec_()"""
 
             self.close()
             
+    def import_transfers(self):
+        loc = self.filename_path
+        wb = xlrd.open_workbook(loc) 
+        sheet_names = wb.sheet_names()
+        if self.ln_sheetname.text() in sheet_names:
+            sheet = wb.sheet_by_name(self.ln_sheetname.text()) 
+            id_scenario = self.idScenario
+            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+            header = 1 if self.header.isChecked() else 0
+            for i in range(header,sheet.nrows): 
+                id_origin = str(sheet.row_values(i, 0)[0]).split(' ')[0]
+                id_destination = str(sheet.row_values(i, 0)[1]).split(' ')[0]
+                tariff = sheet.row_values(i, 0)[2]
+                try:
+                    id_origin = int(float(id_origin))
+                    id_destination = int(float(id_destination))
+                    tariff = float(tariff)
+                except:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Row (%s) Invalid." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    break
+
+                result_ori = self.dataBaseSqlite.selectAll(' operator ', where = " where id = %s" % id_origin)
+                result_dest = self.dataBaseSqlite.selectAll(' operator ', where = " where id = %s" % id_destination)
+                if len(result_ori)==0 or len(result_dest)==0:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Invalid Operator in row (%s)." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    break
+                else:
+                    resultado = self.dataBaseSqlite.addTransferOperator(scenarios, id_origin, id_destination, tariff)
+        else:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Invalid Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+
+    def import_exogenous_trips(self):
+        loc = self.filename_path
+        wb = xlrd.open_workbook(loc) 
+        sheet_names = wb.sheet_names()
+        data_trips = []
+        if self.ln_sheetname.text() in sheet_names:
+            sheet = wb.sheet_by_name(self.ln_sheetname.text()) 
+            id_category = self._idCategory
+            id_scenario = self.idScenario
+            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+            header = 1 if self.header.isChecked() else 0
+            for i in range(header,sheet.nrows): 
+                id_from = str(sheet.row_values(i, 0)[0])
+                id_to = str(sheet.row_values(i, 0)[1])
+                trips = sheet.row_values(i, 0)[2]
+                try:
+                    id_origin = int(float(id_from))
+                    id_destination = int(float(id_to))
+                    trips = float(trips)
+                except:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Row (%s) Invalid." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    break
+
+                result_ori = self.dataBaseSqlite.selectAll(' zone ', where = " where id = %s" % id_from)
+                result_dest = self.dataBaseSqlite.selectAll(' zone ', where = " where id = %s" % id_to)
+                if len(result_ori)==0 or len(result_dest)==0:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Invalid zone in row (%s)." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    break
+                
+                else:
+                    data_trips.append((id_from, id_to, id_category, trips))
+            resultado = self.dataBaseSqlite.bulkLoadExogenousTrips(scenarios, data_trips)
+        else:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Invalid Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+
