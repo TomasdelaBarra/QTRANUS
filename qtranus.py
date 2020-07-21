@@ -470,6 +470,7 @@ class QTranus:
                     join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
                     where b.code = '{scenario_code}'
                     and id_route = {int(route)}"""
+                    
                 link_list = self.dataBaseSqlite.executeSql(sql)
                 link_list = [ f"'{value[0]}'"  for value in link_list]
                 links_x_route.append(( int(route) , link_list))
