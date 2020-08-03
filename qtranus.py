@@ -41,7 +41,7 @@ from . import resources_rc
 
 import qgis
 from qgis import *
-from qgis.core import  QgsMessageLog, QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest
+from qgis.core import  QgsMessageLog, QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest, QgsSymbolLayer, QgsProperty
 from qgis.gui import QgsQueryBuilder
 
 from .qtranus_project import QTranusProject
@@ -395,7 +395,6 @@ class QTranus:
 
     
     def update_routes(self):
-
         # UI cursor loading 
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -449,18 +448,7 @@ class QTranus:
             features_network = [feat for feat in layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"{self.project['links_shape_field_id']}\" IN ({links_ids}) "))]
 
             feat_arr = []
-            #for value in data_links_routes:
-                # Get Feature from layer network
-            #    features_routes = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f""""LinkID" = '{value[0]}' """))
-            """  for feature in features_routes:
-                    geom = feature.geometry()
-                    attributtes = feature.attributes()
-                    feat = QgsFeature()
-                    feat.setGeometry(geom)
-                    feat.setAttributes([value[1], value[0]])
-                    feat_arr.append(feat)"""
             
-            # NUEVA FUNCION 
             links_x_route = []
             for route in id_routes_selected:
                 sql =  f"""select 
@@ -474,7 +462,35 @@ class QTranus:
                 link_list = self.dataBaseSqlite.executeSql(sql)
                 link_list = [ f"'{value[0]}'"  for value in link_list]
                 links_x_route.append(( int(route) , link_list))
+
+            # Group routes
+            sql_test = f"""select 
+                a.id_link, a.id_route
+                from link_route a
+                join scenario b on (a.id_scenario = b.id)
+                join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
+                where b.code = '{scenario_code}'
+                and id_route in ({",".join(id_routes_selected)}) order by 1"""
             
+            routes_x_link_arr = self.dataBaseSqlite.executeSql(sql_test)
+            
+            # Dictionary to buil offset expression
+            routes_links_new = {}
+            for linkid_new, routes_new in routes_x_link_arr:
+                if linkid_new not in routes_links_new.keys():
+                    routes_links_new[linkid_new] = [routes_new]
+                else:
+                    routes_links_new[linkid_new].append(routes_new)
+
+            expression_str = " CASE "
+            for link_id, routes_ids in routes_links_new.items():
+                offset = 0
+                for route_id in routes_ids:
+                    expression_str += f"""WHEN "route_id" = {route_id} and "link_id"='{link_id}' THEN {offset} """
+                    offset += 0.8
+            expression_str += "ELSE 0 \n END"
+
+            result_arr = [] 
             for route_data in links_x_route:
                 link_ids = ", ".join(route_data[1])
                 features_routes = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f""""{self.project['links_shape_field_id']}" in ({link_ids}) """))
@@ -514,10 +530,13 @@ class QTranus:
             # Routes symbols
             for index, link_route in enumerate(routes_ids):
                 symbol_layer = QgsSimpleLineSymbolLayer(QColor(routes_colors[index]))
-                #line.setOffsetUnit(2)
+
+                symbol_layer.setDataDefinedProperty(QgsSymbolLayer.PropertyOffset, QgsProperty.fromExpression(expression_str))
+                ## print(symbol_layer.dxfOffset())
+                ## line.setOffsetUnit(2)
                 symbol_layer.setOffset(offset)
                 offset += 0.8 
-                #line.setWidthUnit(2)
+                ##line.setWidthUnit(2)
                 symbol_layer.setWidth(0.6)
                 symbol = QgsLineSymbol()
                 symbol.changeSymbolLayer(0,symbol_layer)
