@@ -23,7 +23,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-import os, sys, os.path, re
+import os, sys, os.path, re, json
 from PyQt5.QtGui import  QIcon
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui, uic, QtCore
@@ -33,7 +33,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 #from PyQt5.QtWidgets import QMenu
-from qgis.core import QgsProject, QgsRendererCategory, QgsCategorizedSymbolRenderer 
+
+from qgis.core import QgsProject, QgsRendererCategory, QgsCategorizedSymbolRenderer, QgsSymbol, QgsLineSymbol, QgsSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer, QgsArrowSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer
 
 # Initialize Qt resources from file resources.py
 from . import resources_rc 
@@ -44,13 +45,16 @@ from qgis import *
 from qgis.core import  QgsMessageLog, QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest, QgsSymbolLayer, QgsProperty
 from qgis.gui import QgsQueryBuilder
 
+from .classes.data.DataBaseSqlite import DataBaseSqlite
+from .classes.libraries.tabulate import tabulate
+from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .qtranus_project import QTranusProject
 from .qtranus_dialog import QTranusDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
-from .classes.data.DataBaseSqlite import DataBaseSqlite
 from .add_route_dialog import AddRouteDialog
-from .classes.libraries.tabulate import tabulate
-from .classes.general.QTranusMessageBox import QTranusMessageBox
+from .add_linktype_dialog import AddLinkTypeDialog
+from .reasign_linktype import ReasignLintype
+
 
 class QTranus:
     """QGIS Plugin Implementation."""
@@ -89,6 +93,7 @@ class QTranus:
         self.linktypes_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.linktypes_tree.customContextMenuRequested.connect(self.open_menu_linktypes)
         self.linktypes_tree.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.linktypes_tree.header().setStretchLastSection(True)
         self.btn_add_route.clicked.connect(self.open_add_route_window)
         self.btn_add_route.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         self.btn_add_linktype.clicked.connect(self.open_add_linktype_window)
@@ -154,6 +159,7 @@ class QTranus:
         result = dialog.exec_()
         self.load_routes()
 
+
     def open_edit_route_window(self, id_route_selected=None):
         """
             @summary: Opens add scenario window
@@ -170,6 +176,22 @@ class QTranus:
         self.load_routes()
 
 
+    def open_edit_linktypes_window(self, id_lintype_selected=None):
+        """
+            @summary: Open linktypes 
+        """
+        index_scenario = self.scenarios_tree.selectedIndexes()
+        scenario_cod_selected = index_scenario[0].model().itemFromIndex(index_scenario[0]).text()[:3]
+        self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        id_scenario = self.dataBaseSqlite.selectAll( 'scenario', where=f" where code = '{scenario_cod_selected}'")
+
+        dialog = AddLinkTypeDialog(self.project_file,  idScenario=id_scenario[0][0], linkTypeSelected=id_lintype_selected)
+        dialog.show()
+        result = dialog.exec_()
+        self.load_linktypes()
+
+
     def open_menu_routes(self, position):
         menu = QMenu()
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
@@ -182,7 +204,7 @@ class QTranus:
             # Get last id route selected 
             if len(indexes) > 3:
                 id_route_selected = indexes[len(indexes)-2].model().itemFromIndex(indexes[len(indexes)-2]).text()
-
+            print("ID selected  " ,id_route_selected)
             index_scenario = self.scenarios_tree.selectedIndexes()
             scenario_cod_selected = index_scenario[0].model().itemFromIndex(index_scenario[0]).text()[:3]
             
@@ -210,34 +232,34 @@ class QTranus:
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
 
-        indexes = self.routes_tree.selectedIndexes()
+        indexes = self.linktypes_tree.selectedIndexes()
         if indexes:
-            id_route_selected = indexes[1].model().itemFromIndex(indexes[1]).text()
+            id_linktype_selected = indexes[1].model().itemFromIndex(indexes[1]).text()
 
             # Get last id route selected 
             if len(indexes) > 3:
-                id_route_selected = indexes[len(indexes)-2].model().itemFromIndex(indexes[len(indexes)-2]).text()
-
+                id_linktype_selected = indexes[len(indexes)-2].model().itemFromIndex(indexes[len(indexes)-2]).text()
+            
             index_scenario = self.scenarios_tree.selectedIndexes()
             scenario_cod_selected = index_scenario[0].model().itemFromIndex(index_scenario[0]).text()[:3]
             
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_cod_selected)
             
-            assign = menu.addAction(QIcon(self.plugin_dir+"/icons/action_capture_line.svg"),'Assign Linktype')
-            remove_assign = menu.addAction(QIcon(self.plugin_dir+"/icons/action_remove_line.svg"),'Remove Link')
-            edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Linktype')
-            remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Delete Linktype')
+            assign = menu.addAction(QIcon(self.plugin_dir+"/icons/action_capture_line.svg"),'Assign Link type')
+            remove_assign = menu.addAction(QIcon(self.plugin_dir+"/icons/action_remove_line.svg"),'Re asign Link type')
+            edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Link type')
+            remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Delete Link type')
 
             opt = menu.exec_(self.routes_tree.viewport().mapToGlobal(position))
             
             if opt == remove:
-                self.delete_route(scenarios, id_route_selected)
+                self.delete_linktype(scenarios, id_linktype_selected)
             if opt == edit:
-                self.open_edit_route_window(id_route_selected)
+                self.open_edit_linktypes_window(id_linktype_selected)
             if opt == assign:
-                self.assing_remove_route_link(id_route_selected, scenarios, action='assign')
+                self.assing_remove_linktype_link(id_linktype_selected, scenarios, action='assign')
             if opt == remove_assign:
-                self.assing_remove_route_link(id_route_selected, scenarios, action='remove')
+                self.assing_remove_linktype_link(id_linktype_selected, scenarios, action='remove')
         
     
     def delete_route(self, scenarios, id_route_selected):
@@ -258,6 +280,25 @@ class QTranus:
                 self.load_routes()
                 QApplication.restoreOverrideCursor()
 
+    
+    def delete_linktype(self, scenarios, id_linktype_selected):
+        scenarios_str = [str(value[0]) for value in scenarios]
+        scenarios_str = ','.join(scenarios_str)
+        validation, linktypes = self.dataBaseSqlite.validateRemoveLinkType(id_linktype_selected, scenarios_str)
+        
+        messagebox = QTranusMessageBox.set_new_message_box_confirm(QtWidgets.QMessageBox.Warning, "Link Type", "Are you sure?", ":/plugins/QTranus/icon.png")
+        messagebox.exec_()
+        if messagebox.clickedButton() == messagebox.button(QtWidgets.QMessageBox.Yes):
+            if validation == False:
+                linktypes = tabulate(linktypes, headers=["Scenario Code", "Link Id"])  if linktypes else ''
+                messagebox = QTranusMessageBox.set_new_message_box_base(QtWidgets.QMessageBox.Warning, "Link Type", "Can't remove elements \n Please check details.", ":/plugins/QTranus/icon.png", buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {linktypes}")
+                messagebox.exec_()
+            else:
+                QApplication.setOverrideCursor(Qt.WaitCursor)
+                self.dataBaseSqlite.removeLinkType(scenarios, id_linktype_selected)
+                self.load_linktypes()
+                QApplication.restoreOverrideCursor()
+                
 
     def assing_remove_route_link(self, id_route_selected, scenarios, action='assign'):
         """ Capture features of the network layer to assign routes 
@@ -287,12 +328,39 @@ class QTranus:
             self.canvas.keyReleased.connect(lambda key_released, layer=layer, scenarios=scenarios, id_route_selected=id_route_selected: self.key_ctlr_released_remove(key_released, layer, scenarios, id_route_selected))
     
 
+    def assing_remove_linktype_link(self, id_linktype_selected, scenarios, action='assign'):
+        """ Capture features of the network layer to assign routes 
+        """
+        # Messaga info for selection fearutes on Network Layer
+        self.iface.messageBar().pushMessage("Info", f"Plase use Ctrl + Click to {action} a route to links", level=0)
+
+        # Enabling selection features mode on QGIS UI 
+        self.iface.actionSelect().trigger()
+
+        # Active network layer
+        registry = QgsProject.instance()
+        layersCount = len(registry.mapLayers())
+        
+        layer = registry.mapLayersByName('Network_Linktypes')[0]
+        registry.layerTreeRoot().findLayer(layer.id()).setItemVisibilityChecked(True)
+        self.iface.setActiveLayer(layer)
+        
+        self.canvas = self.iface.mapCanvas()
+        if self.canvas.receivers(self.canvas.keyReleased) > 0:
+            self.canvas.keyReleased.disconnect()
+
+        if action == 'assign':
+            self.canvas.keyReleased.connect(lambda key_released, layer=layer, scenarios=scenarios, id_linktype_selected=id_linktype_selected: self.key_ctlr_released_assign_lynktype(key_released, layer, scenarios, id_linktype_selected))
+
+        if action == 'remove':
+            self.canvas.keyReleased.connect(lambda key_released, layer=layer, scenarios=scenarios, id_linktype_selected=id_linktype_selected: self.key_ctlr_released_remove_lynktype(key_released, layer, scenarios, id_linktype_selected))
+    
+
     def key_ctlr_released_assign(self, key_released, layer, scenarios, id_route_selected):
         """ Action trigger to save links
         """
         try:
             project = QgsProject.instance()
-
             # Change UI Cursor loading...
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
@@ -317,6 +385,35 @@ class QTranus:
             print("Error: ", e)
             QApplication.restoreOverrideCursor()
         
+
+    def key_ctlr_released_assign_lynktype(self, key_released, layer, scenarios, id_lynktype_selected):
+        """ Action trigger to save linkstypes  """
+        try:
+            project = QgsProject.instance()
+            # Change UI Cursor loading...
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
+            self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+            links_linktypes = []
+            if key_released.key() == Qt.Key_Control:
+                # List of features selected
+                if isinstance(layer, QgsVectorLayer):
+                    features_ids = [ feature.id() for feature in layer.selectedFeatures() ]
+                    # Save database routes added
+                    attributes_link_id = [value.attribute('link_id') for value in layer.selectedFeatures()]
+                    for link_id in attributes_link_id:
+                        links_linktypes.append((link_id, id_lynktype_selected))
+
+                    self.dataBaseSqlite.add_linktype_link(scenarios, links_linktypes)
+
+                    self.update_linktypes()
+                    
+                    QApplication.restoreOverrideCursor()
+                    self.iface.messageBar().pushMessage("Success", f"Link Type #{id_lynktype_selected} has been added successful", level=3)
+        except Exception as e:
+            print(e)                
+            QApplication.restoreOverrideCursor()
+
 
     def key_ctlr_released_remove(self, key_released, layer, scenarios, id_route_selected):
         """ Action trigger to save links
@@ -347,6 +444,23 @@ class QTranus:
                 self.iface.messageBar().pushMessage("Success", f"Route #{id_route_selected} has been removed successful", level=3)
         except:
             QApplication.restoreOverrideCursor()
+
+
+    def key_ctlr_released_remove_lynktype(self, key_released, layer, scenarios, id_linktype_selected):
+        """ Action trigger to save links
+        """
+        index_scenario = self.scenarios_tree.selectedIndexes()
+        scenario_cod_selected = index_scenario[0].model().itemFromIndex(index_scenario[0]).text()[:3]
+        id_scenario = self.dataBaseSqlite.selectAll( 'scenario', where=f" where code = '{scenario_cod_selected}'")
+
+        dialog = ReasignLintype(self.project_file, id_scenario[0][0])
+        dialog.show()
+        result = dialog.exec_()
+
+        id_lynktype_selected = dialog.cb_linktype.currentText().split()[0]
+        if dialog.response_buttons:
+            self.key_ctlr_released_assign_lynktype(key_released, layer, scenarios, id_lynktype_selected)
+
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -586,18 +700,11 @@ class QTranus:
         # UI cursor loading 
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            # Routes tree index
-            id_routes_selected = []
-            indexes = self.routes_tree.selectedIndexes()
-            
-            for i, index in enumerate(indexes):
-                if index.column() == 1:
-                    id_routes_selected.append(index.model().itemFromIndex(index).text())
-
             # Scenario tree index
             scenario_selected_index = self.scenarios_tree.selectedIndexes()
             scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
 
+            # Get EPSG from layer network
             registry = QgsProject.instance()
             layersCount = len(registry.mapLayers())
             layer_network = registry.mapLayersByName('Network_Links')[0]
@@ -607,21 +714,29 @@ class QTranus:
             layer_group = root.findGroup("QTRANUS")
             layers_name = [lyr.name() for lyr in registry.mapLayers().values()]
 
-            id_routes = ", ".join(id_routes_selected)
-
-            sql =  f"""select 
-                    a.id_link, a.id_route, c.color
-                    from link_route a
-                    join scenario b on (a.id_scenario = b.id)
-                    join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
-                    where b.code = '{scenario_code}'
-                    and id_route in  ({id_routes})"""
-
-            data_links_routes = self.dataBaseSqlite.executeSql(sql)
-            links_routes ="','".join( [ link[0] for link in data_links_routes ] ) 
             
-            memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_Linktypes", "memory")
+            id_linktypes_selected = []
+            indexes = self.linktypes_tree.selectedIndexes()
+            for i, index in enumerate(indexes):
+                if index.column() == 1 and index.model().item(index.row(), 0).data(Qt.DecorationRole):
+                    id_linktypes_selected.append(index.model().itemFromIndex(index).text())
 
+            #if len(id_linktypes_selected) > 0:
+            id_linktypes = ", ".join(id_linktypes_selected)
+
+            sql =  f"""select distinct id_linktype, linkid, c.symbology
+                from link a
+                join scenario b on (a.id_scenario = b.id)
+                join link_type c on (a.id_linktype = c.id)
+                where b.code = '{scenario_code}'
+                and a.id_linktype in ({id_linktypes})
+                order by 1
+                """
+            data_links_linktypes = self.dataBaseSqlite.executeSql(sql)
+            links_routes ="','".join( [ link[1] for link in data_links_linktypes ] ) 
+            links_routes = f"'{links_routes}'"
+
+            memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_Linktypes", "memory")
             memory_data = memory_route_lyr.dataProvider()
             memory_data.addAttributes([QgsField("linktype_id",  QVariant.Int), QgsField("link_id",  QVariant.String)])
 
@@ -636,17 +751,19 @@ class QTranus:
             features_network = [feat for feat in layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"LinkId\" IN ({links_ids}) "))]
 
             feat_arr = []
-            for value in data_links_routes:
+            # Attributes 
+            for value in data_links_linktypes:
                 # Get Feature from layer network
-                features_routes = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f""""LinkID" = '{value[0]}' """))
+                features_routes = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f""""LinkID" = '{value[1]}' """))
                 for feature in features_routes:
                     geom = feature.geometry()
                     attributtes = feature.attributes()
                     feat = QgsFeature()
                     feat.setGeometry(geom)
-                    feat.setAttributes([value[1], value[0]])
+                    feat.setAttributes([value[0], value[1]])
                     feat_arr.append(feat)
             
+            # Base network
             for feature in features_network:
                 geom = feature.geometry()
                 attributte = feature.attribute(f"{self.project['links_shape_field_id']}")
@@ -658,25 +775,21 @@ class QTranus:
             memory_route_lyr.startEditing()
             memory_route_lyr.dataProvider().addFeatures(feat_arr)
             memory_route_lyr.commitChanges()
-            # Get unique route_id and color_id of data_links_routes
-            temp_colors, temp_ids = set(), set()
-            routes_colors, routes_ids = [], []
-            for link_route in data_links_routes: 
-                if not link_route[1] in temp_ids: 
-                    temp_ids.add(link_route[1]) 
-                    routes_ids.append(link_route[1])
-                if not link_route[2] in temp_colors: 
-                    temp_colors.add(link_route[2]) 
-                    routes_colors.append(link_route[2])
+
+            # Get unique id_linktypes and color_id of data_links_linktypes
+            linktypes_objs = set()
+            for values in data_links_linktypes:
+                linktypes_objs.add((values[0], values[2]))
+            linktypes_objs = list(linktypes_objs)
+            linktypes_objs.sort()
 
             categories = []
             # Routes symbols
-            for index, link_route in enumerate(routes_ids):
-                symbol = QgsLineSymbol()
-                symbol.setColor(QColor(routes_colors[index]))
-                symbol.setWidth(0.6)
-                cat = QgsRendererCategory(routes_ids[index], symbol, f"""Route {routes_ids[index]}""")
+            for values in linktypes_objs:
+                symbol = self.get_symbol_object(values[1])
+                cat = QgsRendererCategory(values[0], symbol, f"Link type {values[0]}")
                 categories.append(cat)
+
             # Base Network
             # 4291677645 Gray color
             symbol = QgsLineSymbol()
@@ -685,9 +798,7 @@ class QTranus:
             cat = QgsRendererCategory('', symbol, f"""Base Network""")
             categories.append(cat)
             
-            
-
-            categorized_renderer = QgsCategorizedSymbolRenderer('route_id', categories)
+            categorized_renderer = QgsCategorizedSymbolRenderer('linktype_id', categories)
             
             memory_route_lyr.setRenderer(categorized_renderer)
             msg = 'created'
@@ -699,11 +810,13 @@ class QTranus:
 
             registry.addMapLayer(memory_route_lyr, False)
             layer_group.insertLayer(0, memory_route_lyr)
-
-            self.iface.messageBar().pushMessage("Info", f"QTRANUS Layer 'Network_routes' has been {msg}. Route #{id_routes}", level=0)
+            
+            if len(id_linktypes) > 0:
+                self.iface.messageBar().pushMessage("Info", f"QTRANUS Layer 'Network_Linktypes' has been {msg}. Link type #{id_linktypes}", level=0)
 
             # Remove UI Cursor loading...
             QApplication.restoreOverrideCursor()
+        
         except Exception as e:
             # Remove UI Cursor loading...
             print("Error:", e)
@@ -857,25 +970,31 @@ class QTranus:
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
 
         # TODO: Importante validar el scenario seleccionado o el por defecto
-        qry = """select a.id, a.name
+        qry = """
+                select 
+                    a.symbology, a.id, a.name
                 from link_type a
-                where id_scenario = 1 order by 1 asc """
+                where id_scenario = 1 order by 2 asc """
         #result = self.dataBaseSqlite.selectAll('route', columns='id, name, description')
         result = self.dataBaseSqlite.executeSql(qry)
-
+                
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['ID', 'Name'])
+        model.setHorizontalHeaderLabels(['Symbol', 'ID', 'Name'])
         if result:
             for x in range(0, len(result)):
                 model.insertRow(x)
                 z=0
-                for y in range(0,2):
-                    model.setData(model.index(x, y), result[x][z])
+                for y in range(0,3):
+                    if y == 0 and result[x][z]:
+                        model.setData(model.index(x, y), self.get_symbol_object(result[x][z]).asImage(QSize(35,10)), Qt.DecorationRole)
+                    else:
+                        model.setData(model.index(x, y), result[x][z])
                     z+=1
 
             self.linktypes_tree.setModel(model)
-            self.linktypes_tree.setColumnWidth(0, 12)
-            # self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
+            self.linktypes_tree.resizeColumnToContents(0)
+            self.linktypes_tree.resizeColumnToContents(1)
+            #self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
 
 
     def unload(self):
@@ -899,3 +1018,16 @@ class QTranus:
         self.dlg.show()
 
         self.dlg.exec_()
+
+    
+    def get_symbol_object(self, symbol_srt):
+        """ Return dictionary with objects of symbol """
+		# TODO: resolver tema de la symbologia correcta
+        symbol_obj = json.loads(symbol_srt.replace("'",'"'))
+        symbol_layers = QgsLineSymbol()
+
+        for layer_symbol in symbol_obj['layers_list']:
+            obj_symbol = eval(f"Qgs{layer_symbol['type_layer']}SymbolLayer.create({layer_symbol['properties_layer']})")
+            symbol_layers.appendSymbolLayer(obj_symbol)
+        symbol_layers.deleteSymbolLayer(0)
+        return symbol_layers

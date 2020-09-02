@@ -121,16 +121,16 @@ class LinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.__get_linktype_data()
         if opt == remove:
             scenarios = [str(value[0]) for value in scenarios]
-            scenarios = ','.join(scenarios)
-            validation, links = self.dataBaseSqlite.validateRemoveLinkType(linkTypeSelected, scenarios)
+            scenarios_str = ','.join(scenarios)
+            validation, links = self.dataBaseSqlite.validateRemoveLinkType(linkTypeSelected, scenarios_str)
              
             if validation == False:
                 links = tabulate(links, headers=["Scenario Code", "Link"])  if links else ''
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {links}")
                 messagebox.exec_()
             else:
-                self.dataBaseSqlite.removeAdministrator(scenarios, administratorSelected)
-                self.__get_administrators_data()
+                self.dataBaseSqlite.removeLinkType(scenarios, linkTypeSelected)
+                self.__get_linktype_data()
             
             
 

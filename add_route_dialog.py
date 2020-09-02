@@ -20,6 +20,7 @@ from .classes.general.Validators import validatorExpr # validatorExpr: For Valid
 
 from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
 
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_route.ui'))
 

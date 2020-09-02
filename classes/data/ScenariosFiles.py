@@ -130,8 +130,8 @@ class ScenariosFiles():
         id_base_scenario = result_base_scenario[0][0]
         # 1.1
         qry_internal = f"""select 
-                        distinct id_sector, id_zone, coalesce(exogenous_production, 0), coalesce(induced_production, 0), 
-                        coalesce(exogenous_demand, 0), coalesce(base_price, 0), coalesce(value_added, 0), coalesce(attractor, 0)
+                        distinct id_sector, id_zone, coalesce(nullif(exogenous_production, ''),0), coalesce(nullif(induced_production, ''),0), 
+                        coalesce(nullif(exogenous_demand, ''),0), coalesce(nullif(base_price, ''),0), coalesce(nullif(value_added, ''),0), coalesce(nullif(attractor, ''),0)
                         from 
                         zonal_data a 
                         join zone b on a.id_zone = b.id
@@ -144,7 +144,7 @@ class ScenariosFiles():
 
         # 2.1
         qry_exports = f"""select 
-                        distinct id_sector, id_zone, coalesce(exports,0)
+                        distinct id_sector, id_zone, coalesce(nullif(exports,''),0)
                         from 
                         zonal_data a 
                         join zone b on a.id_zone = b.id
@@ -155,8 +155,8 @@ class ScenariosFiles():
 
         # 2.2
         qry_imports = f"""select 
-                    distinct id_sector, id_zone, coalesce(min_imports, 0), coalesce(max_imports, 0), 
-                    coalesce(base_price, 0), coalesce(attractor, 0)
+                    distinct id_sector, id_zone, coalesce(nullif(min_imports,''), 0), coalesce(nullif(max_imports,''), 0), 
+                    coalesce(nullif(base_price,''), 0), coalesce(nullif(attractor,''), 0)
                     from 
                     zonal_data a 
                     join zone b on a.id_zone = b.id
@@ -169,7 +169,7 @@ class ScenariosFiles():
 
         # 3.0
         qry_prod = f"""select 
-                distinct id_sector, id_zone, min_production, max_production
+                distinct id_sector, id_zone, coalesce(nullif(min_production,''), 0), coalesce(nullif(max_production,''), 0)
                 from 
                     zonal_data a 
                 join zone b on a.id_zone = b.id
@@ -221,8 +221,8 @@ class ScenariosFiles():
         
         # 1.0 CATEGORY FORMATION FROM SOCIO-ECONOMIC SECTORS
         int_trans_cat =["Cat","Sector","Type","TimeF","VolumeF","Cons>Pro","Pro>Cons"]
-        qry_trans_cat = """select distinct coalesce(id_category,0) id_category, coalesce(id_sector,0) id_sector, coalesce(type,0) type, 
-                        coalesce(time_factor,0) time_factor, coalesce(volume_factor,0) volume_factor, coalesce(flow_to_product,0) flow_to_product, coalesce(flow_to_consumer,0) flow_to_consumer
+        qry_trans_cat = """select distinct coalesce(nullif(id_category,''),0) id_category, coalesce(nullif(id_sector,''),0) id_sector, coalesce(nullif(type,''),0) type, 
+                        coalesce(nullif(time_factor,''),0) time_factor, coalesce(nullif(volume_factor,''),0) volume_factor, coalesce(nullif(flow_to_product,''),0) flow_to_product, coalesce(nullif(flow_to_consumer,''),0) flow_to_consumer
                         from inter_sector_transport_cat
                         where id_scenario = 1 and (type != '' or time_factor != '' 
                          or  volume_factor != '' or flow_to_product != '' or  flow_to_consumer != '') order by 2 ASC""".format(id_scenario)
@@ -236,7 +236,7 @@ class ScenariosFiles():
                             config_model
                             where def_internal_cost_factor is not null
                             UNION
-                            select id zone, coalesce(internal_cost_factor,0) internal_cost_factor
+                            select id zone, coalesce(nullif(internal_cost_factor,''),0) internal_cost_factor
                             from zone 
                             where internal_cost_factor is not null and internal_cost_factor > 0"""
         result_zone_cost = self.dataBaseSqlite.executeSql(qry_trans_cat) 
@@ -352,7 +352,7 @@ class ScenariosFiles():
         #3.2
         attrac_ind =["Sector","Var","Lev1","Lev2"]
         qry_attra_ind = f"""select distinct id_sector sector, id_input_sector var, 
-                            coalesce(ind_prod_attractors,0) lvl1, 0 lvl2
+                            coalesce(nullif(ind_prod_attractors,''),0) lvl1, 0 lvl2
                             from inter_sector_inputs 
                             where id_scenario = {id_scenario} and nullif(ind_prod_attractors,'') > 0"""
         result_attra_ind = self.dataBaseSqlite.executeSql(qry_attra_ind) 
@@ -444,7 +444,7 @@ class ScenariosFiles():
         
         # 2.1 TRANSPORT DEMAND CATEGORIES
         trans_mode_head =["No.","'Name'","Paths","Overlapp","ASC"]
-        qry_trans_mode = """select a.id, name, coalesce(maximum_number_paths,0), 
+        qry_trans_mode = """select a.id, name, coalesce(nullif(maximum_number_paths,''),0), 
                             coalesce(path_overlapping_factor,0), 0 asc
                         from mode a"""
         result_trans_mode = self.dataBaseSqlite.executeSql(qry_trans_mode) 
@@ -452,9 +452,9 @@ class ScenariosFiles():
 
         # 2.2
         trans_ope_head =["No","'Name'","Mode","Type","OccRate","Penaliz","MinWait","MaxWait","PathASC"]
-        qry_ope = """select a.id, a.name, a.id_mode mode, a.type, coalesce(a.basics_occupency,0) occupency, 
-                            coalesce(a.basics_modal_constant,0) penaliz, 
-                            coalesce(a.basics_fixed_wating_factor,0)  minwait,  0 maxwait, 0 path_asc 
+        qry_ope = """select a.id, a.name, a.id_mode mode, a.type, coalesce(nullif(a.basics_occupency,''),0) occupency, 
+                            coalesce(nullif(a.basics_modal_constant,''),0) penaliz, 
+                            coalesce(nullif(a.basics_fixed_wating_factor,''),0)  minwait,  0 maxwait, 0 path_asc 
                             from operator a
                             where id_scenario = {}""".format(id_scenario)
         result_ope = self.dataBaseSqlite.executeSql(qry_ope) 
@@ -463,7 +463,7 @@ class ScenariosFiles():
         # 2.3
         trans_route_head =["No","'Name'","Oper","MinFreq","MaxFreq","Tartet Occ","MaxFleet","Scheduled"]
         qry_route = """select a.id, a.name, a.id_operator, a.frequency_from, 
-                    a.frequency_to, 0.70, a.max_fleet, a.follows_schedule
+                    a.frequency_to, 0.70, coalesce(nullif(a.max_fleet,''),0), coalesce(nullif(a.follows_schedule,''),0)
                     from route a
                     where id_scenario = {} and used = 1""".format(id_scenario)
         result_route = self.dataBaseSqlite.executeSql(qry_route) 
@@ -479,7 +479,7 @@ class ScenariosFiles():
 
         # 2.5
         trans_lynkt_head =["No","'Name'","Admin","MinMaintCo"]
-        qry_lynkt = """select a.id, name, id_administrator, min_maintenance_cost 
+        qry_lynkt = """select a.id, name, id_administrator, coalesce(nullif(min_maintenance_cost,''),0)
                         from link_type a
                         where a.id_scenario = {}""".format(id_scenario)
         result_lynkt = self.dataBaseSqlite.executeSql(qry_lynkt) 
@@ -487,7 +487,7 @@ class ScenariosFiles():
 
         # 3.0
         trans_cat_head =["No","'Name'","VofTrTime","VofWtTime", "Available Modes"]
-        qry_cat = """select id, name, volumen_travel_time, value_of_waiting_time, id_mode 
+        qry_cat = """select id, name, coalesce(nullif(volumen_travel_time,''),0), coalesce(nullif(value_of_waiting_time,''),0), id_mode 
                     from category
                     where id_scenario = {}""".format(id_scenario)
         result_cat = self.dataBaseSqlite.executeSql(qry_cat) 
@@ -495,10 +495,10 @@ class ScenariosFiles():
 
         # 4.1
         cost_ener_head =["Oper", "MinCons", "MaxCons","Slope","EnerCost","CtOpCost","TimeOpCost"]
-        qry_cost_ener = """select a.id, coalesce(a.energy_min,0) energy_min, coalesce(a.energy_max,0) energy_max, 
-                        coalesce(a.energy_slope,0) energy_slope, coalesce(a.energy_cost,0) energy_cost,
+        qry_cost_ener = """select a.id, coalesce(nullif(a.energy_min,''),0) energy_min, coalesce(nullif(a.energy_max,''),0) energy_max, 
+                        coalesce(nullif(a.energy_slope,''),0) energy_slope, coalesce(nullif(a.energy_cost,''),0) energy_cost,
                         0 cost_time_operation, 
-                        coalesce(cost_time_operation, 0) cost_time_operation
+                        coalesce(nullif(cost_time_operation,''), 0) cost_time_operation
                         from operator a
                         where id_scenario = {}""".format(id_scenario)
         result_cost_ener = self.dataBaseSqlite.executeSql(qry_cost_ener) 
@@ -507,8 +507,8 @@ class ScenariosFiles():
         # 4.2
         cost_header =["Type", "Oper", "Speed","EqVeh","DistCost","Toll","Maint","Penal"]
         qry_cond = """select 
-                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(speed,0), coalesce(equiv_vahicules,0), coalesce(distance_cost,0), 
-                        coalesce(charges,0) toll, coalesce(margin_maint_cost,0), coalesce(penaliz,0)
+                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(nullif(speed,''),0), coalesce(nullif(equiv_vahicules,''),0), coalesce(nullif(distance_cost,''),0), 
+                        coalesce(nullif(charges,''),0) toll, coalesce(nullif(margin_maint_cost,''),0), coalesce(nullif(penaliz,''),0)
                         from link_type_operator a
                         where id_scenario = {} and speed > 0
                         order by 1,2 """.format(id_scenario)
@@ -518,7 +518,7 @@ class ScenariosFiles():
         # 4.3
         overlap_head =["Type", "Oper", "Overlap"]
         qry_overlap = """select 
-                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(overlap_factor,0) overlap_factor
+                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(nullif(overlap_factor,''),0) overlap_factor
                         from link_type_operator a
                         where id_scenario = {} and overlap_factor > 1
                         order by 1,2 """.format(id_scenario)
@@ -527,8 +527,8 @@ class ScenariosFiles():
 
         # 5.1
         tariff_head =["Oper","MinTarf","TimeTarf","DistTarf.","OperCost"]
-        qry_tariff = """select distinct a.id, basics_boarding_tariff, basics_time_tariff,  
-                        basics_distance_tariff, cost_porc_paid_by_user/100  
+        qry_tariff = """select distinct a.id, coalesce(nullif(basics_boarding_tariff,''),0), coalesce(nullif(basics_time_tariff,''),0),  
+                        coalesce(nullif(basics_distance_tariff,''),0), coalesce(nullif(cost_porc_paid_by_user/100,''),0)  
                         from operator a
                         where id_scenario = {} 
                         and (basics_boarding_tariff > 0 or basics_time_tariff > 0 or cost_porc_paid_by_user > 0)""".format(id_scenario)
@@ -538,7 +538,7 @@ class ScenariosFiles():
 
         # 5.2
         transfer_head =["FromOper","ToOper","Tariff"]
-        qry_transfer = """select id_operator_from, id_operator_to, cost
+        qry_transfer = """select id_operator_from, id_operator_to, coalesce(nullif(cost,''),0)
                         from transfer_operator_cost
                         where id_scenario = {} order by 1,2 """.format(id_scenario)
         result_transfer = self.dataBaseSqlite.executeSql(qry_transfer) 
@@ -546,7 +546,7 @@ class ScenariosFiles():
 
         # 5.3
         cat_cost_head =["Cat","Oper","Penal F.","Tariff F..","ASC"]
-        qry_cat_cost = """select id_category, id_operator, tariff_factor, penal_factor, 0 asc
+        qry_cat_cost = """select id_category, id_operator, coalesce(nullif(tariff_factor,''),0), coalesce(nullif(penal_factor,''),0), 0 asc
                         from operator_category
                         where id_scenario = {}""".format(id_scenario)
         result_cat_cost = self.dataBaseSqlite.executeSql(qry_cat_cost) 
@@ -623,7 +623,7 @@ class ScenariosFiles():
         result = self.dataBaseSqlite.selectAll(" config_model ", " where type = 'transport'")
         
         net_head =["Src","Dest","GISId","Type","Dist.","Capac.","Delay","Routes..    0 Restricted Turns..../"]
-        qry_net = """select distinct node_from, node_to, id, id_linktype, coalesce(length,0), coalesce(capacity,0), coalesce(delay,0), 0
+        qry_net = """select distinct node_from, node_to, id, id_linktype, coalesce(nullif(length,''),0), coalesce(nullif(capacity,''),0), coalesce(nullif(delay,''),0), 0
                     from link
                     where id_scenario = %s
                     order by 1,2""" % (id_scenario)
@@ -631,10 +631,6 @@ class ScenariosFiles():
         result_net = self.dataBaseSqlite.executeSql(qry_net) 
         result_routes = []
 
-        """for valor in result_net:
-            result_routes.append(self.dataBaseSqlite.findRoutes(f"{valor[0]}-{valor[1]}", id_scenario))
-        
-        print(result_routes)"""
         #[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5],valor[6], str(valor[7])+" /"]
         net_data = [[valor[0],valor[1],valor[2],valor[3],valor[4],valor[5], valor[6], str(self.dataBaseSqlite.findRoutesRestrictedTurns(f"{valor[0]}-{valor[1]}", id_scenario))] for valor in result_net] 
 
@@ -682,7 +678,7 @@ class ScenariosFiles():
 
         # 1.0
         global_head =["Iterations","Convergenc",""]
-        qry_global = """select iterations, convergence, 1 
+        qry_global = """select iterations, coalesce(nullif(convergence,''),0), 1 
                         from config_model
                         where type='transport'"""
 
@@ -691,7 +687,7 @@ class ScenariosFiles():
 
         # 2.1
         ope_simu_head =["Oper","TimeFactor","ConsolPar"]
-        qry_ope_simu = """select a.id, basics_time_factor, -1 cosolpar
+        qry_ope_simu = """select a.id, coalesce(nullif(basics_time_factor,''),0), -1 cosolpar
                         from operator a
                         where id_scenario = {}""".format(id_scenario)
                     
@@ -700,8 +696,8 @@ class ScenariosFiles():
 
         # 2.2
         restr_head =["Link\nType","% Reduct\nat V/C=1","% Reduct\nMax", "V/C for\nMin Vel","Capacity\nFactor"]
-        qry_restr = """select a.id, perc_speed_reduction_vc/100, perc_max_speed_reduction/100, 
-                        vc_max_reduction/100, capacity_factor 
+        qry_restr = """select a.id, coalesce(nullif(perc_speed_reduction_vc/100,''),0), coalesce(nullif(perc_max_speed_reduction/100,''),0), 
+                        coalesce(nullif(vc_max_reduction/100,''),0), coalesce(nullif(capacity_factor,''),0) 
                         from link_type a
                         where id_scenario = {}""".format(id_scenario)
         result_restr = self.dataBaseSqlite.executeSql(qry_restr) 
@@ -709,8 +705,8 @@ class ScenariosFiles():
 
         # 2.3
         trip_gen_head =["Cat","MinGen","MaxGen", "GenElast","ModeElast","Logit Sc","CarAvail"]
-        qry_trip_gen = """select id, min_trip_gener, max_trip_gener, 
-                    elasticity_trip_gener, 1 modeelast, 1 logitsc, 1 caravail 
+        qry_trip_gen = """select id, coalesce(nullif(min_trip_gener,''),0), coalesce(nullif(max_trip_gener,''),0), 
+                    coalesce(nullif(elasticity_trip_gener,''),0), 1 modeelast, 1 logitsc, 1 caravail 
                     from category
                     where id_scenario = {}""".format(id_scenario)
         result_trip_gen = self.dataBaseSqlite.executeSql(qry_trip_gen) 
@@ -718,7 +714,7 @@ class ScenariosFiles():
         
         # 2.4
         path_head =["Cat","PathChElas","Logit Sc"]
-        qry_path = """select id, choice_elasticity, 1 logitsc 
+        qry_path = """select id, coalesce(nullif(choice_elasticity,''),0), 1 logitsc 
                         from category
                     where id_scenario = {}""".format(id_scenario)
         result_path = self.dataBaseSqlite.executeSql(qry_path) 
@@ -791,7 +787,7 @@ class ScenariosFiles():
         #1.2 
         int_exog_prods_head = ["Sector","Zone","Increment"]
         qry_exog_prod_incre = """select distinct id_sector sector, id_zone zone, 
-                            coalesce(exogenous_production,0) exogenous_production
+                            coalesce(nullif(exogenous_production,''),0) exogenous_production
                             from zonal_data a
                             where a.id_zone != 0 and id_scenario = {} and (exogenous_production != 0 and exogenous_production != '') order by 2,1""".format(id_scenario)
         result_int_exog_prod = self.dataBaseSqlite.executeSql(qry_exog_prod_incre)
@@ -800,7 +796,7 @@ class ScenariosFiles():
         #1.3 
         int_exog_demand_head = ["Sector","Zone","Increment"]
         qry_exog_demand_incre = """select distinct id_sector sector, id_zone zone, 
-                                coalesce(exogenous_demand,0) exogenous_demand
+                                coalesce(nullif(exogenous_demand,''),0) exogenous_demand
                                 from zonal_data a
                                 where a.id_zone != 0 and id_scenario = {} and (exogenous_demand!=0 and exogenous_demand!='')  order by 2,1""".format(id_scenario)
         result_int_demand_prod = self.dataBaseSqlite.executeSql(qry_exog_demand_incre)
@@ -810,7 +806,7 @@ class ScenariosFiles():
         int_ext_zone_exp_head = ["Sector","Zone","Increment"]
         qry_ext_zone_exp = """select distinct
                     id_sector sector, id_zone zone, 
-                    coalesce(exports, 0) exports
+                    coalesce(nullif(exports,''), 0) exports
                     from zonal_data a 
                     join zone b on (a.id_zone = b.id)
                     where a.id_zone != 0 and b.external = 1 and id_scenario = {} and (exports != 0 and exports !='') order by 2,1""".format(id_scenario)
@@ -821,9 +817,9 @@ class ScenariosFiles():
         int_imp_zone_exp_head = ["Sector","Zone","Min Incr.", "Max Incr.", "Attractor"]
         qry_imp_zone_exp = """select distinct
                                     id_sector sector, id_zone zone, 
-                                    coalesce(min_imports, 0) min_imports, 
-                                    coalesce(max_imports, 0) max_imports, 
-                                    coalesce(attractor_import,0) attractor_import
+                                    coalesce(nullif(min_imports,''), 0) min_imports, 
+                                    coalesce(nullif(max_imports,''), 0) max_imports, 
+                                    coalesce(nullif(attractor_import,''),0) attractor_import
                                 from zonal_data a 
                                 join zone b on (a.id_zone = b.id)
                                 where b.external = 1 and id_scenario = {} 
@@ -837,7 +833,7 @@ class ScenariosFiles():
         int_endvar_head = ["Sector","Zone","Attractor"]
         qry_endvar = """select distinct
                         id_sector sector, id_zone zone, 
-                        coalesce(attractor, 0) attractor
+                        coalesce(nullif(attractor,''), 0) attractor
                         from zonal_data a 
                         join zone b on (a.id_zone = b.id) 
                         where a.id_zone != 0 and a.id_scenario = {} and (attractor != 0 and attractor != '') order by 1,2""".format(id_scenario)
@@ -848,8 +844,8 @@ class ScenariosFiles():
         int_prod_head = ["Sector","Zone","MinRest", "MaxRest"]
         qry_prod = """select 
                     distinct  id_sector sector, id_zone zone, 
-                    coalesce(min_production,0) min_production, 
-                    coalesce(max_production,0) max_production
+                    coalesce(nullif(min_production,''),0) min_production, 
+                    coalesce(nullif(max_production,''),0) max_production
                     from zonal_data 
                     where id_zone != 0 and id_scenario = {} and (min_production != 0 or max_production != 0)  order by 1,2 """.format(id_scenario)
         result_prod = self.dataBaseSqlite.executeSql(qry_prod)
@@ -859,7 +855,7 @@ class ScenariosFiles():
         int_value_add_head = ["Sector","Zone","ValueAdded"]
         qry_value_add = """select distinct 
                                 id_sector sector, id_zone zone, 
-                                coalesce(value_added,0) value_added
+                                coalesce(nullif(value_added,''),0) value_added
                         from zonal_data
                         where id_zone != 0 and id_scenario = {} and (value_added != 0 and value_added != '') 
                         order by 1,2""".format(id_scenario)

@@ -119,6 +119,8 @@ class Helpers(object):
         return color_dict(RGB_list)
 
 
+
+
 class ExceptionGeometryType(Exception):
     """
     @summary: Exception for type geometry of the shapes
@@ -142,7 +144,5 @@ class ExceptionFormatID(Exception):
 
     def __str__(self):
         return f"{self.typeFile} \nIncorrect Format ID {self.idFile}" if self.typeFile else f"Incorrect Format ID {self.typeFile}"
-
-
-        
+    
                 

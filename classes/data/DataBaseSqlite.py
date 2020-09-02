@@ -270,7 +270,8 @@ class DataBaseSqlite():
 				min_maintenance_cost   	REAL,
 				perc_speed_reduction_vc REAL,
 				perc_max_speed_reduction REAL,
-				vc_max_reduction         REAL
+				vc_max_reduction         REAL, 
+				symbology                TEXT
 			);
 			""",
 			"""
@@ -682,8 +683,8 @@ class DataBaseSqlite():
 		sql_node = f"""INSERT OR REPLACE INTO  node (id, id_scenario, id_type,  name,  description,  x, y) 
 			VALUES (?, ?, ?, ?, ?, ?, ?)"""
 
-		sql_linktype = f"""INSERT OR REPLACE INTO  link_type (id, id_scenario, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+		sql_linktype = f"""INSERT OR REPLACE INTO  link_type (id, id_scenario, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
 		sql_linktype_ope = f"""INSERT OR REPLACE INTO  link_type_operator ( id_scenario, id_linktype, id_operator, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost ) 
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
@@ -818,6 +819,23 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
+
+	def add_linktype_link(self, scenarios, linktypes_list):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+
+		sql = """ update link set id_linktype = ?
+				where id_scenario = ? and linkid = ? """
+		sql_arr = []
+		
+		for id_scenario in scenarios:		
+			for link in linktypes_list:
+				sql_arr.append((int(link[1]), id_scenario[0], link[0]))
+		
+		cursor.executemany(sql, sql_arr)
+		conn.commit()			
+		conn.close()
+		return True
 	
 	def remove_route_link(self, scenarios, links_list):
 		conn = self.connectionSqlite()
@@ -1091,7 +1109,6 @@ class DataBaseSqlite():
 				sql_arr_trips.append((id_scenario[0], row[0], row[1], row[2], row[3]))
 
 		cursor.executemany(sql_exogenous, sql_arr_trips)
-
 		conn.commit()			
 		conn.close()
 
@@ -1110,33 +1127,29 @@ class DataBaseSqlite():
 			return True
 
 
-	def addLinkType(self, scenarios, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction):
+	def addLinkType(self, scenarios, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
 		for id_scenario in scenarios:
-			sql = """insert into link_type (id_scenario, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction)
-			 values ({}, {},'{}','{}',{},{},{},{},{},{});""".format(id_scenario[0], id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction)
-			
+			sql = """insert into link_type (id_scenario, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology)
+			 values ({}, {},'{}','{}',{},{},{},{},{},{},"{}");""".format(id_scenario[0], id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology)
 			cursor.execute(sql)
 			conn.commit()
-
 		conn.close()
 		
 		return True
 
 
-	def updateLinkType(self, scenarios, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction):
+	def updateLinkType(self, scenarios, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
 		for id_scenario in scenarios:
-			sql = """update link_type set name='{}', description='{}', id_administrator={}, capacity_factor={}, min_maintenance_cost={}, perc_speed_reduction_vc={}, perc_max_speed_reduction={}, vc_max_reduction={}
-		 	where id = {} and id_scenario = {};""".format(name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, id, id_scenario[0])
-		
+			sql = """update link_type set name='{}', description='{}', id_administrator={}, capacity_factor={}, min_maintenance_cost={}, perc_speed_reduction_vc={}, perc_max_speed_reduction={}, vc_max_reduction={}, symbology="{}"
+		 	where id = {} and id_scenario = {};""".format(name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology, id, id_scenario[0])
 			cursor.execute(sql)
 			conn.commit()
-
 		conn.close()
 		
 		return True
@@ -1177,20 +1190,22 @@ class DataBaseSqlite():
 		return True
 
 
-	def removeLinkType(self, id):
+	def removeLinkType(self, scenarios, id):
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
-		sql = """delete from link_type where id = {};""".format(id)
-		cursor.execute(sql)
-		conn.commit()
+		for id_scenario in scenarios:
+			sql = """delete from link_type where id_scenario = {} and  id = {};""".format(id_scenario[0], id)
+			cursor.execute(sql)
+			conn.commit()
 
-		sql = """delete from link_type_operator where id_linktype = {};""".format(id)
-		cursor.execute(sql)
-		conn.commit()
+			sql = """delete from link_type_operator where id_scenario = {} and id_linktype = {};""".format(id_scenario[0], id)
+			cursor.execute(sql)
+			conn.commit()
 		
 		conn.close()
 		return True
+
 
 	def addRoute(self, scenarios, id, name, description, id_operator, frequency_from, frequency_to, max_fleet, color, used=None, follows_schedule=None):
 		#try:
@@ -1463,7 +1478,6 @@ class DataBaseSqlite():
 		
 		for id_scenario in scenarios:
 			sql = "delete from node where id={} and id_scenario = {};".format(_id, id_scenario[0])
-			print(sql)
 			cursor.execute(sql)
 			conn.commit()
 		conn.close()

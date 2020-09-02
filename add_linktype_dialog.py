@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, re, webbrowser, numpy as np
+import os, re, webbrowser, pickle, json, numpy as np
 from string import *
 
 from PyQt5.QtGui import QIcon
@@ -20,6 +20,10 @@ from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .classes.general.Validators import validatorRegex
 
+from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton, QgsSymbolButton
+from qgis.core import QgsSymbol, QgsLineSymbol, QgsSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer
+from qgis.core import QgsArrowSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_linktype.ui'))
 
@@ -32,8 +36,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		"""
 		super(AddLinkTypeDialog, self).__init__(parent)
 		self.setupUi(self)
-		resolution_dict = Helpers.screenResolution(85)
-		self.resize(resolution_dict['width'], resolution_dict['height'])
+		#resolution_dict = Helpers.screenResolution(85)
+		#self.resize(resolution_dict['width'], resolution_dict['height'])
 
 		self.dataProject = None
 		self.tranus_folder = tranus_folder
@@ -45,6 +49,7 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.shortcut.activated.connect(self.paste_event)
 		self._row = 0
 		self._column = 0
+		
 
 		self.header = ['Speed', 'Charges', 'Penaliz.', 'Distance Cost', 'Equiv Vehicules', 'Overlap Factor', 'Marg. Maint. Cost']
 		self.columnLinkTypeDb = ['speed', 'charges', 'penaliz', 'distance_cost', 'equiv_vahicules', 'overlap_factor', 'margin_maint_cost']
@@ -67,7 +72,14 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		# Operator Data Section
 		self.operator_table = self.findChild(QtWidgets.QTableWidget, 'operator_table')
-
+		
+		self.btn_symbol = QgsSymbolButton(self, 'Symbol settings')
+		self.btn_symbol.setMinimumWidth(200)
+		self.btn_symbol.setSymbolType(QgsSymbol.Line)
+		self.label_symbol = QLabel("Symbol") 
+		self.layout_data = self.findChild(QtWidgets.QFormLayout, 'formLayout_3')
+		self.layout_data.addRow(self.label_symbol, self.btn_symbol)
+			
 		self.changeLineEditStyle = "color: green; font-weight: bold"
 
 		# Validations 
@@ -98,7 +110,6 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		#self.operator_table.itemChanged.connect(self.__update_operator_linktype)
 		
 		self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_linktype)
-		#self.__load_fields()
 		self.__get_scenarios_data()
 		self.__loadId()
 
@@ -138,7 +149,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
 		scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
 		self.idScenario = scenarioData[0][0]
-		self.load_default_data()
+		# TODO: correct symbology selection
+		#self.load_default_data()
 		self.__load_fields()
 
 
@@ -226,11 +238,16 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			return False
 
 		id_administrator = self.cb_administrator.itemData(self.cb_administrator.currentIndex())
+		
+		symbol = self.btn_symbol.symbol()
+		
+		symbololy_dict = self.get_symbol_dict(symbol)
 
 		if self.linkTypeSelected is None:
-			result = self.dataBaseSqlite.addLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
+			result = self.dataBaseSqlite.addLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text(), symbololy_dict)
 		else:
-			result = self.dataBaseSqlite.updateLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text())
+			result = self.dataBaseSqlite.updateLinkType(scenarios, self.id.text(), self.name.text(), self.description.text(), id_administrator, self.capacity_factor.text(), self.min_maintenance_cost.text(), self.porc_speed_reduction.text(), self.porc_max_speed_reduction.text(), self.vc_max_reduction.text(), symbololy_dict)
+
 		# Save Operator Data Table
 		operatorTable = self.operator_table.rowCount()
 		
@@ -249,7 +266,6 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			#self.dataBaseSqlite.addLinkTypeOperator(scenarios, id_operator, id_linktype, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost )
 			operator_arr.append((id_linktype, id_operator,  speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost)) 
 
-		print(scenarios, operator_arr)
 		self.dataBaseSqlite.addLinkTypeOperatorInsertUpdate(scenarios, operator_arr)
 
 		if result:
@@ -289,7 +305,6 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.linkTypeSelected:
 			linktype_result = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, self.idScenario))
 			id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
-
 			linktype_result_prev = None
 			if id_prevScenario:
 				linktype_result_prev = self.dataBaseSqlite.selectAll(' link_type ', " where id = {} and id_scenario = {}".format(self.linkTypeSelected, id_prevScenario[0][0]))
@@ -335,7 +350,9 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 					self.vc_max_reduction.setStyleSheet(self.changeLineEditStyle)
 				else:
 					self.vc_max_reduction.setStyleSheet("")
-		
+
+			if linktype_result[0][10] != '' and linktype_result[0][10]:
+				self.btn_symbol.setSymbol(self.get_symbol_object(linktype_result[0][10]))
 
 	def __load_fields(self):
 		
@@ -438,3 +455,33 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.scenario_tree.setSelectionModel(modelSelection)
 
 		self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+
+
+	
+	def get_symbol_dict(self, symbol):
+		""" Return dictionary with main elements of symbol """
+		symbol_dict = dict()
+
+		symbol_dict['type'] = symbol.type()
+		symbol_dict['layers_list'] = []
+
+		for index in range(0, symbol.symbolLayerCount()):
+			symbol_dict['layers_list'].append({
+					'type_layer': symbol.symbolLayer(index).layerType().split(':')[0],
+					'properties_layer': symbol.symbolLayer(index).properties(),
+			 	})
+	
+		return symbol_dict
+	
+
+	def get_symbol_object(self, symbol_srt):
+		""" Return dictionary with objects of symbol"""
+		# TODO: resolver tema de la symbologia correcta
+		symbol_obj = json.loads(symbol_srt.replace("'",'"'))
+		symbol_layers = QgsLineSymbol()
+		
+		for layer_symbol in symbol_obj['layers_list']:
+			obj_symbol = eval(f"Qgs{layer_symbol['type_layer']}SymbolLayer.create({layer_symbol['properties_layer']})")
+			symbol_layers.appendSymbolLayer(obj_symbol)
+		symbol_layers.deleteSymbolLayer(0)
+		return symbol_layers

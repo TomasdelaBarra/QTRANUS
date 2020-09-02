@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>634</width>
-    <height>496</height>
+    <height>425</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -83,8 +83,15 @@
              <layout class="QVBoxLayout" name="verticalLayout_3">
               <item>
                <layout class="QFormLayout" name="formLayout_3">
-                <item row="1" column="1">
-                 <widget class="QLineEdit" name="capacity_factor"/>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>Administrator</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="id_administrator"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_4">
@@ -93,15 +100,8 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>Administrator</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="min_maintenance_cost"/>
+                <item row="1" column="1">
+                 <widget class="QLineEdit" name="capacity_factor"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_6">
@@ -110,8 +110,8 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="porc_speed_reduction"/>
+                <item row="2" column="1">
+                 <widget class="QLineEdit" name="min_maintenance_cost"/>
                 </item>
                 <item row="3" column="0">
                  <widget class="QLabel" name="label_7">
@@ -120,12 +120,18 @@
                   </property>
                  </widget>
                 </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="porc_speed_reduction"/>
+                </item>
                 <item row="4" column="0">
                  <widget class="QLabel" name="label_10">
                   <property name="text">
                    <string>% Max Speed Reduction</string>
                   </property>
                  </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLineEdit" name="porc_max_speed_reduction"/>
                 </item>
                 <item row="5" column="0">
                  <widget class="QLabel" name="label_11">
@@ -134,28 +140,8 @@
                   </property>
                  </widget>
                 </item>
-                <item row="6" column="0">
-                 <widget class="QLabel" name="label_15">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="0">
-                 <widget class="QLabel" name="label_16">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QLineEdit" name="porc_max_speed_reduction"/>
-                </item>
                 <item row="5" column="1">
                  <widget class="QLineEdit" name="vc_max_reduction"/>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QComboBox" name="id_administrator"/>
                 </item>
                </layout>
               </item>
