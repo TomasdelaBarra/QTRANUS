@@ -1,11 +1,13 @@
     # -*- coding: utf-8 -*-
 import os, re, webbrowser
 from string import *
+import threading
 
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QAbstractItemView, QStandardItemModel, QStandardItem, QMainWindow, QToolBar, QHBoxLayout
+from PyQt5.QtWidgets import QApplication 
 from PyQt5.QtCore import *
 
 from qgis.core import QgsVectorLayer
@@ -189,12 +191,17 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
         if self.project_file[-13:]=="""\W_TRANUS.CTL""":
             self.project_file = self.project_file.replace('\W_TRANUS.CTL','')
-
+        
+        # TODO: validate sequence events
         #Loads
         #self.__extract_db_files()
         self.__connect_database_sqlite()
         self.__load_scenarios()
         self.load_data()
+
+        # Thread to load information
+        # load_data_thread = threading.Thread(target=self.load_data, name='load_data')
+        # load_data_thread.start()
         self.__validate_buttons()
         self.validate_database()
         
@@ -403,34 +410,54 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
+        self.statusBar.clearMessage()
         messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite nodes data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         selected = messagebox.exec_()
-        
-        if selected == QtWidgets.QMessageBox.Yes:
+
+        if selected == QtWidgets.QMessageBox.Yes:    
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
             self.__load_nodes_data("REPLACE")
-        
+            QApplication.restoreOverrideCursor()
+            
+            self.statusbar.showMessage("Success: Nodes data has been overwritten", 4000)
 
     def open_overwrite_zones(self):
         """
             @summary: Opens data window
         """
+        self.statusBar.clearMessage()
         messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite zones data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         selected = messagebox.exec_()
+        message = QtWidgets.QLabel()
 
-        if selected == QtWidgets.QMessageBox.Yes:
+        if selected == QtWidgets.QMessageBox.Yes:    
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
             self.__load_zones_data("REPLACE")
+            QApplication.restoreOverrideCursor()
+            
+            self.statusbar.showMessage("Success: Zones data has been overwritten", 4000)
+
         
 
     def open_overwrite_links(self):
         """
             @summary: Opens data window
         """
+        
         messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Do you want overwrite links data?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         selected = messagebox.exec_()
-        
-        if selected == QtWidgets.QMessageBox.Yes:
+        message = QtWidgets.QLabel()
+
+        if selected == QtWidgets.QMessageBox.Yes:    
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
             self.__load_network_data("REPLACE")
-        
+            QApplication.restoreOverrideCursor()
+
+            self.statusbar.showMessage("Success: Links data has been overwritten", 4000)
+
 
     def open_links_window(self):
         """
@@ -576,6 +603,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         else:
             print("DataBase Connection Successfully")
         
+
     def __validate_buttons(self):
         result_sector = self.dataBaseSqlite.selectAll(' sector ')
         result_category = self.dataBaseSqlite.selectAll(' category ')
@@ -632,30 +660,39 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.scenario_tree.setSelectionModel(modelSelection)
 
         
-
     def load_data(self):
-        
         if self.zone_shape.text() != '':
+            self.btn_zones.setEnabled(False)
+            self.btn_zones.setText("Zones loading...")
             self.__load_zones_data()
+            self.btn_zones.setText("Zones")
+            self.btn_zones.setEnabled(True)
         else:
             return False
 
         if self.network_nodes_shape.text() != '':
+            self.btn_nodes.setText("Nodes loading...")
+            self.btn_nodes.setEnabled(False)
             self.__load_nodes_data()
+            self.btn_nodes.setText("Nodes")
+            self.btn_nodes.setEnabled(True)
         else:
             return False
 
         if self.network_links_shape.text() != '':
-            self.__load_network_data() 
+            self.btn_links.setEnabled(False)
+            self.btn_links.setText("Links loading...")
+            self.__load_network_data()
+            self.btn_links.setText("Links")
+            self.btn_links.setEnabled(True)
         else:   
             return False
-            
 
 
     def __load_zones_data(self, typeSql="IGNORE"):
         shape = self.zone_shape.text()
         layer = QgsVectorLayer(shape, 'Zonas', 'ogr')
-
+        
         try:
             if not layer.isValid():
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Zone is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -671,7 +708,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
                 zoneIdField = self.zones_shape_id.currentText()
                 zoneNameField = self.zones_shape_name.currentText()
-                
                 for feature in features:
                     zoneId = feature.attribute(zoneIdField)
                     zoneName = feature.attribute(zoneNameField) if feature.attribute(zoneNameField) else None
@@ -692,6 +728,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
                 return True
         except Exception as e:
+            print(f"Error: {e}")
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in zone Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
@@ -715,7 +752,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 parent = self.parent()
                 data_list = []
                 for feature in layer.getFeatures():
-                    
                     scenarioField = self.links_shape_codscenario.currentText()
                     linkIdField = self.links_shape_fields.currentText()
                     linkNameField = self.links_shape_name.currentText()
@@ -734,7 +770,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             name = feature.attribute(linkNameField) if linkNameField != 'Select' else None
                             codScenario = feature.attribute(scenarioField) if scenarioField != 'Select' else None
                             idType = feature.attribute(typeField) if typeField != 'Select' else None
-                            two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
+                            #two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
+                            two_way = feature.attribute(directionField) if directionField != 'Select' else None 
                             length = feature.attribute(lengthField) if lengthField != 'Select' else None
                             capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
 
@@ -750,20 +787,28 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             capacity = None if isinstance(capacity, QVariant) else capacity
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
+                                if two_way != None:
+                                    data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
+                            
                         else:
-                            raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')
-                                
+                            raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')             
                 qry = """select 
                         distinct b.code, linkid, node_from, node_to, id_linktype, length, two_way, capacity, a.name
                         from link a
                         join scenario b on (a.id_scenario = b.id)"""
 
                 result = self.dataBaseSqlite.executeSql(qry)
-
+        
+                """
+                TODO: evaluate delete this section
                 if len(data_list) >= len(result):
                     resultList = list(set(data_list) - set(result))
                 else:
                     resultList = list(set(result) - set(data_list))
+                """
+                # result: database data
+                # data_list: network shape file data
+                resultList = Helpers.union_elements_by_column(result, data_list)
 
                 if typeSql=='REPLACE':
                     # self.dataBaseSqlite.executeDML('delete from link')
@@ -773,7 +818,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
                 return True
         except ExceptionFormatID as e:
-            print("Error: ", e)
+            print("Error ExceptionFormatID: ", e)
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
@@ -822,10 +867,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
                     return True
         except ExceptionFormatID as e:
+                print(f"Error ExceptionFormatID: {e}")
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
         except Exception as e:
+            print(f"Error: {e}")
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in node Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False

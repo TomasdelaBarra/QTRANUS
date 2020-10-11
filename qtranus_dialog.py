@@ -683,9 +683,10 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Opens data window
         """
-
+        # QTranusMessageBox.set_new_message_box_loader(self)
+        
         if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
-            project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
+            project_file = os.path.join(self.tranus_folder.text(), self.layers_group_name.text())
             window = DataWindow(project_file, parent = self)
             window.show()
             #result = dialog.exec_()
@@ -701,26 +702,43 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def results_dialog(self):
         """
-            @summary: Opens results window 
+            @summary: Opens result window
         """
-        if self.tranus_folder.text().strip() =='':
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            return False
-        
-        dialog = ResultsDialog(self.tranus_folder.text(), parent = self)
-        dialog.show()
-        result = dialog.exec_()
+        # TODO: Delete text edit path centriods
+        if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
+            self.project.load_tranus_folder()
+            #self.project.load_shapes()
+            project_file = os.path.join(self.tranus_folder.text(), self.layers_group_name.text())
+            dialog = ResultsDialog(project_file, parent = self)
+            dialog.show()
+            result = dialog.exec_()
+            
+        else:
+            if(self.layers_group_name.text().strip() == ''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                
+            if(self.tranus_folder.text().strip() ==''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
 
     def run_dialog(self):
         """
             @summary: Opens run window 
         """
-        project_file = f"{self.tranus_folder.text()}/{self.layers_group_name.text()}"
-        dialog = RunDialog(project_file, parent = self)
-        dialog.show()
-        result = dialog.exec_()
-        pass
+        if(self.layers_group_name.text().strip() !='' and self.tranus_folder.text().strip()!= ''):
+            project_file = os.path.join(self.tranus_folder.text(), self.layers_group_name.text())
+            dialog = RunDialog(project_file, parent = self)
+            dialog.show()
+            result = dialog.exec_()
+        else:
+            if(self.layers_group_name.text().strip() == ''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a DB ZIP file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                
+            if(self.tranus_folder.text().strip() ==''):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select workspace path.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
 
     """def default_data(self):
         indexZonesIdFieldName = self.zones_shape_fields.findText(self.project['zones_id_field_name'], Qt.MatchFixedString)
@@ -1020,6 +1038,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Empty database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
         except:
-            print("Read database error")
+            print("Read database error Project files")
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()

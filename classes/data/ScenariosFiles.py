@@ -7,12 +7,12 @@ from ..libraries.tabulate import tabulate
 class ScenariosFiles():
     def __init__(self, project_file, statusBar=None):
         self.project_file = project_file
-        self.tranus_folder = self.uriSegmentation(self.project_file)
+        self.tranus_folder = self.uri_segmentation(self.project_file)
         self.statusBar = statusBar
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
 
-    def uriSegmentation(self, project_file):
-        project_file_arr = project_file.split("/")
+    def uri_segmentation(self, project_file):
+        project_file_arr = project_file.split("\\")
         return "/".join(project_file_arr[:len(project_file_arr)-1])
 
     def generate_single_scenario(self, id_scenario):

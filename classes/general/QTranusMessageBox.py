@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.Qt import QMessageBox
+from PyQt5.QtWidgets import QLabel
 
 __ALL__ = ['QTranusMessageBox']
 """ QTranusMessageBox Class """
@@ -46,5 +47,17 @@ class QTranusMessageBox(object):
             messagebox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         if detailedText:
             messagebox.setDetailedText(detailedText)
+        
+        return messagebox
+
+
+    @staticmethod
+    def set_new_message_box_loader(parent, text="Syncing files..."):
+        """
+            @summary: Constructor
+        """
+        
+        messagebox = QtWidgets.QProgressDialog(text, "Cancel", 0, 21, parent)
+        messagebox.setWindowModality(Qt.WindowModal)
         
         return messagebox

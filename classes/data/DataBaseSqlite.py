@@ -221,7 +221,8 @@ class DataBaseSqlite():
 				cost_porc_paid_by_user    	REAL NOT NULL,
 				stops_min_stop_time    	    REAL NOT NULL,
 				stops_unit_boarding_time    REAL NOT NULL,
-				stops_unit_alight_time    	REAL NOT NULL
+				stops_unit_alight_time    	REAL NOT NULL,
+				color 					    INT  NOT NULL
 			);
 			""",
 			"""
@@ -668,8 +669,8 @@ class DataBaseSqlite():
 		sql_cat = f"""INSERT OR REPLACE INTO  category (id, id_scenario, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity) 
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
-		sql_ope = f"""INSERT OR REPLACE INTO  operator (id, id_scenario, name, description, id_mode, type, basics_modal_constant, basics_occupency, basics_time_factor, basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, energy_min, energy_max, energy_slope, energy_cost, cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, stops_unit_boarding_time, stops_unit_alight_time) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+		sql_ope = f"""INSERT OR REPLACE INTO  operator (id, id_scenario, name, description, id_mode, type, basics_modal_constant, basics_occupency, basics_time_factor, basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, energy_min, energy_max, energy_slope, energy_cost, cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, stops_unit_boarding_time, stops_unit_alight_time, color) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
 		sql_ope_cat = f"""INSERT OR REPLACE INTO  operator_category ( id_scenario, id_operator, id_category, tariff_factor, penal_factor ) 
 			VALUES (?, ?, ?, ?, ?)"""
@@ -714,7 +715,7 @@ class DataBaseSqlite():
 			sql_arr_cat.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
 
 		for row in data_ope:
-			sql_arr_ope.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[15], row[17], row[18], row[19], row[20], row[21]))
+			sql_arr_ope.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[15], row[17], row[18], row[19], row[20], row[21], row[22]))
 		
 		for row in data_ope_cat:
 			sql_arr_ope_cat.append((id_scenario, row[1], row[2], row[3], row[4]))
@@ -1534,6 +1535,7 @@ class DataBaseSqlite():
 		stops_min_stop_time = float(data['stops_min_stop_time'])
 		stops_unit_boarding_time = float(data['stops_unit_boarding_time'])
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
+		color = int(data['color'])
 
 		for id_scenario in scenarios:
 			sql = "insert into operator (id_scenario, id, name, description, id_mode, type, \
@@ -1542,13 +1544,13 @@ class DataBaseSqlite():
 				   energy_min, energy_max, energy_slope, energy_cost, \
 				   cost_time_operation, cost_porc_paid_by_user,\
 				   stops_min_stop_time, stops_unit_boarding_time, \
-				   stops_unit_alight_time) values ({},{},'{}','{}',{},'{}',\
-				   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(id_scenario[0], _id, _name, _description, _id_mode, _type,
+				   stops_unit_alight_time, color) values ({},{},'{}','{}',{},'{}',\
+				   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(id_scenario[0], _id, _name, _description, _id_mode, _type,
 				   basics_modal_constant, basics_time_factor, basics_occupency,
 				   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
 				   energy_min, energy_max, energy_slope, energy_cost, 
 				   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
-				   stops_unit_boarding_time, stops_unit_alight_time)
+				   stops_unit_boarding_time, stops_unit_alight_time, color)
 
 			cursor.execute(sql)
 			conn.commit()
@@ -1583,6 +1585,7 @@ class DataBaseSqlite():
 		stops_min_stop_time = float(data['stops_min_stop_time'])
 		stops_unit_boarding_time = float(data['stops_unit_boarding_time'])
 		stops_unit_alight_time = float(data['stops_unit_alight_time'])
+		color = float(data['color'])
 
 		for id_scenario in scenarios:
 			sql = """update operator set name='{}', description='{}', id_mode={}, type='{}', 
@@ -1591,12 +1594,12 @@ class DataBaseSqlite():
 				   energy_min={}, energy_max={}, energy_slope={}, energy_cost={}, 
 				   cost_time_operation={}, cost_porc_paid_by_user={},
 				   stops_min_stop_time={}, stops_unit_boarding_time={}, 
-				   stops_unit_alight_time={} where id = {} and id_scenario = {};""".format(_name, _description, _id_mode, _type,
+				   stops_unit_alight_time={}, color={} where id = {} and id_scenario = {};""".format(_name, _description, _id_mode, _type,
 				   basics_modal_constant, basics_time_factor, basics_occupency,
 				   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, 
 				   energy_min, energy_max, energy_slope, energy_cost, 
 				   cost_time_operation, cost_porc_paid_by_user, stops_min_stop_time, 
-				   stops_unit_boarding_time, stops_unit_alight_time, _id, id_scenario[0])
+				   stops_unit_boarding_time, stops_unit_alight_time, color, _id, id_scenario[0])
 			
 			cursor.execute(sql)
 			conn.commit()

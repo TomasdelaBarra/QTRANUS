@@ -88,7 +88,6 @@ class MapData(object):
         """
             @summary: Loads dictionaries 
         """
-        print("CARGA DE DICCIONARIOS")
         self.__set_scenarios()
         self.__set_sectors()
         self.__set_data_fields()

@@ -137,7 +137,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def uriSegmentation(self, project_file):
-        project_file_arr = project_file.split("/")
+        project_file_arr = project_file.split("\\")
         return "/".join(project_file_arr[:len(project_file_arr)-1])
 
 
@@ -266,8 +266,8 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.programs_list = []
     
         if self.rd_allprograms.isChecked():
-            self.programs_list = ['Path Search', 'Initial Assigment', 'Location', 'Assigment']
-
+            self.programs_list = ['Path Search', 'Initial Assigment', 'Location', 'Assigment'] if self.is_base_scenario(self.scenarioCode) else ['Path Search', 'Location', 'Assigment']
+    
         if self.chck_path_search.isChecked():
             self.programs_list.append('Path Search')
 
@@ -435,3 +435,13 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             else:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generate input files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
+    
+    def is_base_scenario(self, scenario_code):
+        
+        result = self.dataBaseSqlite.selectAll(" scenario ", where=f" where code = '{scenario_code}' and cod_previous = '' ")
+
+        if len(result) > 0:
+            return True
+        else:
+            return False
+

@@ -118,7 +118,22 @@ class Helpers(object):
 
         return color_dict(RGB_list)
 
+    @staticmethod
+    def union_elements_by_column(list_a, list_b, column=1):
+        '''
+        Add list_a to the missing elements that are in list_b
+        '''
+        def find_element(value, links_list):
+            for data in links_list:
+                if data[column] == value:
+                    return True
+            return False
 
+
+        for data_b in list_b:
+            if not find_element(data_b[column], list_a):
+                list_a.append(data_b)
+        return list_a
 
 
 class ExceptionGeometryType(Exception):

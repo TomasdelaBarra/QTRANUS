@@ -65,21 +65,21 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         filename = "file:///" + os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/userHelp/", 'results.html')
         webbrowser.open_new_tab(filename)
     
-    """def __reload_scenarios(self):
+    def __reload_scenarios(self):
        
         self.scenarios_model = ScenariosModel(self)
         self.scenarios.setModel(self.scenarios_model)
-        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)"""
+        self.scenarios.setExpanded(self.scenarios_model.indexFromItem(self.scenarios_model.root_item), True)
 
 
     def __load_scenarios(self):
-
         self.scenarios_model = ScenariosModelSqlite(self.tranus_folder)
         self.scenarios.setModel(self.scenarios_model)
         self.scenarios.expandAll()
         modelSelection = QItemSelectionModel(self.scenarios_model)
         modelSelection.setCurrentIndex(self.scenarios_model.index(0, 0, QModelIndex()), QItemSelectionModel.SelectCurrent)
         self.scenarios.setSelectionModel(modelSelection)
+    
     
     def __load_layers_list(self):
         """

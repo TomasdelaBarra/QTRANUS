@@ -180,6 +180,7 @@ class AddNodeDialog(QtWidgets.QDialog, FORM_CLASS):
                 project = QgsProject.instance()
                 layerIds = [layer.id() for layer in project.mapLayers().values()]
                 layerId = [ value for value in layerIds if re.match('Network_Nodes',value)][0]
+                print(Node)
                 if not Node.addNodeFeatureShape(layerId, self.le_x.text(), self.le_y.text(), self.id.text(), name, id_type, nodeShapeFields=self.node_shape_fields):
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Node", "Please select other scenario code.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                     messagebox.exec_() 

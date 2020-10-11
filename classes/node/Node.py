@@ -28,8 +28,6 @@ class Node(object):
 
 	@staticmethod
 	def addNodeFeatureShape(layerId, xCoordenate, yCoordenate, nodeId, name, typeNode, nodeShapeFields=None):
-		#def addNodeFeatureShape(layerId, xCoordenate, yCoordenate, nodeId, name, type, nodeShapeFields=None):
-
 		"""
 		@summary: Build link to Shape Network
 		@param originPoint: xCoordenate
@@ -58,7 +56,7 @@ class Node(object):
 			values[fields.index(nodeShapeFields['typeNode'])] = typeNode
 			values[fields.index(nodeShapeFields['x'])] = xCoordenate
 			values[fields.index(nodeShapeFields['y'])] = yCoordenate
-			print(values, "type: "+str(typeNode), "Coordenadas ", xCoordenate, yCoordenate, nodeShapeFields)
+			# print(values, "type: "+str(typeNode), "Coordenadas ", xCoordenate, yCoordenate, nodeShapeFields)
 			layer.startEditing()
 
 			geom = QgsGeometry()

@@ -54,6 +54,7 @@ from .scenarios_model_sqlite import ScenariosModelSqlite
 from .add_route_dialog import AddRouteDialog
 from .add_linktype_dialog import AddLinkTypeDialog
 from .reasign_linktype import ReasignLintype
+from .classes.Paths import Paths
 
 
 class QTranus:
@@ -76,17 +77,20 @@ class QTranus:
         self.canvas = None
 
         # Load layput dock Scenarios
+        # Routes tab
         self.scenarios_dockwidget = uic.loadUi(os.path.join(os.path.dirname(__file__), 'scenarios_selector.ui'))
         self.scenarios_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'scenarios')            
-        self.scenarios_tree.clicked.connect(self.update_leyers)
+        self.scenarios_tree.clicked.connect(self.update_layers)
         self.btn_add_route = self.scenarios_dockwidget.findChild(QtWidgets.QPushButton, 'btn_add_route')
-        self.btn_add_linktype = self.scenarios_dockwidget.findChild(QtWidgets.QPushButton, 'btn_add_linktype')
         self.routes_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'routes_tree')                 
         self.routes_tree.setRootIsDecorated(False)
         self.routes_tree.clicked.connect(self.update_routes)
         self.routes_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.routes_tree.customContextMenuRequested.connect(self.open_menu_routes)
         self.routes_tree.setSelectionMode(QAbstractItemView.MultiSelection)
+        
+        # Link types tab
+        self.btn_add_linktype = self.scenarios_dockwidget.findChild(QtWidgets.QPushButton, 'btn_add_linktype')
         self.linktypes_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'linktypes_tree')            
         self.linktypes_tree.setRootIsDecorated(False)
         self.linktypes_tree.clicked.connect(self.update_linktypes)
@@ -98,6 +102,16 @@ class QTranus:
         self.btn_add_route.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         self.btn_add_linktype.clicked.connect(self.open_add_linktype_window)
         self.btn_add_linktype.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
+        
+        # Results - Path tab
+        self.cb_origin = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_origin')
+        self.cb_destination = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_destination')
+        self.cb_mode = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_mode')
+        self.cb_category = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_category')
+        self.cb_path = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_path')
+        self.pathlink_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'paths_links_tree')            
+        self.pathlink_tree.setRootIsDecorated(False)
+        self.pathlink_tree.header().setStretchLastSection(True)
 
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
@@ -478,7 +492,7 @@ class QTranus:
         return QCoreApplication.translate('QTranus', message)
 
 
-    def update_leyers(self, selectedIndex):
+    def update_layers(self, selectedIndex):
         """
             @summary: Update Layers after scenario selection
         """
@@ -922,6 +936,56 @@ class QTranus:
         self.load_scenarios()
         self.load_routes()
         self.load_linktypes()
+        #self.load_paths()
+
+
+    def load_paths(self):
+        self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
+        self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        zones_result = self.dataBaseSqlite.selectAll(' zone ', where=" where id != 0", orderby=" order by 1 asc")
+        mode_result = self.dataBaseSqlite.selectAll(' mode ')
+        scenario_code = '91A'
+        id_origin = 1
+        id_destination = 2
+        
+        for value in zones_result:
+            self.cb_origin.addItem(f"{value[0]} {value[1]}", value[0])
+            self.cb_destination.addItem(f"{value[0]} {value[1]}", value[0])
+
+        for value in mode_result:
+            self.cb_mode.addItem(f"{value[0]} {value[1]}", value[0])
+
+        result_paths = self.get_paths(id_origin, id_destination, scenario_code)
+        
+        self.load_pathlinktree(result_paths)
+    
+    
+    def load_pathlinktree(self, paths):
+        try:    
+            model = QtGui.QStandardItemModel()
+            model.setHorizontalHeaderLabels(['Route/Operator','To Node'])
+            if paths:
+                for x in range(0, len(result)):
+                    model.insertRow(x)
+                    z=0
+                    for y in range(0,2):
+                        model.setData(model.index(x, y), paths[x][z])
+                        z+=1
+
+                self.pathlink_tree.setModel(model)
+                self.pathlink_tree.setColumnWidth(0, 37)
+                self.pathlink_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
+                
+        except Exception as e:
+            print(e)
+
+    
+    def get_paths(self, id_origin, id_destination, scenario_code):
+        result = Paths(self.project['tranus_folder'], scenario_code).load_paths()
+        for value in result:
+            if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination):
+                return value[1]
+        return False
 
 
 
@@ -955,7 +1019,10 @@ class QTranus:
                 z=0
                 for y in range(0,3):
                     if y == 0:
-                        model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+                        if result[x][z]:
+                            model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+                        else:
+                            model.setData(model.index(x, y), QtGui.QBrush(QColor(4294967295)), Qt.BackgroundRole)
                     else:
                         model.setData(model.index(x, y), result[x][z])
                     z+=1

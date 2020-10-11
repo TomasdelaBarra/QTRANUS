@@ -20,6 +20,7 @@ from .add_scenario_dialog import AddScenarioDialog
 from .classes.general.Validators import validatorExpr  # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .classes.general.Validators import validatorRegex
 
+from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_operator.ui'))
@@ -42,7 +43,6 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.columnOperatorCetegoryDb = ['tariff_factor', 'penal_factor']
 		self.vertical_header_cat = []
 		self.operatorSelected = codeOperator
-
 		self.idScenario = idScenario
 
 		# Style of LineEdit
@@ -58,6 +58,8 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.description = self.findChild(QtWidgets.QLineEdit, 'description')
 		self.cb_mode = self.findChild(QtWidgets.QComboBox, 'cb_mode')
 		self.cb_type = self.findChild(QtWidgets.QComboBox, 'cb_type')
+		self.button_color = QgsColorButton(self, 'Color')
+		self.label_color = QLabel("Color") 
 
 		# Basics Section
 		self.basics_modal_constant = self.findChild(QtWidgets.QLineEdit, 'basics_modal_constant')
@@ -68,7 +70,9 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.basics_boarding_tariff = self.findChild(QtWidgets.QLineEdit, 'basics_boarding_tariff')
 		self.basics_distance_tariff = self.findChild(QtWidgets.QLineEdit, 'basics_distance_tariff')
 		self.basics_time_tariff = self.findChild(QtWidgets.QLineEdit, 'basics_time_tariff')
-
+		
+		self.layout_operator = self.findChild(QtWidgets.QFormLayout, 'formLayout_operator')
+		self.layout_operator.addRow(self.label_color, self.button_color)
 		# By Category Section
 		self.by_category_tbl = self.findChild(QtWidgets.QTableWidget, 'by_category_table')
 		
@@ -304,8 +308,13 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 		
+		if self.button_color.isNull():
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Route", "Please select Color.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
+		
 		id_mode = self.cb_mode.itemData(self.cb_mode.currentIndex())
-
+		
 		data = dict(id=self.id.text(), name=self.name.text(), description=self.description.text(), id_mode=id_mode, 
 			   type=id_type, basics_modal_constant=self.basics_modal_constant.text(), basics_occupency=self.basics_occupency.text(),
 			   basics_time_factor=self.basics_time_factor.text(), basics_fixed_wating_factor=self.basics_fixed_wating_factor.text(), 
@@ -314,7 +323,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			   energy_max=self.energy_max.text(), energy_slope = self.energy_slope.text(), energy_cost=self.energy_cost.text(),
 			   cost_time_operation=self.cost_time_operation.text(),cost_porc_paid_by_user=self.cost_porc_paid_by_user.text(), 
 			   stops_min_stop_time=self.stops_min_stop_time.text(),stops_unit_boarding_time=self.stops_unit_boarding_time.text(), 
-			   stops_unit_alight_time=self.stops_unit_alight_time.text()
+			   stops_unit_alight_time=self.stops_unit_alight_time.text(), color=self.button_color.color().rgb()
 			   )
 		
 		if self.operatorSelected:
@@ -389,9 +398,11 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 	def load_default_data(self):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
+		icons_types = ['normal.png', 'transit_icon.png','transit_with_routes.png','non_motorized.png']
+		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 		self.cb_type.clear()
 		for index, valor in enumerate(types):
-			self.cb_type.addItem(valor, index+1)
+			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)
 
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()
@@ -434,6 +445,11 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.stops_min_stop_time.setText(Helpers.decimalFormat(str(operator_result[0][19])))
 			self.stops_unit_boarding_time.setText(Helpers.decimalFormat(str(operator_result[0][20])))
 			self.stops_unit_alight_time.setText(Helpers.decimalFormat(str(operator_result[0][21])))
+
+			if operator_result[0][22]: 
+				qcolor = QColor()
+				qcolor.setRgb(operator_result[0][22])
+				self.button_color.setColor(qcolor)
 
 			if id_prevScenario and operator_result_prev:
 				if (operator_result[0][1] !=  operator_result_prev[0][1]):
@@ -528,11 +544,11 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 	def __load_fields(self):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
-		
+		icons_types = ['normal.png', 'transit_icon.png','transit_with_routes.png','non_motorized.png']
 		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 		self.cb_type.clear()
 		for index, valor in enumerate(types):
-			self.cb_type.addItem(types[index],index+1)
+			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()

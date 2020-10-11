@@ -17,7 +17,7 @@ class BatchFiles():
 
 
     def uriSegmentation(self, project_file):
-        project_file_arr = project_file.split("/")
+        project_file_arr = project_file.split("\\")
         return "/".join(project_file_arr[:len(project_file_arr)-1])
 
 
@@ -76,14 +76,15 @@ class BatchFiles():
         fh = None
         
         try:
-            fh = open("{}/{}".format(self.tranus_folder, filename), "w", encoding="utf-8")
+            file = os.path.join(self.tranus_folder, filename)
+            print(file)
+            with open(file, "w", encoding="utf-8") as fh:
+                for program in programs:
+                    fh.write(f"{program}\n")
+                
+                self.statusBar.showMessage("File: {}/{}".format(self.tranus_folder, filename))
 
-            for program in programs:
-                fh.write(f"{program}\n")
-            
-            self.statusBar.showMessage("File: {}/{}".format(self.tranus_folder, filename))
-
-            return filename
+                return filename
         except Exception as e:
             return False
         finally:

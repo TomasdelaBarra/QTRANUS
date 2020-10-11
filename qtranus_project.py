@@ -989,6 +989,7 @@ class QTranusProject(object):
         folder = folder or self['tranus_folder']
         # path = os.path.join(folder, 'W_TRANUS.CTL')
         path = folder
+        
         try:
 
             #Load all indicators (Sectors, Scenarios, Operator, Routes)

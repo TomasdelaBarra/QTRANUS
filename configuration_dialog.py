@@ -66,7 +66,7 @@ class ConfigurationDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.projectAuthor.textChanged.connect(self.check_state)
 		"""
 		self.projectDescription.setMaxLength(55)
-		self.projectAuthor.setMaxLength(10)
+		self.projectAuthor.setMaxLength(30)
 
 		# Validations Double Fields
 		self.projectTransIter.setValidator(validatorExpr('decimal'))
