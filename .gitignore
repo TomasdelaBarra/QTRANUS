@@ -1,3 +1,11 @@
-programs.zip 
-__pycache__/ 
+programs.zip
+__pycache__/
 programs/
+classes/libraries/xlrd/__pycache__/
+classes/__pycache__/
+classes/__pycache__/
+classes/data/__pycache__/
+classes/general/__pycache__/
+classes/libraries/__pycache__/
+classes/network/__pycache__/
+classes/node/__pycache__/
