@@ -200,8 +200,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.load_data()
 
         # Thread to load information
-        # load_data_thread = threading.Thread(target=self.load_data, name='load_data')
-        # load_data_thread.start()
+        #load_data_thread = threading.Thread(target=self.load_data, name='load_data')
+        #load_data_thread.start()
         self.__validate_buttons()
         self.validate_database()
         
