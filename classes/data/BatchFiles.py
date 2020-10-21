@@ -26,7 +26,7 @@ class BatchFiles():
         codeScenario = resultScenario[0][1]
 
         if resultScenario[0][3]:
-            programs = {'Path Search': [f'pasos {codeScenario}'], 
+            programs = {'Path Search': [f'pasos {codeScenario}', f'impas {codeScenario} -P -M -o {codeScenario}\path_{codeScenario}.csv'], 
                         'Location':[f'loc {codeScenario}',
                                     f'fluj {codeScenario}',
                                     f'imploc {codeScenario} -J -o transport_indicators_{codeScenario}.csv'],
@@ -39,7 +39,7 @@ class BatchFiles():
                         }
         else:
             # Base Sceanario 
-            programs = {'Path Search': [f'pasos {codeScenario}'], 
+            programs = {'Path Search': [f'pasos {codeScenario}', f'impas {codeScenario} -P -M -o {codeScenario}\path_{codeScenario}.csv'], 
                         'Initial Assigment':[f'trans {codeScenario} -I', 
                                              f'cost {codeScenario}'],
                         'Location':[f'cost {codeScenario}', 

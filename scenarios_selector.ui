@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="scenarios_tab">
        <property name="toolTip">
@@ -122,9 +122,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label_9">
+             <widget class="QLabel" name="lbl_scenario_code">
               <property name="text">
-               <string>Name scenario</string>
+               <string>N/A</string>
               </property>
              </widget>
             </item>
@@ -165,18 +165,8 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_4">
-                <property name="text">
-                 <string>Category</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="1">
                <widget class="QComboBox" name="cb_mode"/>
-              </item>
-              <item row="1" column="1">
-               <widget class="QComboBox" name="cb_category"/>
               </item>
              </layout>
             </item>
@@ -202,9 +192,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label_8">
+             <widget class="QLabel" name="lbl_total_paths">
               <property name="text">
-               <string>12</string>
+               <string>0</string>
               </property>
              </widget>
             </item>
@@ -241,7 +231,7 @@
                  </layout>
                 </item>
                 <item>
-                 <widget class="QTableWidget" name="table_desutilities"/>
+                 <widget class="QTableWidget" name="tbl_desutilities"/>
                 </item>
                </layout>
               </item>

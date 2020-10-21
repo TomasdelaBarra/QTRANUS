@@ -2596,7 +2596,6 @@ class DataBaseSqlite():
 
 	def selectAll(self, table, where='', columns='*', orderby=''):
 		sql = "select {} from {} {} {}".format(columns,table, where, orderby)
-
 		conn = self.connectionSqlite()
 		try:
 			data = conn.execute(sql)

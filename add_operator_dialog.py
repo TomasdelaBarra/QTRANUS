@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, re, webbrowser, numpy as np
+import os, re, webbrowser, json, numpy as np
 from string import *
 
 from PyQt5.QtGui import QIcon
@@ -21,6 +21,9 @@ from .classes.general.Validators import validatorExpr  # validatorExpr: For Vali
 from .classes.general.Validators import validatorRegex
 
 from qgis.gui import QgsColorButton, QgsGradientColorRampDialog, QgsColorRampButton
+
+from qgis.core import QgsProject, QgsRendererCategory, QgsCategorizedSymbolRenderer, QgsSymbol, QgsLineSymbol, QgsSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer, QgsArrowSymbolLayer, QgsSimpleLineSymbolLayer, QgsMarkerLineSymbolLayer
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'add_operator.ui'))
@@ -401,8 +404,12 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		icons_types = ['normal.png', 'transit_icon.png','transit_with_routes.png','non_motorized.png']
 		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 		self.cb_type.clear()
+		
 		for index, valor in enumerate(types):
-			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)
+			symbol_json_str = self.operators_symbols_lst(index+1)
+			image = self.get_symbol_object(symbol_json_str).asImage(QSize(15,7))
+		
+			self.cb_type.addItem(QIcon(QPixmap.fromImage(image)), types[index],index+1)
 
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()
@@ -546,9 +553,18 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		types = ['Normal', 'Transit','Transit with Routes','Non Motorized']
 		icons_types = ['normal.png', 'transit_icon.png','transit_with_routes.png','non_motorized.png']
 		id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
+
 		self.cb_type.clear()
+		
+		
 		for index, valor in enumerate(types):
-			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)
+			symbol_json_str = self.operators_symbols_lst(index+1)
+			image = self.get_symbol_object(symbol_json_str).asImage(QSize(15,7))
+			self.cb_type.addItem(QIcon(QPixmap.fromImage(image)), types[index],index+1)
+
+		"""self.cb_type.clear()
+		for index, valor in enumerate(types):
+			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)"""
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()
@@ -653,3 +669,31 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.scenario_tree.setSelectionModel(modelSelection)
 
 		self.select_scenario(self.scenario_tree.selectedIndexes()[0])
+
+
+	def get_symbol_object(self, symbol_srt):
+		""" Return dictionary with objects of symbol """
+		# TODO: resolver tema de la symbologia correcta
+		symbol_obj = json.loads(symbol_srt.replace("'",'"'))
+		symbol_layers = QgsLineSymbol()
+
+		for layer_symbol in symbol_obj['layers_list']:
+			obj_symbol = eval(f"Qgs{layer_symbol['type_layer']}SymbolLayer.create({layer_symbol['properties_layer']})")
+			symbol_layers.appendSymbolLayer(obj_symbol)
+		symbol_layers.deleteSymbolLayer(0)
+		return symbol_layers
+	
+
+	def operators_symbols_lst(self, type):
+        # Type: 1 Transit
+        # Type: 2 Non motorized
+        # Type: 3 Transit with routes
+        # Type: 4 Normal		
+		symbol_group_list = [
+			"""{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'dash', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+			"""{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'round', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'round', 'line_color': '0,0,0,255', 'line_style': 'solid', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '-1', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'round', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'round', 'line_color': '0,0,0,255', 'line_style': 'solid', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+			"""{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '0.26', 'line_width_unit': 'MM', 'offset': '1.2', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '1.06', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '0.26', 'line_width_unit': 'MM', 'offset': '-1.2', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+			"""{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'dot', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}"""
+		]
+
+		return symbol_group_list[type-1]
