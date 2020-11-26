@@ -197,11 +197,13 @@ class DataWindow(QMainWindow, FORM_CLASS):
         #self.__extract_db_files()
         self.__connect_database_sqlite()
         self.__load_scenarios()
-        #self.load_data()
+        self.load_data()
 
         # Thread to load information
+        """
         load_data_thread = threading.Thread(target=self.load_data, name='load_data')
         load_data_thread.start()
+        """
         self.__validate_buttons()
         self.validate_database()
         

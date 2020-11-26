@@ -104,6 +104,7 @@ class QTranus:
         self.btn_add_linktype.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         
         # Results - Path tab
+        self.tab_widget_main = self.scenarios_dockwidget.findChild(QtWidgets.QTabWidget , 'tabWidget') 
         self.cb_origin = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_origin')
         self.cb_destination = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_destination')
         self.cb_mode = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_mode')
@@ -111,9 +112,10 @@ class QTranus:
         self.pathlink_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'paths_links_tree')            
         self.tbl_desutilities = self.scenarios_dockwidget.findChild(QtWidgets.QTableWidget, 'tbl_desutilities')            
         self.lbl_scenario_code = self.scenarios_dockwidget.findChild(QtWidgets.QLabel, 'lbl_scenario_code')            
-        self.lbl_total_paths = self.scenarios_dockwidget.findChild(QtWidgets.QLabel, 'lbl_total_paths')            
+        self.lbl_total_paths = self.scenarios_dockwidget.findChild(QtWidgets.QLabel, 'lbl_total_paths')                
         self.pathlink_tree.setRootIsDecorated(False)
         self.pathlink_tree.header().setStretchLastSection(True)
+        self.tab_widget_main.setTabEnabled(3, False);
 
         self.cb_origin.currentIndexChanged.connect(self.load_paths_combobox)
         self.cb_destination.currentIndexChanged.connect(self.load_paths_combobox)
@@ -504,6 +506,8 @@ class QTranus:
         """
         self.scenarioSelectedIndex = selectedIndex
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+
+        self.load_path_base_info()
         
         # "LinkId"  in ('1-101', '101-1')
         layerIds = [layer.id() for layer in QgsProject.instance().mapLayers().values()]
@@ -733,7 +737,6 @@ class QTranus:
             root = registry.layerTreeRoot()
             layer_group = root.findGroup("QTRANUS")
             layers_name = [lyr.name() for lyr in registry.mapLayers().values()]
-
             
             id_linktypes_selected = []
             indexes = self.linktypes_tree.selectedIndexes()
@@ -947,7 +950,9 @@ class QTranus:
 
 
     def path_fields_changed(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         self.load_paths_file()
+        QApplication.restoreOverrideCursor()
 
 
     def load_path_base_info(self):
@@ -958,7 +963,8 @@ class QTranus:
 
         scenario_selected_index = self.scenarios_tree.selectedIndexes()
         scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
-
+        self.validate_scenario_pathsfile(scenario_code)
+        self.lbl_scenario_code.setText(scenario_code)
         if zones_result and len(zones_result):
             for value in zones_result:
                 self.cb_origin.addItem(f"{value[0]} {value[1]}", value[0])
@@ -970,6 +976,7 @@ class QTranus:
 
     def load_paths_combobox(self, index):
         if index:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
             path_count = []
             # load zones result combo
             id_origin = self.cb_origin.currentText().split(" ")[0]
@@ -986,13 +993,11 @@ class QTranus:
                     # load paths
                     for value in path_data_structure:
                         path_count.append(value[0]['path'])
-                    
                     self.cb_path.clear()
                     self.cb_path.addItems(path_count)
 
                     self.lbl_scenario_code.setText(scenario_code)
                     self.lbl_total_paths.setText(str(len(path_count)))
-                    
                 else:
                     self.cb_path.clear()
                     self.tbl_desutilities.clearContents()
@@ -1001,9 +1006,10 @@ class QTranus:
                     self.lbl_total_paths.setText("0")
             else:
                 self.cb_path.clear()
-                self.lbl_scenario_code.setText("N/A")
+                self.lbl_scenario_code.setText("-")
                 self.lbl_total_paths.setText("0")
-            
+
+            QApplication.restoreOverrideCursor()
 
     def load_paths_file(self):
             
@@ -1012,6 +1018,7 @@ class QTranus:
         id_origin = self.cb_origin.currentText().split(" ")[0]
         id_destination = self.cb_destination.currentText().split(" ")[0]
         id_mode = self.cb_mode.currentText().split(" ")[0]
+        id_path = self.cb_path.currentText().split(" ")[0]
         scenario_selected_index = self.scenarios_tree.selectedIndexes()
         scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
 
@@ -1023,12 +1030,7 @@ class QTranus:
             self.load_pathlinktree(path_data_structure)
             self.load_desutilitiestable(path_data_structure)
             # Show paths
-            """
-            id_mode = 1
-            id_origin = 1
-            id_destination = 2 
-            """
-            self.show_path_layer(result_file, id_origin, id_destination, id_mode)
+            self.show_path_layer(result_file, id_origin, id_destination, id_mode, id_path)
         
     
     def load_pathlinktree(self, paths):
@@ -1036,14 +1038,14 @@ class QTranus:
             id_origin = self.cb_origin.currentText().split(" ")[0]
             id_destination = self.cb_destination.currentText().split(" ")[0]
             id_mode = self.cb_mode.currentText().split(" ")[0]
-            id_path = int(self.cb_path.currentText())
-            
+            id_path = self.cb_path.currentText()
+        
             paths_links_list = self.search_path_links(paths, id_origin, id_destination, id_mode, id_path)
-            
+            paths_links_list.pop()
             model = QtGui.QStandardItemModel()
             model.setHorizontalHeaderLabels(['Route/Operator','To Node'])
             if paths_links_list:
-                for x in range(0, len(paths)):
+                for x in range(0, len(paths_links_list)):
                     model.insertRow(x)
                     z=0
                     for y in range(0,2):
@@ -1055,6 +1057,7 @@ class QTranus:
         
         except Exception as e:
             print("Error: paths_links_tree population", e)
+            self.iface.messageBar().pushMessage("Error", f"QTRANUS error while updating layer.", level=2)
     
 
     def load_desutilitiestable(self, paths):
@@ -1063,9 +1066,8 @@ class QTranus:
             id_destination = self.cb_destination.currentText().split(" ")[0]
             id_mode = self.cb_mode.currentText().split(" ")[0]
             id_path = int(self.cb_path.currentText())
-
             vertical_header = ['GenC','VehCharg','UserCharg','Dist','Time','Wait','MonC']
-            horizontal_header = ['1','2','3']
+            horizontal_header = [ str(value) for value in range(1, len(paths)+1)]
             self.tbl_desutilities.setRowCount(len(vertical_header))
             self.tbl_desutilities.setColumnCount(len(horizontal_header))
             self.tbl_desutilities.setHorizontalHeaderLabels(horizontal_header) # Headers of columns table
@@ -1091,8 +1093,10 @@ class QTranus:
 
     def search_path_links(self, paths, id_origin, id_destination, id_mode, id_path):
         for value in paths:
-            if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination) \
-                and int(value[0]['mode']) == int(id_mode) and int(value[0]['path']) == int(id_path):
+            if int(value[0]['orig']) == int(id_origin) \
+                and int(value[0]['dest']) == int(id_destination) \
+                and int(value[0]['mode']) == int(id_mode) \
+                and int(value[0]['path'].strip()) == int(id_path.strip()):
                 for path in value[1]:
                     if path[0].strip():
                         if  int(path[0]) < 0:
@@ -1109,15 +1113,15 @@ class QTranus:
         return False
 
     
-    def show_path_layer(self, paths, id_origin, id_destination, id_mode):
+    def show_path_layer(self, paths, id_origin, id_destination, id_mode, id_path):
         try:
             QApplication.setOverrideCursor(Qt.WaitCursor)
             
             # create data structure
-            ori_dest_mode_result = self.get_find_list(id_origin, id_destination, id_mode, paths)
+            ori_dest_mode_result = self.get_find_list(id_origin, id_destination, id_mode, id_path, paths)
             data_structure_links = self.get_linksid_elements_paths(ori_dest_mode_result, id_origin, id_destination)
             
-            # Estructura de datos de ejenplo 
+            # Example data structure
             # data_structure_links = [(301, '84-6201'), (-1, '6101-6201'), (-2, '3101-6101'), (-3,'2302-3101'), (-4,'5704-5701'), (-4,'2302-5704')]
 
             # Find layer
@@ -1134,7 +1138,7 @@ class QTranus:
             memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_Pahts", "memory")
             memory_data = memory_route_lyr.dataProvider()
             memory_data.addAttributes([QgsField("operator_route",  QVariant.Int), QgsField("link_id",  QVariant.String)])
-            
+            #print(data_structure_links)
             features_attributes = []
             for value in data_structure_links:
                 features_network = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"linkID\" = '{value[1]}' "))
@@ -1144,6 +1148,7 @@ class QTranus:
             feat_arr = []
             for feature_attr in features_attributes:
                 feat = feature_attr[0]
+                #print([feature_attr[1][0], feature_attr[1][1]])
                 feat.setAttributes([feature_attr[1][0], feature_attr[1][1]])
                 feat_arr.append(feat)
             
@@ -1198,10 +1203,10 @@ class QTranus:
             QApplication.restoreOverrideCursor()
         
 
-    def get_find_list(self, id_origin, id_destination, id_mode, paths):
+    def get_find_list(self, id_origin, id_destination, id_mode, id_path, paths):
         for value in paths:
             if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination) \
-                and int(value[0]['mode']) == int(id_mode):
+                and int(value[0]['mode']) == int(id_mode) and int(value[0]['path']) == int(id_path):
                 return value[1]
         return False
 
@@ -1231,33 +1236,38 @@ class QTranus:
     def load_routes(self):
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        
+        scenario_selected_index = self.scenarios_tree.selectedIndexes()
+        scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
 
-        # TODO: Importante validar el scenario seleccionado o el por defecto
-        qry = """select a.color, a.id, a.name
-                     from route a
-                     where id_scenario = 1 order by 2 asc """
-        #result = self.dataBaseSqlite.selectAll('route', columns='id, name, description')
-        result = self.dataBaseSqlite.executeSql(qry)
+        if len(scenario_code) <= 3:
+            result_scenario_id = self.dataBaseSqlite.selectAll(" scenario ", where=f" where code = '{scenario_code}'")
+            result_scenario_id = result_scenario_id[0][0]
+            
+            qry = f"""select a.color, a.id, a.name
+                        from route a
+                        where id_scenario = {result_scenario_id} order by 2 asc """
+            result = self.dataBaseSqlite.selectAll(' route ', where=f" where id_scenario = '{result_scenario_id}'", columns=' color, id, name ', orderby=' order by 2 asc ')
 
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Color','ID', 'Name'])
-        if result:
-            for x in range(0, len(result)):
-                model.insertRow(x)
-                z=0
-                for y in range(0,3):
-                    if y == 0:
-                        if result[x][z]:
-                            model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+            model = QtGui.QStandardItemModel()
+            model.setHorizontalHeaderLabels(['Color','ID', 'Name'])
+            if result:
+                for x in range(0, len(result)):
+                    model.insertRow(x)
+                    z=0
+                    for y in range(0,3):
+                        if y == 0:
+                            if result[x][z]:
+                                model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+                            else:
+                                model.setData(model.index(x, y), QtGui.QBrush(QColor(4294967295)), Qt.BackgroundRole)
                         else:
-                            model.setData(model.index(x, y), QtGui.QBrush(QColor(4294967295)), Qt.BackgroundRole)
-                    else:
-                        model.setData(model.index(x, y), result[x][z])
-                    z+=1
+                            model.setData(model.index(x, y), result[x][z])
+                        z+=1
 
-            self.routes_tree.setModel(model)
-            self.routes_tree.setColumnWidth(0, 37)
-            self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
+                self.routes_tree.setModel(model)
+                self.routes_tree.setColumnWidth(0, 37)
+                self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
 
     
     def load_linktypes(self):
@@ -1343,3 +1353,16 @@ class QTranus:
         ]
 
         return symbol_group_list[type-1]
+    
+
+    def validate_scenario_pathsfile(self, scenario_code):
+        """ Validate if exists sceneario file
+        """
+        paths_file = f"path_{scenario_code}.csv"
+        abs_path = os.path.join(self.project['tranus_folder'], scenario_code, paths_file)
+
+        if os.path.exists(abs_path):
+            self.tab_widget_main.setTabEnabled(3, True)
+        else:
+            self.tab_widget_main.setTabEnabled(3, False)
+
