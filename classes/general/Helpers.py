@@ -159,5 +159,20 @@ class ExceptionFormatID(Exception):
 
     def __str__(self):
         return f"{self.typeFile} \nIncorrect Format ID {self.idFile}" if self.typeFile else f"Incorrect Format ID {self.typeFile}"
+
+
+class ExceptionWrongDataType(Exception):
+    """
+    @summary: Exception for data type 
+    """
+    def __init__(self, _id, _field, message="Data type is wrong"):
+        self._id = _id
+        self._field = _field
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'Field: {self._field}  id: {self._id} data type is wrong'
     
+       
                 

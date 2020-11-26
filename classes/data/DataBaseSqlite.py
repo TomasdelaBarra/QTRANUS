@@ -1414,11 +1414,13 @@ class DataBaseSqlite():
 		cursor = conn.cursor()
 		sql_arr = []
 
-		sql = """INSERT OR """+str(typeSql)+""" INTO node (id_scenario, id, x, y, id_type, name, description) 
+		sql = """INSERT OR """+str(typeSql)+""" INTO node (id_scenario, id, x, y, name, description, id_type) 
 			values (?, ?, ?, ?, ?, ?, ?);"""
-			
+		
+		print("Dentro de SQLITE")
 		for row in data_list:
 			for id_scenario in scenarios:
+				print((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
 				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
 		
 		cursor.executemany(sql, sql_arr)
