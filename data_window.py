@@ -200,8 +200,10 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.load_data()
 
         # Thread to load information
-        # load_data_thread = threading.Thread(target=self.load_data, name='load_data')
-        # load_data_thread.start()
+        """
+        load_data_thread = threading.Thread(target=self.load_data, name='load_data')
+        load_data_thread.start()
+        """
         self.__validate_buttons()
         self.validate_database()
         
@@ -860,12 +862,24 @@ class DataWindow(QMainWindow, FORM_CLASS):
                                 description = None
                                 x = feature.attribute(xNode) if xNode else None
                                 y = feature.attribute(yNode) if yNode else None
-                                data_list.append((_id, x, y, id_type, name, description))
+
+                                if not isinstance(_id, int):
+                                    raise ExceptionWrongDataType(_id=_id, _field=idNode)
+                                
+                                if not isinstance(id_type, int):
+                                    raise ExceptionWrongDataType(_id=_id, _field=typeNode)
+                                
+                                data_list.append((_id, x, y, name, description, id_type))
                             else:
                                 raise ExceptionFormatID(_id, typeFile='Import error in Nodes shape file')
                     self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list, typeSql=typeSql)
 
-                    return True
+                    return True                                                                                      
+        except ExceptionWrongDataType as e:
+                print(f"Error ExceptionWrongDataType: {e}")
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Loading Nodes Error \n"+str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
         except ExceptionFormatID as e:
                 print(f"Error ExceptionFormatID: {e}")
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -873,7 +887,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 return False
         except Exception as e:
             print(f"Error: {e}")
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in node Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Error importing node shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
             return False
 
@@ -954,3 +968,5 @@ class DataWindow(QMainWindow, FORM_CLASS):
         dialog = DatabaseErrorsDialog(self.project_file, self.linktypesList, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
+
+

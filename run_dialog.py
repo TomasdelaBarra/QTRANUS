@@ -249,11 +249,15 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def dataReady(self):
-        output_data = str(self.process.readAll(), 'utf-8')
-        cursor = self.te_ouput.textCursor()
-        cursor.movePosition(cursor.End)
-        cursor.insertText(output_data)
-        self.te_ouput.ensureCursorVisible()
+        try:
+            output_data = str(self.process.readAll(), 'utf-8')
+            cursor = self.te_ouput.textCursor()
+            cursor.movePosition(cursor.End)
+            cursor.insertText(output_data)
+            self.te_ouput.ensureCursorVisible()
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while generating files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
 
 
     def finish_process(self):

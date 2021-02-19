@@ -169,7 +169,8 @@ class ScenariosFiles():
 
         # 3.0
         qry_prod = f"""select 
-                distinct id_sector, id_zone, coalesce(nullif(min_production,''), 0), coalesce(nullif(max_production,''), 0)
+                distinct id_sector, id_zone, coalesce(nullif(min_production,''), 0), coalesce(nullif(max_production,''), 0), coalesce(nullif(induced_production,''), 0), \
+                     coalesce(nullif(exogenous_production,''), 0)
                 from 
                     zonal_data a 
                 join zone b on a.id_zone = b.id
@@ -179,7 +180,15 @@ class ScenariosFiles():
                 and max_production > 0 */ and id_scenario = {id_base_scenario} """
 
         result_prod = self.dataBaseSqlite.executeSql(qry_prod) 
-        prod_data =[[valor[0],valor[1],valor[2],valor[3]] for valor in result_prod]
+        data_result = []
+        for value in result_prod:
+            if (value[4] + value[5]) > 0  and value[2] > 0 and value[3] > 0:
+                data_result.append([value[0],value[1],value[2],value[3]])
+            elif (value[4] + value[5]) == 0  and value[2] == 0 and value[3] == 0:
+                data_result.append([value[0],value[1],value[2],value[3]])
+
+        # prod_data =[[valor[0],valor[1],valor[2],valor[3]] for valor in result_prod]
+        prod_data = data_result
         try:
             fh = open("{}/{}".format(self.tranus_folder, filename), "w", encoding="utf-8")
             fh.write("LOCALIZATION DATA - File L0E  (QTRANUS v2019.04.15 )\n"
@@ -893,7 +902,8 @@ class ScenariosFiles():
             fh.write("    3.2 Increments in Production Restriction per Sector-Zone\n")
             fh.write(tabulate(int_prod_data, tablefmt='plain', headers=int_prod_head)+"\n")
             fh.write("*------------------------------------------------------------------------- /\n")
-            fh.write("    3.3 Increments in Value Added by Sector-Zone (Zone=0 means All Zones)  \n")
+            fh.write("    3.3 Increments in Value Added by Sector-Zone \n")
+            fh.write("                                                (Zone=0 means All Zones) \n")
             fh.write(tabulate(int_value_add_data, tablefmt='plain', headers=int_value_add_head)+"\n")
             fh.write("*------------------------------------------------------------------------- /\n")
             

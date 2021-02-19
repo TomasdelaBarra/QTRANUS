@@ -23,7 +23,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-import os, sys, os.path, re, json
+import os, sys, os.path, re, json, datetime
 from PyQt5.QtGui import  QIcon
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui, uic, QtCore
@@ -104,15 +104,23 @@ class QTranus:
         self.btn_add_linktype.setIcon(QIcon(self.plugin_dir+"/icons/add-scenario.svg"))
         
         # Results - Path tab
+        self.tab_widget_main = self.scenarios_dockwidget.findChild(QtWidgets.QTabWidget , 'tabWidget') 
         self.cb_origin = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_origin')
         self.cb_destination = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_destination')
         self.cb_mode = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_mode')
-        self.cb_category = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_category')
         self.cb_path = self.scenarios_dockwidget.findChild(QtWidgets.QComboBox, 'cb_path')
         self.pathlink_tree = self.scenarios_dockwidget.findChild(QtWidgets.QTreeView, 'paths_links_tree')            
+        self.tbl_desutilities = self.scenarios_dockwidget.findChild(QtWidgets.QTableWidget, 'tbl_desutilities')            
+        self.lbl_scenario_code = self.scenarios_dockwidget.findChild(QtWidgets.QLabel, 'lbl_scenario_code')            
+        self.lbl_total_paths = self.scenarios_dockwidget.findChild(QtWidgets.QLabel, 'lbl_total_paths')                
         self.pathlink_tree.setRootIsDecorated(False)
         self.pathlink_tree.header().setStretchLastSection(True)
+        self.tab_widget_main.setTabEnabled(3, False);
 
+        self.cb_origin.currentIndexChanged.connect(self.load_paths_combobox)
+        self.cb_destination.currentIndexChanged.connect(self.load_paths_combobox)
+        self.cb_mode.currentIndexChanged.connect(self.load_paths_combobox)
+        self.cb_path.currentIndexChanged.connect(self.path_fields_changed)
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -139,7 +147,7 @@ class QTranus:
         self.toolbar.setObjectName(u'QTranus')
 
         # TODO: delete when the load scenario process is finished
-        self.addScenariosSection()
+        # self.addScenariosSection()
 
         
     def open_add_route_window(self):
@@ -498,6 +506,8 @@ class QTranus:
         """
         self.scenarioSelectedIndex = selectedIndex
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
+
+        self.load_path_base_info()
         
         # "LinkId"  in ('1-101', '101-1')
         layerIds = [layer.id() for layer in QgsProject.instance().mapLayers().values()]
@@ -727,7 +737,6 @@ class QTranus:
             root = registry.layerTreeRoot()
             layer_group = root.findGroup("QTRANUS")
             layers_name = [lyr.name() for lyr in registry.mapLayers().values()]
-
             
             id_linktypes_selected = []
             indexes = self.linktypes_tree.selectedIndexes()
@@ -936,58 +945,282 @@ class QTranus:
         self.load_scenarios()
         self.load_routes()
         self.load_linktypes()
-        #self.load_paths()
+        # self.load_paths_file()
+        self.load_path_base_info()
 
 
-    def load_paths(self):
+    def path_fields_changed(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.load_paths_file()
+        QApplication.restoreOverrideCursor()
+
+
+    def load_path_base_info(self):
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
         zones_result = self.dataBaseSqlite.selectAll(' zone ', where=" where id != 0", orderby=" order by 1 asc")
         mode_result = self.dataBaseSqlite.selectAll(' mode ')
-        scenario_code = '91A'
-        id_origin = 1
-        id_destination = 2
-        
-        for value in zones_result:
-            self.cb_origin.addItem(f"{value[0]} {value[1]}", value[0])
-            self.cb_destination.addItem(f"{value[0]} {value[1]}", value[0])
 
-        for value in mode_result:
-            self.cb_mode.addItem(f"{value[0]} {value[1]}", value[0])
+        scenario_selected_index = self.scenarios_tree.selectedIndexes()
+        scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
+        self.validate_scenario_pathsfile(scenario_code)
+        self.lbl_scenario_code.setText(scenario_code)
+        if zones_result and len(zones_result):
+            for value in zones_result:
+                self.cb_origin.addItem(f"{value[0]} {value[1]}", value[0])
+                self.cb_destination.addItem(f"{value[0]} {value[1]}", value[0])
+        # load mode result combo
+        if mode_result and len(mode_result):
+            for value in mode_result:
+                self.cb_mode.addItem(f"{value[0]} {value[1]}", value[0])
 
-        result_paths = self.get_paths(id_origin, id_destination, scenario_code)
+    def load_paths_combobox(self, index):
+        if index:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            path_count = []
+            # load zones result combo
+            id_origin = self.cb_origin.currentText().split(" ")[0]
+            id_destination = self.cb_destination.currentText().split(" ")[0]
+            scenario_selected_index = self.scenarios_tree.selectedIndexes()
+            scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
+
+            paths_data = Paths(self.project['tranus_folder'], scenario_code)
+            result_file = paths_data.load_paths()
+
+            if result_file and len(result_file) > 0:
+                path_data_structure = paths_data.find_paths(id_origin, id_destination, scenario_code)
+                if len(path_data_structure) > 0:
+                    # load paths
+                    for value in path_data_structure:
+                        path_count.append(value[0]['path'])
+                    self.cb_path.clear()
+                    self.cb_path.addItems(path_count)
+
+                    self.lbl_scenario_code.setText(scenario_code)
+                    self.lbl_total_paths.setText(str(len(path_count)))
+                else:
+                    self.cb_path.clear()
+                    self.tbl_desutilities.clearContents()
+                    self.tbl_desutilities.model().removeRows(0, self.tbl_desutilities.rowCount())
+                    self.pathlink_tree.model().removeRows(0, self.pathlink_tree.model().rowCount())
+                    self.lbl_total_paths.setText("0")
+            else:
+                self.cb_path.clear()
+                self.lbl_scenario_code.setText("-")
+                self.lbl_total_paths.setText("0")
+
+            QApplication.restoreOverrideCursor()
+
+    def load_paths_file(self):
+            
+        path_count = []
+        # load zones result combo
+        id_origin = self.cb_origin.currentText().split(" ")[0]
+        id_destination = self.cb_destination.currentText().split(" ")[0]
+        id_mode = self.cb_mode.currentText().split(" ")[0]
+        id_path = self.cb_path.currentText().split(" ")[0]
+        scenario_selected_index = self.scenarios_tree.selectedIndexes()
+        scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
+
+        paths_data = Paths(self.project['tranus_folder'], scenario_code)
+        result_file = paths_data.load_paths()
+
+        if result_file:
+            path_data_structure = paths_data.find_paths(id_origin, id_destination, scenario_code)
+            self.load_pathlinktree(path_data_structure)
+            self.load_desutilitiestable(path_data_structure)
+            # Show paths
+            self.show_path_layer(result_file, id_origin, id_destination, id_mode, id_path)
         
-        self.load_pathlinktree(result_paths)
-    
     
     def load_pathlinktree(self, paths):
-        try:    
+        try:   
+            id_origin = self.cb_origin.currentText().split(" ")[0]
+            id_destination = self.cb_destination.currentText().split(" ")[0]
+            id_mode = self.cb_mode.currentText().split(" ")[0]
+            id_path = self.cb_path.currentText()
+        
+            paths_links_list = self.search_path_links(paths, id_origin, id_destination, id_mode, id_path)
+            paths_links_list.pop()
             model = QtGui.QStandardItemModel()
             model.setHorizontalHeaderLabels(['Route/Operator','To Node'])
-            if paths:
-                for x in range(0, len(result)):
+            if paths_links_list:
+                for x in range(0, len(paths_links_list)):
                     model.insertRow(x)
                     z=0
                     for y in range(0,2):
-                        model.setData(model.index(x, y), paths[x][z])
+                        model.setData(model.index(x, y), paths_links_list[x][z])
                         z+=1
-
                 self.pathlink_tree.setModel(model)
-                self.pathlink_tree.setColumnWidth(0, 37)
+                self.pathlink_tree.setColumnWidth(0, 100)
                 self.pathlink_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
-                
+        
         except Exception as e:
-            print(e)
+            print("Error: paths_links_tree population", e)
+            self.iface.messageBar().pushMessage("Error", f"QTRANUS error while updating layer.", level=2)
+    
+
+    def load_desutilitiestable(self, paths):
+        try:   
+            id_origin = self.cb_origin.currentText().split(" ")[0]
+            id_destination = self.cb_destination.currentText().split(" ")[0]
+            id_mode = self.cb_mode.currentText().split(" ")[0]
+            id_path = int(self.cb_path.currentText())
+            vertical_header = ['GenC','VehCharg','UserCharg','Dist','Time','Wait','MonC']
+            horizontal_header = [ str(value) for value in range(1, len(paths)+1)]
+            self.tbl_desutilities.setRowCount(len(vertical_header))
+            self.tbl_desutilities.setColumnCount(len(horizontal_header))
+            self.tbl_desutilities.setHorizontalHeaderLabels(horizontal_header) # Headers of columns table
+            self.tbl_desutilities.horizontalHeader().setStretchLastSection(True)
+            self.tbl_desutilities.setVerticalHeaderLabels(vertical_header)
+            
+            i = 0
+            for value in paths:
+                if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination) \
+                    and int(value[0]['mode']) == int(id_mode):
+                    self.tbl_desutilities.setItem(0,  i, QTableWidgetItem(str(value[0]['gencost'])))
+                    self.tbl_desutilities.setItem(1,  i, QTableWidgetItem(str(value[0]['chargs'])))
+                    self.tbl_desutilities.setItem(2,  i, QTableWidgetItem(str(value[0]['uchrgs'])))
+                    self.tbl_desutilities.setItem(3,  i, QTableWidgetItem(str(value[0]['dist'])))
+                    self.tbl_desutilities.setItem(4,  i, QTableWidgetItem(str(datetime.timedelta(float(value[0]['lnktme'])))))
+                    self.tbl_desutilities.setItem(5,  i, QTableWidgetItem(str(datetime.timedelta(float(value[0]['waittme'])))))
+                    self.tbl_desutilities.setItem(6,  i, QTableWidgetItem(str(value[0]['moncos'])))
+                    i += 1
+            
+        except Exception as e:
+            print("Error: tbl_desutilities population", e)
+
+
+    def search_path_links(self, paths, id_origin, id_destination, id_mode, id_path):
+        for value in paths:
+            if int(value[0]['orig']) == int(id_origin) \
+                and int(value[0]['dest']) == int(id_destination) \
+                and int(value[0]['mode']) == int(id_mode) \
+                and int(value[0]['path'].strip()) == int(id_path.strip()):
+                for path in value[1]:
+                    if path[0].strip():
+                        if  int(path[0]) < 0:
+                            table = ' operator '
+                            mult = -1
+                        else:
+                            table = ' route '
+                            mult = 1
+                        id = int(path[0])*mult
+                        result = self.dataBaseSqlite.selectAll(f"{table}", where=f" where id = {id}", columns=' name ')
+                        path[0] = f"{id} {result[0][0]}" 
+                        path[1] = path[1].strip()
+                return value[1]
+        return False
 
     
-    def get_paths(self, id_origin, id_destination, scenario_code):
-        result = Paths(self.project['tranus_folder'], scenario_code).load_paths()
-        for value in result:
-            if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination):
+    def show_path_layer(self, paths, id_origin, id_destination, id_mode, id_path):
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
+            # create data structure
+            ori_dest_mode_result = self.get_find_list(id_origin, id_destination, id_mode, id_path, paths)
+            data_structure_links = self.get_linksid_elements_paths(ori_dest_mode_result, id_origin, id_destination)
+            
+            # Example data structure
+            # data_structure_links = [(301, '84-6201'), (-1, '6101-6201'), (-2, '3101-6101'), (-3,'2302-3101'), (-4,'5704-5701'), (-4,'2302-5704')]
+
+            # Find layer
+            registry = QgsProject.instance()
+            layersCount = len(registry.mapLayers())
+            layer_network = registry.mapLayersByName('Network_Links')[0]
+            epsg = layer_network.crs().postgisSrid()
+            
+            root = registry.layerTreeRoot()
+            layer_group = root.findGroup("QTRANUS")
+            layers_name = [lyr.name() for lyr in registry.mapLayers().values()]
+
+            # Create new layer
+            memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_Pahts", "memory")
+            memory_data = memory_route_lyr.dataProvider()
+            memory_data.addAttributes([QgsField("operator_route",  QVariant.Int), QgsField("link_id",  QVariant.String)])
+            #print(data_structure_links)
+            features_attributes = []
+            for value in data_structure_links:
+                features_network = layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"linkID\" = '{value[1]}' "))
+                for feature_net in features_network:
+                    features_attributes.append((feature_net, value))
+            
+            feat_arr = []
+            for feature_attr in features_attributes:
+                feat = feature_attr[0]
+                #print([feature_attr[1][0], feature_attr[1][1]])
+                feat.setAttributes([feature_attr[1][0], feature_attr[1][1]])
+                feat_arr.append(feat)
+            
+            memory_route_lyr.startEditing()
+            memory_route_lyr.dataProvider().addFeatures(feat_arr)
+            memory_route_lyr.commitChanges()
+                
+            _ids = []
+            categories = []
+            for value in data_structure_links:
+                if value[0] < 0:
+                    _id = value[0]*-1
+                    table = ' operator '
+                    type = self.dataBaseSqlite.selectAll(table, where=f' where id = {_id} ', columns=' type ')
+                    symbol_json_str = self.operators_symbols_lst(int(type[0][0]))
+                    symbol = self.get_symbol_object(symbol_json_str)
+                else:
+                    symbol = QgsLineSymbol()
+                    _id = value[0]    
+                    table = ' route '
+                operator_route = self.dataBaseSqlite.selectAll(table, where=f' where id = {_id} ', columns=' color, name ')
+                name = operator_route[0][1]
+                color = operator_route[0][0]
+                symbol.setColor(QColor(color))
+                symbol.setWidth(0.6)
+                cat = QgsRendererCategory(value[0], symbol, f"""{table} {_id} {name}""")
+                if value[0] not in _ids:
+                    categories.append(cat)
+                    _ids.append(value[0])
+
+            categorized_renderer = QgsCategorizedSymbolRenderer('operator_route', categories)
+            
+            memory_route_lyr.setRenderer(categorized_renderer)
+            msg = 'created'
+            if 'Network_Pahts' in layers_name:
+                layer_route = registry.mapLayersByName('Network_Pahts')
+                layer_group.removeLayer(layer_route[0])
+                registry.removeMapLayer(layer_route[0].id())
+                msg = 'updated'
+
+            registry.addMapLayer(memory_route_lyr, False)
+            layer_group.insertLayer(0, memory_route_lyr)
+
+            self.iface.messageBar().pushMessage("Info", f"QTRANUS Layer 'Network_paths' has been created.", level=0)
+
+            # Remove UI Cursor loading...
+            QApplication.restoreOverrideCursor()
+        
+        except Exception as e:
+            # Remove UI Cursor loading...
+            print("Error:", e)
+            QApplication.restoreOverrideCursor()
+        
+
+    def get_find_list(self, id_origin, id_destination, id_mode, id_path, paths):
+        for value in paths:
+            if int(value[0]['orig']) == int(id_origin) and int(value[0]['dest']) == int(id_destination) \
+                and int(value[0]['mode']) == int(id_mode) and int(value[0]['path']) == int(id_path):
                 return value[1]
         return False
 
 
+    def get_linksid_elements_paths(self, paths, id_origin, id_destination):
+        data = []
+
+        while([""] in paths): 
+            paths.remove([""]) 
+        
+        for index, value in enumerate(paths):
+            data.append((int(value[0].strip()),f"{id_origin}-{value[1].strip()}"))
+            id_origin = value[1].strip()
+        return data
 
     def load_scenarios(self):
         
@@ -1003,33 +1236,38 @@ class QTranus:
     def load_routes(self):
         self.project_file = f"{self.project['tranus_folder']}/{self.project['project_name']}"
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
+        
+        scenario_selected_index = self.scenarios_tree.selectedIndexes()
+        scenario_code = scenario_selected_index[0].model().itemFromIndex(scenario_selected_index[0]).text().split(" - ")[0]
 
-        # TODO: Importante validar el scenario seleccionado o el por defecto
-        qry = """select a.color, a.id, a.name
-                     from route a
-                     where id_scenario = 1 order by 2 asc """
-        #result = self.dataBaseSqlite.selectAll('route', columns='id, name, description')
-        result = self.dataBaseSqlite.executeSql(qry)
+        if len(scenario_code) <= 3:
+            result_scenario_id = self.dataBaseSqlite.selectAll(" scenario ", where=f" where code = '{scenario_code}'")
+            result_scenario_id = result_scenario_id[0][0]
+            
+            qry = f"""select a.color, a.id, a.name
+                        from route a
+                        where id_scenario = {result_scenario_id} order by 2 asc """
+            result = self.dataBaseSqlite.selectAll(' route ', where=f" where id_scenario = '{result_scenario_id}'", columns=' color, id, name ', orderby=' order by 2 asc ')
 
-        model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Color','ID', 'Name'])
-        if result:
-            for x in range(0, len(result)):
-                model.insertRow(x)
-                z=0
-                for y in range(0,3):
-                    if y == 0:
-                        if result[x][z]:
-                            model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+            model = QtGui.QStandardItemModel()
+            model.setHorizontalHeaderLabels(['Color','ID', 'Name'])
+            if result:
+                for x in range(0, len(result)):
+                    model.insertRow(x)
+                    z=0
+                    for y in range(0,3):
+                        if y == 0:
+                            if result[x][z]:
+                                model.setData(model.index(x, y), QtGui.QBrush(QColor(result[x][z])), Qt.BackgroundRole)
+                            else:
+                                model.setData(model.index(x, y), QtGui.QBrush(QColor(4294967295)), Qt.BackgroundRole)
                         else:
-                            model.setData(model.index(x, y), QtGui.QBrush(QColor(4294967295)), Qt.BackgroundRole)
-                    else:
-                        model.setData(model.index(x, y), result[x][z])
-                    z+=1
+                            model.setData(model.index(x, y), result[x][z])
+                        z+=1
 
-            self.routes_tree.setModel(model)
-            self.routes_tree.setColumnWidth(0, 37)
-            self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
+                self.routes_tree.setModel(model)
+                self.routes_tree.setColumnWidth(0, 37)
+                self.routes_tree.setColumnWidth(1, QtWidgets.QHeaderView.ResizeToContents)
 
     
     def load_linktypes(self):
@@ -1054,6 +1292,7 @@ class QTranus:
                 for y in range(0,3):
                     if y == 0 and result[x][z]:
                         model.setData(model.index(x, y), self.get_symbol_object(result[x][z]).asImage(QSize(35,10)), Qt.DecorationRole)
+                        #model.setData(model.index(x, y), self.get_symbol_object(result[x][z]).asImage(QSize(500,500)), Qt.DecorationRole)
                     else:
                         model.setData(model.index(x, y), result[x][z])
                     z+=1
@@ -1098,3 +1337,32 @@ class QTranus:
             symbol_layers.appendSymbolLayer(obj_symbol)
         symbol_layers.deleteSymbolLayer(0)
         return symbol_layers
+
+    
+    def operators_symbols_lst(self, type):
+        # Type: 1 Transit
+        # Type: 2 Non motorized
+        # Type: 3 Transit with routes
+        # Type: 4 Normal
+
+        symbol_group_list = [
+            """{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'dash', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+            """{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'round', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'round', 'line_color': '0,0,0,255', 'line_style': 'solid', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '-1', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'round', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'round', 'line_color': '0,0,0,255', 'line_style': 'solid', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+            """{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '0.26', 'line_width_unit': 'MM', 'offset': '1.2', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '1.06', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}, {'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'solid', 'line_width': '0.26', 'line_width_unit': 'MM', 'offset': '-1.2', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}""",
+            """{'type': 1, 'layers_list': [{'type_layer': 'SimpleLine', 'properties_layer': {'capstyle': 'square', 'customdash': '5;2', 'customdash_map_unit_scale': '3x:0,0,0,0,0,0', 'customdash_unit': 'MM', 'draw_inside_polygon': '0', 'joinstyle': 'bevel', 'line_color': '35,35,35,255', 'line_style': 'dot', 'line_width': '0.46', 'line_width_unit': 'MM', 'offset': '0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 'ring_filter': '0', 'use_custom_dash': '0', 'width_map_unit_scale': '3x:0,0,0,0,0,0'}}]}"""
+        ]
+
+        return symbol_group_list[type-1]
+    
+
+    def validate_scenario_pathsfile(self, scenario_code):
+        """ Validate if exists sceneario file
+        """
+        paths_file = f"path_{scenario_code}.csv"
+        abs_path = os.path.join(self.project['tranus_folder'], scenario_code, paths_file)
+
+        if os.path.exists(abs_path):
+            self.tab_widget_main.setTabEnabled(3, True)
+        else:
+            self.tab_widget_main.setTabEnabled(3, False)
+
