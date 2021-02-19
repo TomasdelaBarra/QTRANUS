@@ -51,8 +51,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.idScenario = None
         self.table_type = None
 
-       
-
         self.project = parent.project
         self.copyScenarioSelected = None
         self.tranus_folder = tranus_folder
@@ -275,8 +273,8 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario and sectorId and results:
             self.sustitute.setText(str(results[0][7]))
             # Default data of the table
-            sql = """select a.id||" "||a.name sector, b.min_demand, max_demand, elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
+            sql = f"""select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {self.idScenario} and id_sector = {sectorId}"""
 
             resultA_prev = None
 
@@ -286,7 +284,7 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             resultA_prev = None
             resultB_prev = None
             if id_prevScenario:
-                sql_prev = """select a.id||" "||a.name sector, b.min_demand, max_demand, elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+                sql_prev = """select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
                   from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = %s and id_sector = %s""" % (id_prevScenario[0][0], sectorId)
                 resultA_prev = self.dataBaseSqlite.executeSql(sql_prev)
 
