@@ -269,7 +269,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         results = self.dataBaseSqlite.selectAll(' sector ', f" where id = {sectorId} and id_scenario = {self.idScenario}")
         id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
         
-        
         if self.idScenario and sectorId and results:
             self.sustitute.setText(str(results[0][7]))
             # Default data of the table
