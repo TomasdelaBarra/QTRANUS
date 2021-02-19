@@ -582,21 +582,22 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		operatorSql = " b.id_operator = {0}".format(self.operatorSelected) if self.operatorSelected else  'b.id_operator is null '
 		# Table data
 		sql = """with base as (
-			select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
+			select a.id||' '||a.name category, b.tariff_factor, b.penal_factor, a.id
 			from category a 
 			join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
 			where {0} and a.id_scenario = {1}
 		),
 		operator_only as (
-			select id||' '||name category, '' tariff_factor, '' penal_factor 
+			select id||' '||name category, '' tariff_factor, '' penal_factor, id
 			from category where id_scenario = {1}
 		)
-		select * from 
+		SELECT * FROM
 			base
 		UNION
 			select * from 
 			operator_only
-			where category not in (select category from base)""".format(operatorSql, self.idScenario)
+			where category not in (select category from base)
+		ORDER BY 4""".format(operatorSql, self.idScenario)
 		
 		result_cat = self.dataBaseSqlite.executeSql(sql) 
 		result_cat_prev = ''
@@ -621,7 +622,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			result_cat_prev = self.dataBaseSqlite.executeSql(sql)
 		
 		rowsCount = len(result_cat)
-		columsCount = len(result_cat[0])-1
+		columsCount = len(result_cat[0])-2
 		self.by_category_tbl.setRowCount(rowsCount)
 		self.by_category_tbl.setColumnCount(columsCount)
 		self.by_category_tbl.setHorizontalHeaderLabels(self.header) # Headers of columns table
@@ -639,7 +640,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		# Fill values of the table
 		for indice,valor in enumerate(result_cat):
 			x = 0
-			for z in range(1,len(valor)):
+			for z in range(1,len(valor)-1):
 				data = result_cat[indice][z] if result_cat[indice][z] is not None else ''
 				data_prev = data
 				if result_cat_prev:
