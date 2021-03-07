@@ -2211,6 +2211,16 @@ class DataBaseSqlite():
 			cursor.execute(sql)
 			conn.commit()
 		
+		for id_scenario in scenarios:
+			sql = "delete from operator_category where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+			cursor.execute(sql)
+			conn.commit()
+
+		for id_scenario in scenarios:
+			sql = "delete from exogenous_trips where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+			cursor.execute(sql)
+			conn.commit()
+			
 		conn.close()
 		return True
 

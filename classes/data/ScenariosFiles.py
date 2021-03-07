@@ -632,10 +632,13 @@ class ScenariosFiles():
         result = self.dataBaseSqlite.selectAll(" config_model ", " where type = 'transport'")
         
         net_head =["Src","Dest","GISId","Type","Dist.","Capac.","Delay","Routes..    0 Restricted Turns..../"]
-        qry_net = """select distinct node_from, node_to, id, id_linktype, coalesce(nullif(length,''),0), coalesce(nullif(capacity,''),0), coalesce(nullif(delay,''),0), 0
+        qry_net = """select distinct node_from, node_to, id, id_linktype, 
+                    coalesce(nullif(length,''),0), 
+                    case when capacity = 0 then -1 else coalesce(nullif(capacity,''),0) end capacity, 
+                    coalesce(nullif(delay,''),0), 0
                     from link
                     where id_scenario = %s
-                    order by 1,2""" % (id_scenario)
+                    order by 1,2;""" % (id_scenario)
         
         result_net = self.dataBaseSqlite.executeSql(qry_net) 
         result_routes = []

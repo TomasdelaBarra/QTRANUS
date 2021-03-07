@@ -512,6 +512,9 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
         if self.codeLink is None:
+            print("DENTRO DE CAPACITY")
+            print(self.capacity.text())
+            
             newLink = self.dataBaseSqlite.addLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
             # Add Link to Shape
             project = QgsProject.instance()
@@ -645,7 +648,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             self.name.setText(str(data[0][4] if data[0][4] else ''))
             self.description.setText(str(data[0][5] if data[0][5] else ''))
             self.length.setText(Helpers.decimalFormat(str(round(data[0][6],3) if data[0][6] else '')))
-            self.capacity.setText(Helpers.decimalFormat(str(data[0][7] if data[0][7] else '')))
+            self.capacity.setText(Helpers.decimalFormat(str('' if data[0][7] is None else data[0][7])))
             self.delay.setText(Helpers.decimalFormat(str(data[0][8] if data[0][8] else '')))
 
             if id_prevScenario and data_prev:

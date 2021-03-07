@@ -131,8 +131,11 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
             if validation == False:
                 operators = tabulate(operators, headers=["Scenario Code", "Operator"]) if operators else ''
                 exogenous_trips = tabulate(exogenous_trips, headers=["Scenario Code", "Origin", "Destination","Trip"])  if exogenous_trips else ''
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {operators} \n {exogenous_trips}")   
-                messagebox.exec_()
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Do you really want to delete the items? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel, detailedText=f"Dependents Elements \n {operators} \n {exogenous_trips}")   
+                result = messagebox.exec_()
+                if result == QtWidgets.QMessageBox.Yes:
+                    self.dataBaseSqlite.removeCategory(scenarios, categorySelected)
+                    self.__get_categories_data()
             else:
                 self.dataBaseSqlite.removeCategory(scenarios, categorySelected)
                 self.__get_categories_data()
