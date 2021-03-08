@@ -302,7 +302,6 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
     def __load_zonal_data(self):
         id_sector = self.cb_sector.itemData(self.cb_sector.currentIndex())
         
-
         if self.idScenario:
             # Internal Zonal Data
             id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
@@ -404,9 +403,6 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                 result_imp_prev = self.dataBaseSqlite.executeSql(sql_import_prev)
                 result_exp_prev = self.dataBaseSqlite.executeSql(sql_exp_prev)
             
-            
-
-            
             if len(result)==0:
                     sql = """select 
                             a.id||" "||a.name zone, a.external, '' exogenous_production, 
@@ -458,7 +454,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
 
             font = QFont()
 
-            #Internal Data
+            #Internal Header
             for index, valor in enumerate(result):
                 self.vertical_header.append(valor[0])
                 if valor[0] == '0 Global Increments':
@@ -475,14 +471,18 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             header = self.internal_data_table.horizontalHeader()       
             for x in range(0,columsCount):
                 header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
-
-            for indice,valor in enumerate(result):
+            
+            print(f""" ESCENATIO PREVIO {id_prevScenario}""")
+            #Internal Data
+            for indice, valor in enumerate(result):
                 x = 0
                 for z in range(2,len(valor)):
                     data = result[indice][z] if result[indice][z] is not None else ''
                     itemText = QTableWidgetItem()
                     itemText.setText(Helpers.decimalFormat(str(data)))
-
+                    if indice == 0 and len(id_prevScenario) == 0:
+                        itemText.setFlags( Qt.ItemIsSelectable |  Qt.ItemIsEnabled  )
+                    
                     if result_prev:
                         if result[indice][z] != result_prev[indice][z]:
                             itemText.setForeground(QColor("green"))
