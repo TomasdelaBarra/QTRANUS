@@ -125,12 +125,21 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
             validation, transfers, routes, link_types = self.dataBaseSqlite.validateRemoveOperator(operatorSelected, scenarios)
              
             if validation == False:
-                transfers = tabulate(transfers, headers=["Scenario Code", "Origin Operator", "Destination Operator","Cost"])  if transfers else ''
                 routes = tabulate(routes, headers=["Scenario Code", "Ruta"]) if routes else ''
+                transfers = tabulate(transfers, headers=["Scenario Code", "Origin Operator", "Destination Operator","Cost"])  if transfers else ''
                 link_types = tabulate(link_types, headers=["Scenario Code", "Link Type"])  if link_types else ''
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n {transfers} \n {routes} \n {link_types}")
+                
+                buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel
 
-                messagebox.exec_()
+                if routes:
+                    buttons = QtWidgets.QMessageBox.Cancel
+                
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Do you really want to delete the items? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = buttons, detailedText=f"Dependents Elements \n {routes} \n\n {transfers} \n\n {link_types}")
+
+                result = messagebox.exec_()
+                if result == QtWidgets.QMessageBox.Yes:
+                    self.dataBaseSqlite.removeOperator(operatorSelected)
+                    self.__get_operators_data()
             else:
                 self.dataBaseSqlite.removeOperator(operatorSelected)
                 self.__get_operators_data()
