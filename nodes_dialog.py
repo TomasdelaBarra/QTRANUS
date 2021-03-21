@@ -194,7 +194,7 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
         qry = """select id, name, 
                  case WHEN id_type = 1 then 'Internal' 
                       WHEN id_type = 2 then 'External'
-                      WHEN id_type = 3 then 'Node'  end type    
+                      WHEN id_type = 3 or  id_type = 0 then 'Node'  end type    
                  from node  
                  where id_scenario = %s
                  order by 1 asc """ % (self.idScenario)

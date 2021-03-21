@@ -172,12 +172,12 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario:
             qry = """
                 select 
-                b.id||' '||b.name operator_from, c.id||' '||c.name operator_to, a.cost
+                b.id||' '||b.name operator_from, c.id||' '||c.name operator_to, a.cost,  b.id, c.id
                 from 
                 transfer_operator_cost a
                 join operator b on a.id_operator_from = b.id and a.id_scenario = b.id_scenario
                 join operator c on a.id_operator_to = c.id and a.id_scenario = c.id_scenario
-                where a.id_scenario = %s order by 1,2 asc""" % self.idScenario
+                where a.id_scenario = %s order by 4, 5 asc""" % self.idScenario
 
             id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 
@@ -195,7 +195,7 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
             
             for indice,valor in enumerate(result):
                 x = 0
-                for z in range(0,len(valor)):
+                for z in range(0,3):
                     data = result[indice][z] if result[indice][z] is not None else ''
                     itemText = QTableWidgetItem()
                     itemText.setText(Helpers.decimalFormat(str(data)))

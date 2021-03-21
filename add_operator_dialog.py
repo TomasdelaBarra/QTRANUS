@@ -42,8 +42,8 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.plugin_dir = os.path.dirname(__file__)
 		self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
 		self.model = QtGui.QStandardItemModel()
-		self.header = ['Tariff Factor', 'Penal Factor']
-		self.columnOperatorCetegoryDb = ['tariff_factor', 'penal_factor']
+		self.header = ['Penal Factor', 'Tariff Factor']
+		self.columnOperatorCetegoryDb = ['penal_factor', 'tariff_factor']
 		self.vertical_header_cat = []
 		self.operatorSelected = codeOperator
 		self.idScenario = idScenario
@@ -106,8 +106,10 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 
 		self.basics_modal_constant.setValidator(validatorExpr('decimal'))
 		self.basics_modal_constant.textChanged.connect(self.check_state)
-		"""self.basics_path_asc.setValidator(validatorExpr('decimal'))
-		self.basics_path_asc.textChanged.connect(self.check_state)"""
+		"""
+		self.basics_path_asc.setValidator(validatorExpr('decimal'))
+		self.basics_path_asc.textChanged.connect(self.check_state)ç
+		"""
 		self.basics_occupency.setValidator(validatorExpr('decimal'))
 		self.basics_occupency.textChanged.connect(self.check_state)
 		self.basics_time_factor.setValidator(validatorExpr('decimal'))
@@ -341,9 +343,9 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		for index in range(0,rowsCategory):
 			id_operator = self.id.text()
 			id_category = self.by_category_tbl.verticalHeaderItem(index).text().split(" ")[0] 
-			tariff_factor = self.by_category_tbl.item(index, 0).text()
-			penal_factor = self.by_category_tbl.item(index, 1).text()
-
+			penal_factor = self.by_category_tbl.item(index, 0).text()
+			tariff_factor = self.by_category_tbl.item(index, 1).text()
+			
 			ifExist = self.dataBaseSqlite.selectAll('operator_category', " where id_operator = {} and id_category = {} and id_scenario = {}".format(id_operator, id_category, self.idScenario))
 			
 			ope_cat_arr.append((id_operator, id_category, tariff_factor, penal_factor))
@@ -352,14 +354,16 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 				messagebox.exec_()
 				
-			"""if len(ifExist) == 0:
+			"""
+			if len(ifExist) == 0:
 				if not self.dataBaseSqlite.addOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
 			else: 
 				if not self.dataBaseSqlite.updateOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-					messagebox.exec_()"""
+					messagebox.exec_()
+			"""
 		
 		self.dataBaseSqlite.syncTransfers(scenarios)
 		
@@ -562,9 +566,11 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			image = self.get_symbol_object(symbol_json_str).asImage(QSize(15,7))
 			self.cb_type.addItem(QIcon(QPixmap.fromImage(image)), types[index],index+1)
 
-		"""self.cb_type.clear()
+		"""
+		self.cb_type.clear()
 		for index, valor in enumerate(types):
-			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)"""
+			self.cb_type.addItem(QIcon(f"{self.plugin_dir}/icons/{icons_types[index]}"), types[index],index+1)
+		"""
 		
 		mode_result = self.dataBaseSqlite.selectAll(' mode ')
 		self.cb_mode.clear()
@@ -572,7 +578,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			self.cb_mode.addItem(value[1], value[0])
 
 		if self.operatorSelected:
-			sql =""" select a.name category, b.tariff_factor, b.penal_factor 
+			sql =""" select a.name category, b.penal_factor, b.tariff_factor 
 					from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
 					where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
 			existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
@@ -582,13 +588,13 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		operatorSql = " b.id_operator = {0}".format(self.operatorSelected) if self.operatorSelected else  'b.id_operator is null '
 		# Table data
 		sql = """with base as (
-			select a.id||' '||a.name category, b.tariff_factor, b.penal_factor, a.id
+			select a.id||' '||a.name category, b.penal_factor, b.tariff_factor, a.id
 			from category a 
 			join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
 			where {0} and a.id_scenario = {1}
 		),
 		operator_only as (
-			select id||' '||name category, '' tariff_factor, '' penal_factor, id
+			select id||' '||name category, '' penal_factor, '' tariff_factor, id
 			from category where id_scenario = {1}
 		)
 		SELECT * FROM
@@ -603,13 +609,13 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		result_cat_prev = ''
 		if id_prevScenario and self.operatorSelected:
 			sql = """with base as (
-				select a.id||' '||a.name category, b.tariff_factor, b.penal_factor 
+				select a.id||' '||a.name category, b.penal_factor, b.tariff_factor 
 				from category a 
 				join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
 				where b.id_operator = {0} and a.id_scenario = {1}
 			),
 			operator_only as (
-				select id||' '||name category, '' tariff_factor, '' penal_factor 
+				select id||' '||name category, '' penal_factor, '' tariff_factor 
 				from category where id_scenario = {1}
 			)
 			select * from 

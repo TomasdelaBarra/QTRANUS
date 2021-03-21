@@ -216,6 +216,11 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Capacity factor.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
+
+		if not float(self.capacity_factor.text()) >= 1:
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Capacity factor must be >= 1.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
 		    
 		if self.min_maintenance_cost is None or self.min_maintenance_cost.text().strip() == '':
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Min. maintenance cost.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -227,8 +232,18 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 
+		if not (float(self.porc_speed_reduction.text()) > 0 and float(self.porc_speed_reduction.text()) < 1):
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", " % Speed Reduction when V/C=1 (Alfa) must be 0 < Alfa < 1", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
+
 		if self.porc_max_speed_reduction is None or self.porc_max_speed_reduction.text().strip() == '':
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write Max. Speed reduction.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
+		
+		if not (float(self.porc_max_speed_reduction.text()) > float(self.porc_speed_reduction.text()) and float(self.porc_max_speed_reduction.text()) < 1):
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", " Please Max Speed Reduction must be > Alfa < 1", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 
@@ -236,7 +251,18 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please write VC max. reduction.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
-
+		
+		if not float(self.vc_max_reduction.text()) > 100:
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please V/C when speed tends to zero (Gama) must be > 100", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
+		
+		"""
+		if not float(self.vc_max_reduction.text()) > 0 and float(self.vc_max_reduction.text()) < 1:
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "% Speed when V/C=1 (Alfa) must be: 0 < Alfa < 1", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+			messagebox.exec_()
+			return False
+		"""
 		id_administrator = self.cb_administrator.itemData(self.cb_administrator.currentIndex())
 		
 		symbol = self.btn_symbol.symbol()

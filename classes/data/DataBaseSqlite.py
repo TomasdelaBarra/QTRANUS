@@ -1503,7 +1503,7 @@ class DataBaseSqlite():
 
 	def removeZone(self, id):
 		
-		sql = "delete from zone where id = {};".format(id)
+		sql = "delete from zone where id = '{}';".format(id)
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		cursor.execute(sql)
@@ -1714,6 +1714,10 @@ class DataBaseSqlite():
 		cursor.execute(qry)
 		conn.commit()
 
+		qry = """delete from link_type_operator where id_operator = %s;""" % (id)
+		cursor.execute(qry)
+		conn.commit()
+		
 		conn.close()
 		return True		   		
 
@@ -1968,9 +1972,8 @@ class DataBaseSqlite():
 			join scenario b on (a.id_scenario = b.id)
 			join operator c on (a.id_operator_from = c.id)
 			join operator d on (a.id_operator_to = d.id)
-			where a.id_scenario in (1,2,3,4,5) 
-			and (id_operator_from = {id_operator} or id_operator_from = {id_operator}) 
-			and b.id_scenario in ({scenarios})"""
+			where a.id_scenario in ({scenarios}) 
+			and (id_operator_from = {id_operator} or id_operator_to = {id_operator})"""
 
 		transfers = self.executeSql(sql)
 
@@ -1978,14 +1981,15 @@ class DataBaseSqlite():
 				from route a
 				join scenario b on (a.id_scenario = b.id)
 				where a.id_scenario in ({scenarios}) 
-				and id_operator = {id_operator}"""
+				and a.id_operator = {id_operator}"""
 		routes = self.executeSql(sql)
 
-		sql = f"""select c.code, a.name link_type 
+		sql = f"""select distinct c.code, a.name link_type 
 			from link_type a
-			join link_type_operator b on (a.id = b.id_operator)
+			join link_type_operator b on (a.id = b.id_linktype)
 			join scenario c on (b.id_scenario = c.id)
-			where b.id_scenario in ({scenarios}) and id_operator = {id_operator}"""
+			where b.id_scenario in ({scenarios}) and id_operator = {id_operator} and speed != '' and speed is not null and speed != 0;"""
+			
 		link_types = self.executeSql(sql)
 
 		if transfers or routes or link_types:
@@ -2211,6 +2215,16 @@ class DataBaseSqlite():
 			cursor.execute(sql)
 			conn.commit()
 		
+		for id_scenario in scenarios:
+			sql = "delete from operator_category where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+			cursor.execute(sql)
+			conn.commit()
+
+		for id_scenario in scenarios:
+			sql = "delete from exogenous_trips where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+			cursor.execute(sql)
+			conn.commit()
+			
 		conn.close()
 		return True
 
