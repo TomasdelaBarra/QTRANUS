@@ -119,8 +119,12 @@ class ZonesDialog(QtWidgets.QDialog, FORM_CLASS):
             if validation == False:
                 exogenous_trips = tabulate(exogenous_trips, headers=["Scenario Code", "Origin Zone", "Destination Zone", "Trip"])  if exogenous_trips else ''
                 zonal_data = tabulate(zonal_data, headers=["Scenario Code", "Zone", "Sector"])  if zonal_data else ''
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Modes", "Can not remove elements? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok, detailedText=f"Dependents Elements \n Exogenous Trips \n {exogenous_trips} \n Zonal data \n {zonal_data}")
-                messagebox.exec_()
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Zones", "Do you really want to delete the items? \n Please check details.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel, detailedText=f"Dependents Elements \n Exogenous Trips \n {exogenous_trips} \n\n Zonal data \n {zonal_data}")
+                result = messagebox.exec_()
+
+                if result == QtWidgets.QMessageBox.Yes:
+                    self.dataBaseSqlite.removeZone(zoneSelected)
+                    self.__get_zones_data()
             else:
                 self.dataBaseSqlite.removeZone(zoneSelected)
                 self.__get_zones_data()

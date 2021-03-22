@@ -1508,6 +1508,19 @@ class DataBaseSqlite():
 		cursor = conn.cursor()
 		cursor.execute(sql)
 		conn.commit()
+
+		sql = "delete from zone where id = '{}';".format(id)
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		cursor.execute(sql)
+		conn.commit()
+
+		sql = f"""delete from exogenous_trips where id_zone_from = '{id}' or id_zone_to = '{id}';"""
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		cursor.execute(sql)
+		conn.commit()
+
 		conn.close()
 		return True	
 
