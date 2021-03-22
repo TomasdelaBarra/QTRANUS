@@ -708,8 +708,8 @@ class ScenariosFiles():
 
         # 2.2
         restr_head =["Link\nType","% Reduct\nat V/C=1","% Reduct\nMax", "V/C for\nMin Vel","Capacity\nFactor"]
-        qry_restr = """select a.id, coalesce(nullif(perc_speed_reduction_vc/100,''),0), coalesce(nullif(perc_max_speed_reduction/100,''),0), 
-                        coalesce(nullif(vc_max_reduction/100,''),0), coalesce(nullif(capacity_factor,''),0) 
+        qry_restr = """select a.id, coalesce(nullif(perc_speed_reduction_vc,''),0), coalesce(nullif(perc_max_speed_reduction,''),0), 
+                        coalesce(nullif(vc_max_reduction,''),0), coalesce(nullif(capacity_factor,''),0) 
                         from link_type a
                         where id_scenario = {}""".format(id_scenario)
         result_restr = self.dataBaseSqlite.executeSql(qry_restr) 
