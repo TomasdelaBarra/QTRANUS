@@ -155,9 +155,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #self.run_btn.setEnabled(True)
         #self.data_btn.setEnabled(True)
-        # Loads
-        """if self.project['zones_id_field_name']:
-            self.default_data()"""
 
         self.projectInst.removeAll.connect(self.deleteObjects)
 

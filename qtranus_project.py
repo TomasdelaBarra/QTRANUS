@@ -610,7 +610,7 @@ class QTranusProject(object):
         return True
 
     def addMatrixLayer(self, progressBar, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, matrixExpressionText, method, color):
-        print("Centroids {} ".format(self.centroids_file_path))
+        
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -655,7 +655,7 @@ class QTranusProject(object):
         result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
         
         if result:
-            layer = registry.mapLayersByName('Zonas_Centroids')[0]
+            layer = registry.mapLayersByName('Network_Nodes')[0]
             epsg = layer.crs().postgisSrid()
             group = self.get_layers_group()
             tripsMatrixLayer = QgsVectorLayer("LineString?crs=epsg:"+str(epsg),  layerName +"_matrix", "memory")
@@ -745,6 +745,7 @@ class QTranusProject(object):
             FileMXML.create_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, shpField, typeLayer, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
         progressBar.setValue(100)
         return True
+
         
     def loadMatrixLayer(self, projectPath, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, method, color, layerId):
 
