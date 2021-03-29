@@ -31,7 +31,8 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.resize(resolution_dict['width'], resolution_dict['height'])
         self.tranus_folder = tranus_folder
         self.project = parent.project
-        
+        self.parent = parent
+
         self.plugin_dir = os.path.dirname(__file__)
         # Linking objects with controls
         self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')

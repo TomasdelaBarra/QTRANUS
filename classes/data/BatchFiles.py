@@ -77,7 +77,6 @@ class BatchFiles():
         
         try:
             file = os.path.join(self.tranus_folder, filename)
-            print(file)
             with open(file, "w", encoding="utf-8") as fh:
                 for program in programs:
                     fh.write(f"{program}\n")

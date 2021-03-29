@@ -27,7 +27,7 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, tranus_folder, parent = None, layerId=None):
         super(MatrixLayerDialog, self).__init__(parent)
         self.setupUi(self)
-        
+        self.parent = parent
         self.tranus_folder = tranus_folder
         self.project = parent.project
         self.proj = QgsProject.instance()
@@ -250,6 +250,7 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Loads operators combo-box
         """
+        #print(self.parent)
         items = ["", "-", "/"]
         self.operators.addItems(items)
     
@@ -283,10 +284,10 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Loads centroids layer
         """
-        if not self.project.centroids_file_path is None:
-            self.project.load_zones_centroids_data()
-        else:
-            self.__create_centroids_file()
+        #if not self.project.centroids_file_path is None:
+        self.project.load_zones_centroids_data()
+        """else:
+            self.__create_centroids_file()"""
     
     def __create_centroids_file(self):
         """

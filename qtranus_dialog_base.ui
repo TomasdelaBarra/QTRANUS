@@ -63,7 +63,7 @@
         <enum>Qt::Horizontal</enum>
        </property>
        <widget class="QTreeView" name="scenarios"/>
-       <widget class="QWidget" name="">
+       <widget class="QWidget" name="layoutWidget">
         <layout class="QFormLayout" name="formLayout">
          <property name="fieldGrowthPolicy">
           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
@@ -177,38 +177,13 @@
           </layout>
          </item>
          <item row="6" column="0">
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Centroid shape file:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <widget class="QLineEdit" name="centroid_shape">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="centroid_shape_btn">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="7" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>Network links shape file:</string>
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="6" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
             <widget class="QLineEdit" name="network_links_shape">
@@ -226,14 +201,14 @@
            </item>
           </layout>
          </item>
-         <item row="8" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="lbl_links_id">
            <property name="text">
             <string>Select links shape Fields:</string>
            </property>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="7" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <layout class="QGridLayout" name="gridLayout_2">
@@ -331,14 +306,14 @@
            </item>
           </layout>
          </item>
-         <item row="9" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Network nodes shape file:</string>
            </property>
           </widget>
          </item>
-         <item row="9" column="1">
+         <item row="8" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_7">
            <item>
             <widget class="QLineEdit" name="network_nodes_shape">
@@ -356,14 +331,14 @@
            </item>
           </layout>
          </item>
-         <item row="10" column="0">
+         <item row="9" column="0">
           <widget class="QLabel" name="lbl_nodes">
            <property name="text">
             <string>Select nodes shape Fields:</string>
            </property>
           </widget>
          </item>
-         <item row="10" column="1">
+         <item row="9" column="1">
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="2">
             <widget class="QLabel" name="label_14">
@@ -552,8 +527,6 @@
   <tabstop>db_btn</tabstop>
   <tabstop>zone_shape</tabstop>
   <tabstop>zones_shape_btn</tabstop>
-  <tabstop>centroid_shape</tabstop>
-  <tabstop>centroid_shape_btn</tabstop>
   <tabstop>network_links_shape</tabstop>
   <tabstop>network_links_shape_btn</tabstop>
   <tabstop>network_nodes_shape</tabstop>

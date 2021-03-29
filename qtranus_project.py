@@ -45,6 +45,7 @@ class QTranusProject(object):
         self.shape = None
         self.zonesIdFieldName = None
         self.links_shape_field_id = None
+        self.nodes_shape_field_type = None
         self.network_model = Network()
         self.centroids_file_path = None
         self.network_link_shape_path = None
@@ -628,12 +629,12 @@ class QTranusProject(object):
             messagebox.exec_()
             print  ("There is not destination zones information.")
             return False
-        
+    
         # Creates centroids layer
-        if not self.centroids_file_path is None:
-            self.load_zones_centroids_data()
-        else:
-            self.load_zones_centroids()
+        #if not self.centroids_file_path is None:
+        self.load_zones_centroids_data()
+        """else:
+            self.load_zones_centroids()"""
 
         progressBar.setValue(30)
         # Gets shape's file folder
@@ -1008,7 +1009,7 @@ class QTranusProject(object):
             self.tranus_project = None
             return False
         else:
-            print("Dentro de tranus Folder", self.tranus_project)
+            # print("Dentro de tranus Folder", self.tranus_project)
             self.tranus_project = tranus_project
             self['tranus_folder'] = folder
             return True
@@ -1344,12 +1345,13 @@ class QTranusProject(object):
         """
             @summary: Loads centroids information from file
         """
-        filePath = self.centroids_file_path[0:max(self.centroids_file_path[0].rfind('\\'), self.centroids_file_path[0].rfind('/'))]
-        layer = QgsProject.instance().mapLayersByName('Zones_Centroids')[0]
+        filePath = self.network_nodes_shape_path[0:max(self.network_nodes_shape_path[0].rfind('\\'), self.network_nodes_shape_path[0].rfind('/'))]
+        layer = QgsProject.instance().mapLayersByName('Network_Nodes')[0]
         epsg = layer.crs().postgisSrid()
         prov =  layer.dataProvider()
         group = self.get_layers_group()
-        for f in layer.getFeatures():
+
+        for f in layer.getFeatures(f"{self.nodes_shape_field_type} = 1"):
             pt = f.geometry().centroid().asPoint()
             zoneCentroid = ZoneCentroid()
             zoneCentroid.id = f.attributes()[0]
@@ -1357,6 +1359,7 @@ class QTranusProject(object):
             zoneCentroid.longitude = pt.x()
             zoneCentroid.latitude = pt.y()
             self.map_data.zoneCentroids.append(zoneCentroid)
+        
         
 
     def load_zones_centroids(self):

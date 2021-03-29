@@ -79,7 +79,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zone_shape = self.findChild(QtWidgets.QLineEdit, 'zone_shape')
         self.network_links_shape = self.findChild(QtWidgets.QLineEdit, 'network_links_shape')
         self.network_nodes_shape = self.findChild(QtWidgets.QLineEdit, 'network_nodes_shape')
-        self.centroid_shape = self.findChild(QtWidgets.QLineEdit, 'centroid_shape')
+        #self.centroid_shape = self.findChild(QtWidgets.QLineEdit, 'centroid_shape')
         self.button_box = self.findChild(QtWidgets.QDialogButtonBox, 'button_box')
         self.data_btn = self.findChild(QtWidgets.QCommandLinkButton, 'data')
         self.results_btn = self.findChild(QtWidgets.QCommandLinkButton, 'results')
@@ -92,7 +92,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_shape_btn = self.findChild(QtWidgets.QToolButton, 'zones_shape_btn')
         self.network_links_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_links_shape_btn')
         self.network_nodes_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_nodes_shape_btn')
-        self.centroid_shape_btn = self.findChild(QtWidgets.QToolButton, 'centroid_shape_btn')
+        #self.centroid_shape_btn = self.findChild(QtWidgets.QToolButton, 'centroid_shape_btn')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         self.zones_shape_fields = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_fields')
         self.zones_shape_name = self.findChild(QtWidgets.QComboBox, 'cb_zones_shape_name')
@@ -107,6 +107,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_capacity = self.findChild(QtWidgets.QComboBox, 'links_shape_capacity')
         self.nodes_shape_fields = self.findChild(QtWidgets.QComboBox, 'nodes_shape_fields')
         self.nodes_shape_name = self.findChild(QtWidgets.QComboBox, 'nodes_shape_name')
+        self.nodes_shape_type = self.findChild(QtWidgets.QComboBox, 'nodes_shape_type')
         self.nodes_shape_x = self.findChild(QtWidgets.QComboBox, 'nodes_shape_x')
         self.nodes_shape_y = self.findChild(QtWidgets.QComboBox, 'nodes_shape_y')
         self.pg_loading = self.findChild(QtWidgets.QProgressBar, 'pg_loading')
@@ -127,7 +128,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.tranus_folder_btn.clicked.connect(self.select_tranus_folder)
         self.zones_shape_btn.clicked.connect(self.select_zone_shape_file(self.select_zones_shape))
-        self.centroid_shape_btn.clicked.connect(self.select_centroid_shape_file(self.select_centroid_shape))
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
         self.network_nodes_shape_btn.clicked.connect(self.select_network_nodes_shape_file(self.select_network_nodes_shape))
 
@@ -144,6 +144,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_direction.currentIndexChanged.connect(self.check_configure)
         self.links_shape_capacity.currentIndexChanged.connect(self.check_configure)
 
+        self.nodes_shape_type.currentIndexChanged.connect(self.nodes_shape_type_changed)
         self.nodes_shape_fields.currentIndexChanged.connect(self.check_configure)
         self.nodes_shape_type.currentIndexChanged.connect(self.check_configure)
         self.nodes_shape_name.currentIndexChanged.connect(self.check_configure)
@@ -482,21 +483,6 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         finally:
             self.check_configure()
 
-
-        
-    def select_centroid_shape(self, file_name):
-        """
-            @summary: Loads selected centroid shape file
-            @param file_name: Path and name of the shape file
-            @type file_name: String
-        """
-        result = self.project.load_centroid_file(file_name)
-        
-        if result:
-            self.centroid_shape.setText(file_name[0])
-        else:
-            self.centroid_shape.setText('')
-
             
     def select_network_links_shape(self, file_name):
         try:
@@ -582,17 +568,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
                 callback(file_name)
 
         return select_file
-    
-    def select_centroid_shape_file(self, callback):
-        """
-            @summary: Opens selected centroid shape file
-        """
-        def select_file():
-            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select centroids shape file', directory=str(self.folder_ws), filter='*.*, *.shp')
-            if file_name:
-                callback(file_name)
-        
-        return select_file
+
 
     def select_network_links_shape_file(self, callback):
         def select_file():
@@ -977,7 +953,13 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.links_shape_fields.currentText() != '':
             self.project.links_shape_field_id = self.links_shape_fields.currentText()
             self.project['links_shape_field_id'] = self.project.links_shape_field_id
-        
+    
+    
+    def nodes_shape_type_changed(self):
+        if self.nodes_shape_type.currentText() != '':
+            self.project.nodes_shape_field_type = self.nodes_shape_type.currentText()
+            self.project['nodes_shape_field_type'] = self.project.nodes_shape_field_type
+
             
     def load_info_shapes(self):
         try:
