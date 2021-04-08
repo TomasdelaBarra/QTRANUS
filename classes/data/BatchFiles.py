@@ -29,13 +29,14 @@ class BatchFiles():
             programs = {'Path Search': [f'pasos {codeScenario}', f'impas {codeScenario} -P -M -o {codeScenario}\path_{codeScenario}.csv'], 
                         'Location':[f'loc {codeScenario}',
                                     f'fluj {codeScenario}',
-                                    f'imploc {codeScenario} -J -o transport_indicators_{codeScenario}.csv'],
+                                    f'imploc {codeScenario} -J -o location_indicators_{codeScenario}.csv'],
                         'Assigment':[f'fluj {codeScenario} -I', 
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv']
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv',
+                                    f'mats {codeScenario} -Q -o trip_matrix_{codeScenario}_i.csv']
                         }
         else:
             # Base Sceanario 
@@ -51,7 +52,8 @@ class BatchFiles():
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv']
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv',
+                                    f'mats {codeScenario} -Q -o trip_matrix_{codeScenario}_i.csv']
                         }
 
         resultList = []

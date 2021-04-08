@@ -129,9 +129,6 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.__get_scenarios_data()
 
     def extractProgramsZip(self):
-        #print(self.plugin_dir)
-        #ruta = self.plugin_dir.replace("\\","/")+'/programs.zip'
-        #print(ruta)
         file = zf(self.plugin_dir.replace("\\","/")+'/programs.zip')
         file.extractall(self.plugin_dir.replace("\\","/"))
 
@@ -250,7 +247,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def dataReady(self):
         try:
-            output_data = str(self.process.readAll(), 'utf-8')
+            output_data = str(self.process.readAll(), encoding = "ascii", errors ="ignore")
             cursor = self.te_ouput.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText(output_data)
@@ -262,6 +259,12 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def finish_process(self):
         self.btn_run.setEnabled(True)
+        
+        if os.path.isfile(os.path.join(self.tranus_folder, f"trip_matrix_{self.scenarioCode}_i.csv")):
+            if not Helpers.transform_trips_matrix(self.scenarioCode, self.tranus_folder):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generating matrix files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+
         #if self.file:
         #    os.remove(f"{self.file}")
 
@@ -435,9 +438,10 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             if self.file:
                 os.chdir(self.tranus_folder)
                 self.process.start("cmd.exe", {f"/C {self.file}"})
+
                 #os.remove(f"{self.file}")
             else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generate input files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generating input files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
     
     def is_base_scenario(self, scenario_code):

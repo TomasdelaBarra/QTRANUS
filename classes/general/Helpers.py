@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import re
+import os
 
 class Helpers(object):
 
@@ -135,6 +137,41 @@ class Helpers(object):
                 list_a.append(data_b)
         return list_a
 
+    
+   
+    @staticmethod
+    def transform_trips_matrix(scenario_cod, tranus_folder):
+        try:
+            regex_cat_line = "\d+-(\s\d+|\d+)-\d\d\d\d\s+\d+:\d+"
+            regex_cat_id = "\s{3,}"
+            regex_zone_id = r"\d+\s\b[A-Za-z0-9 .]+\b\s+\d+.\d+"
+            read_file = os.path.join(tranus_folder, f"trip_matrix_{scenario_cod}_i.csv")
+            write_file = os.path.join(tranus_folder, f"trip_matrices_{scenario_cod}.csv")
+            zones = []
+
+            with open(read_file, 'r' ) as reader:
+                for line in reader:
+                    if re.search(regex_zone_id, line):
+                        tmp = [values.strip() for values in line.split("\t")]
+                        if not tmp[0] in zones:
+                            zones.append(tmp[0])
+            zones.insert(0, '')
+            with open( read_file, 'r' ) as reader, open( write_file, 'w' ) as writer:
+                writer.write("OrZonId,OrZonName,DeZonId,DeZonName,CatId,CatName,Trips\n")
+                category = []
+                for line in reader:
+                    if re.search(regex_cat_line, line):
+                        category = re.split(regex_cat_id, line)
+                    if re.search(regex_zone_id, line) and category:
+                        arr = [values.strip() for values in re.split("\t", line)]
+                        for index in range(1, len(arr)-1):
+                            if index:
+                                OrZon = arr[0].split(" ")
+                                Cat = category[0].strip().split(" ")
+                                writer.write(f"{OrZon[0]},{OrZon[1]},{zones[index].split(' ')[0]},{zones[index].split(' ')[1]},{Cat[0]},{Cat[1]},{arr[index]}\n")
+            return True
+        except:
+            return False
 
 class ExceptionGeometryType(Exception):
     """

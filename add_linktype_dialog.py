@@ -116,6 +116,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.linkTypeSelected:
 			self.setWindowTitle("Edit Link Type")
 			self.load_default_data()
+		else:
+			self.load_default_fields()
 
 		self.operator_table.itemChanged.connect(self.__validate_operators)
 
@@ -252,8 +254,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 			messagebox.exec_()
 			return False
 		
-		if not float(self.vc_max_reduction.text()) > 100:
-			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please V/C when speed tends to zero (Gama) must be > 100", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+		if not float(self.vc_max_reduction.text()) > 1:
+			messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "New Link Type", "Please V/C when speed tends to zero (Gama) must be > 1", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 			messagebox.exec_()
 			return False
 		
@@ -324,6 +326,12 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 				if not self.dataBaseSqlite.updateLinkTypeOperator(scenarios, id_linktype, id_operator, column=dataColumn, value=item_value):
 					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 					messagebox.exec_()
+
+	
+	def load_default_fields(self):
+		self.porc_speed_reduction.setText('0.75')
+		self.porc_max_speed_reduction.setText('0.90')
+		self.vc_max_reduction.setText('1.25')
 
 
 	def load_default_data(self):
