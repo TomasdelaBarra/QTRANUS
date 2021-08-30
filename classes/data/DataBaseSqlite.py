@@ -3,6 +3,7 @@ import sys, os
 
 import sqlite3
 from sqlite3 import OperationalError, IntegrityError, ProgrammingError
+from typing import Tuple
 from ..general.Helpers import Helpers
 
 class DataBaseSqlite():
@@ -1151,7 +1152,7 @@ class DataBaseSqlite():
 
 		sql_exogenous = f"""INSERT OR REPLACE INTO exogenous_trips ( id_scenario, id_zone_from, id_zone_to, id_category, trip) 
 			VALUES (?, ?, ?, ?, ?)"""
- 		
+		
 		for id_scenario in scenarios:
 			for row in data_arr:
 				sql_arr_trips.append((id_scenario[0], row[0], row[1], row[2], row[3]))

@@ -20,6 +20,7 @@ from .add_mode_dialog import AddModeDialog
 from .add_category_dialog import AddCategoryDialog
 from .classes.general.Validators import validatorRegex
 from .add_excel_data_dialog import AddExcelDataDialog
+from .import_csv import ImportCsvData
 
 #import pandas
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -115,7 +116,8 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             @summary: Set Scenario selected
         """
         id_category = self.cb_category.itemData(self.cb_category.currentIndex())
-        dialog = AddExcelDataDialog(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='exogenous_trips', _idCategory=id_category)
+        # dialog = AddExcelDataDialog(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='exogenous_trips', _idCategory=id_category)
+        dialog = ImportCsvData(self.tranus_folder, parent = self, idScenario=self.idScenario, _type='exogenous_trips', _idCategory=id_category)
         dialog.show()
         result = dialog.exec_()
         self.__load_zones_tb_data()
