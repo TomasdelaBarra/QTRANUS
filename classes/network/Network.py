@@ -10,6 +10,7 @@ from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsF
 
 from ..general.FileManagement import FileManagement as FileMXML
 from ..general.Helpers import Helpers as HP
+from ..data.DataBaseSqlite import DataBaseSqlite
 from ..GeneralObject import GeneralObject
 from .NetworkDataAccess import NetworkDataAccess
 
@@ -24,7 +25,8 @@ class Network(object):
         self.network_data_access = NetworkDataAccess()
         self.network_link_shape_location = None
         self.network_node_shape_location = None
-        
+        self.dataBaseSqlite = None
+
     def __del__(self):
         """
             @summary: Destroys the object
@@ -119,7 +121,8 @@ class Network(object):
         """
         self.routes_dic = self.network_data_access.get_scenario_routes(projectPath, scenario)
 
-    def addNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, expressionNetworkText, color):
+
+    def addNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, expressionNetworkText, color, tranusFolder):
         """
             @summary: Get operators dictionary
             @param layerName: Layer name
@@ -140,6 +143,7 @@ class Network(object):
             @type networkLinkShapePath: String
             @return: Result of the layer creation
         """
+        self.dataBaseSqlite = DataBaseSqlite( tranusFolder )
         if scenariosExpression is None:
             QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
@@ -274,16 +278,9 @@ class Network(object):
 
             typeLayer = "network"
             networkExpressionText = str(scenariosExpression)
-
-            # Create XML File ".qtranus" with the parameters of the executions
-            if FileMXML.if_exist_xml_layers(projectPath):
-                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
-                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, method, level, color)
-                else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
-            else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
-
+            
+            if not self.dataBaseSqlite.upSertResultsNetwork(memoryLayer.id(), memoryLayer.name(), color, scenariosExpression, variable, shpField, level, method, expressionNetworkText):
+                return False
             #group.insertLayer((layersCount+1), memoryLayer)
             progressBar.setValue(100)
         return True
@@ -414,7 +411,7 @@ class Network(object):
 
         return True
 
-    def editNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, layerId, expressionNetworkText, color):
+    def editNetworkLayer(self, progressBar, layerName, scenariosExpression, networkExpression, variable, level, projectPath, group, networkLinkShapePath, method, layerId, expressionNetworkText, color, tranusFolder):
         """
             @summary: Get operators dictionary
             @param layerName: Layer name
@@ -435,7 +432,7 @@ class Network(object):
             @type networkLinkShapePath: String
             @return: Result of the layer creation
         """
-        
+        self.dataBaseSqlite = DataBaseSqlite( tranusFolder )
         if scenariosExpression is None:
             QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
@@ -548,14 +545,16 @@ class Network(object):
             networkExpressionText = str(scenariosExpression)
             
             # Create XML File ".qtranus" with the parameters of the executions
-            if FileMXML.if_exist_xml_layers(projectPath):
+            if not self.dataBaseSqlite.upSertResultsNetwork(memoryLayer.id(), memoryLayer.name(), color, scenariosExpression, variable, shpField, level, method, expressionNetworkText):
+                return False
+            """if FileMXML.if_exist_xml_layers(projectPath):
                 if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
                     FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, method, level, color)
                 else:
                     FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
             else:
                 FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, variable, networkExpression, projectPath, expressionNetworkText, shpField, typeLayer, method, level, color)
-
+            """
             #group.insertLayer((layersCount+1), memoryLayer)
             progressBar.setValue(100)
 
@@ -618,6 +617,64 @@ class Network(object):
                 feat.setAttributes(values)            
                 layer.dataProvider().addFeature(feat)
 
+            layer.commitChanges()
+            return True
+        except:
+            return False
+
+    
+    @staticmethod
+    def addLinksFeaturesShape(layerId, features_list, link_id_field='Link_Id', networkShapeFields=None):
+        
+        """
+            @summary: Build link to Shape Network
+            @param originPoint: Layer name
+            @type originPoint: QgsPointXY
+            @param destinationPoint: Layer name
+            @type destinationPoint: QgsPointXY
+            @param originIdNode: Origin Node
+            @type originIdNode: Integer
+            @destinationIdNode: Destination Node
+            @type destinationIdNode: Integer
+            @param twoWay: Flag to mark two-way links
+            @type twoWay: Integer
+            @return: Result of the layer creation
+        """
+        try:
+            if not networkShapeFields:
+                raise Exception("networkShapeFields is None")
+
+            project = QgsProject.instance()
+            layer = project.mapLayer(layerId)
+            fields = [value.name() for value in layer.fields()]
+            values = [None] * len(fields)
+            feats_list = []
+            for attribute_values in features_list:
+                values[fields.index(networkShapeFields['scenario'])] = attribute_values['scenario_code']
+                values[fields.index(networkShapeFields['name'])] = attribute_values['name']
+                values[fields.index(networkShapeFields['id'])] = attribute_values['linkid']
+                values[fields.index(networkShapeFields['origin'])] = attribute_values['node_from']
+                values[fields.index(networkShapeFields['destination'])] = attribute_values['node_to']
+                values[fields.index(networkShapeFields['type'])] = attribute_values['id_linktype']
+                values[fields.index(networkShapeFields['length'])] = attribute_values['length']
+                # values[fields.index(networkShapeFields['direction'])] = attribute_values[]
+                values[fields.index(networkShapeFields['capacity'])] = attribute_values['capacity']
+                originPoint = attribute_values['originPoint']
+                destinationPoint = attribute_values['destinationPoint']
+                geom = QgsGeometry()
+                geom.addPoints([QgsPoint(originPoint), QgsPoint(destinationPoint)], QgsWkbTypes.LineGeometry)
+
+                feat = QgsFeature()
+                feat.setGeometry(geom)
+                #feat.setAttributes([f'name',f'{originIdNode}-{destinationIdNode}', originIdNode, destinationIdNode])
+                feat.setAttributes(values)
+
+                features = layer.getFeatures(QgsFeatureRequest().setFilterExpression(f"{link_id_field} = '{attribute_values['linkid']}'"))
+                if not list(features):
+                    feats_list.append(feat)
+
+            layer.startEditing()
+            layer.dataProvider().addFeatures(feats_list)
             layer.commitChanges()
             return True
         except:

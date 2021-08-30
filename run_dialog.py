@@ -260,13 +260,11 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
     def finish_process(self):
         self.btn_run.setEnabled(True)
         
-        if os.path.isfile(os.path.join(self.tranus_folder, f"trip_matrix_{self.scenarioCode}_i.csv")):
+        if  ("Assigment" in self.programs_list) and os.path.isfile(os.path.join(self.tranus_folder, f"trip_matrix_{self.scenarioCode}_i.csv")):
             if not Helpers.transform_trips_matrix(self.scenarioCode, self.tranus_folder):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generating matrix files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-
-        #if self.file:
-        #    os.remove(f"{self.file}")
+        
 
 
     def add_to_batch(self):
@@ -373,8 +371,9 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioSelectedIndex = selectedIndex
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         self.scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
-        self.idScenario = self.scenarioData[0][0]
-        self.validate_buttons()
+        if self.scenarioData:
+            self.idScenario = self.scenarioData[0][0]
+            self.validate_buttons()
         
 
 

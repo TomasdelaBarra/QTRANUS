@@ -153,7 +153,9 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 		self.idScenario = scenarioData[0][0]
 		# TODO: correct symbology selection
 		#self.load_default_data()
-		self.__load_fields()
+		if scenarioData:
+			self.idScenario = scenarioData[0][0]
+			self.__load_fields()
 
 
 	def __validate_operators(self, item):

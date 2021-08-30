@@ -17,6 +17,7 @@ from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
 from .networklayer_dialog import NetworkLayerDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'results.ui'))
@@ -32,6 +33,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder = tranus_folder
         self.project = parent.project
         self.parent = parent
+        self.dataBaseSqlite = DataBaseSqlite( self.tranus_folder )
 
         self.plugin_dir = os.path.dirname(__file__)
         # Linking objects with controls
@@ -126,7 +128,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: EventFilter to filter Right Click
         """
-        if (event.type() == QtCore.QEvent.ContextMenu and (source is self.layer_zone or source is self.layer_network or source is self.layer_matrix)):
+        if (event.type() == QtCore.QEvent.ContextMenu and (source is self.layer_zone or source is self.layer_network or source is self.layer_matrix)) and source.itemAt(event.pos()):
             menu = QtWidgets.QMenu()
             openLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/open-layer.svg"),'Open Layer')
             editLayer = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"), 'Edit Layer')
@@ -136,8 +138,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             if action == editLayer:
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
-                print(f"Layer ID:  {layerId}")
-                dialog = ZoneLayerDialog(parent=self,layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(parent=self, layerId=layerId) if source is self.layer_network else MatrixLayerDialog(parent=self, layerId=layerId)
+                dialog = ZoneLayerDialog(self.tranus_folder, parent=self, layerId=layerId) if source is self.layer_zone else NetworkLayerDialog(self.tranus_folder, parent=self, layerId=layerId) if source is self.layer_network else MatrixLayerDialog(self.tranus_folder, parent=self, layerId=layerId)
                 dialog.show()
                 result = dialog.exec_()
                 if result==1:
@@ -146,6 +147,12 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
                 item = source.itemAt(event.pos())
                 layerId = item.data(11)
                 QgsProject.instance().removeMapLayers([layerId])
+                if source is self.layer_zone:
+                    self.dataBaseSqlite.deleteResultsZone(layerId)
+                if source is self.layer_network:
+                    self.dataBaseSqlite.deleteResultsNetwork(layerId)
+                if source is self.layer_matrix:
+                    self.dataBaseSqlite.deleteResultsMatrix(layerId)
                 self.__load_layers_list()
             elif action == openLayer:
                 item = source.itemAt(event.pos())

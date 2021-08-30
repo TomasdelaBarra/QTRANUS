@@ -12,6 +12,7 @@ from qgis.gui import *
 from qgis.core import QgsProject
 from qgis.gui import QgisInterface
 from qgis.core import Qgis
+from qgis.core import Qgis, QgsProject, QgsProject, QgsPointXY
 
 from .classes.general.Helpers import Helpers
 from .classes.data.DataBase import DataBase
@@ -20,13 +21,14 @@ from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.network.Network import Network
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'imports_network.ui'))
 
 class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
     
-    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None):
+    def __init__(self, tranus_folder, scenarioCode, scenarioSelectedIndex=None, parent = None, networkShapeFields=None):
         """
             @summary: Class constructor
             @param parent: Class that contains project information
@@ -40,8 +42,10 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.plugin_dir = os.path.dirname(__file__)
         self.scenarioSelectedIndex = scenarioSelectedIndex
+        self.network_shape_fields = networkShapeFields if networkShapeFields else None
         self.scenarioCode = scenarioCode
         self.idScenario = None
+        self.link_id_field =  parent.links_shape_fields.currentText() if parent.links_shape_fields else None
         resolution_dict = Helpers.screenResolution(60)
         self.resize(resolution_dict['width'], 350)
         
@@ -73,6 +77,8 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_opers.setEnabled(False)
         self.btn_turns.setEnabled(False)
 
+        print()
+
         #Loads
         # LOAD SCENARIO FROM FILE self.__load_scenarios_from_db_file()
         self.__get_scenarios_data()
@@ -101,10 +107,10 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         result_route = self.dataBaseSqlite.selectAll(' route ')
         result_link = self.dataBaseSqlite.selectAll(' link ')
         self.btn_opers.setEnabled(True)
-        if len(result_node) > 0:
+        if len(result_node) > 1:
             self.btn_links.setEnabled(True)
 
-        if len(result_link) > 0:
+        if len(result_link) > 1:
             self.btn_turns.setEnabled(True)
             if len(result_route) > 0:
                 self.btn_routes.setEnabled(True)
@@ -136,6 +142,7 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             self.__load_csv_nodes(self.import_file_obj.filePath())
         elif self.btn_links.isChecked():
             self.__load_csv_links(self.import_file_obj.filePath())
+            self.__create_links_shape(self.import_file_obj.filePath())
         elif self.btn_routes.isChecked():
             self.__load_csv_routes(self.import_file_obj.filePath())
         elif self.btn_opers.isChecked():
@@ -145,38 +152,35 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         #self.close()
 
     def close_event(self, event):
-        # wprint("dentro close")
-        self.dataBaseSqlite.insertLoteTest()
-
+        
         self.close()
 
     def __load_csv_routes(self, path):
         scenario_code = self.scenarioCode
         scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
-        with open(path) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            data_list = []
-            try:
+        
+        try:
+            with open(path) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                data_list = []
+            
                 for index, row in enumerate(csv_reader):
-                    #if index > 0 and int(row[3].strip()) != 0:
+                    #if index > 0 and int(row[3].strip()) != 0:          
                     if index > 0:
                         id_link = f"{row[0].strip()}-{row[1].strip()}"
                         id_route = row[2].strip()
                         type_route = row[3].strip() if row[3].strip() != 0 else 3
                         data_list.append((id_link, id_route, type_route))   
                 self.dataBaseSqlite.addLinkRouteFFile(scenarios, data_list)
-            except:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-            finally:
-                self.close() 
-                return True
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import error", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+        finally:
+            self.close() 
+            return True
         return True
 
     def __load_csv_opers(self, path):
-        scenario_code = self.scenarioCode
-        scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
-        with open(path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             data_list = []
             try:
@@ -284,3 +288,46 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             finally:
                 self.close()
                 return True                 
+
+
+    def __create_links_shape(self, path):
+        try:
+            attributes_list = []
+            project = QgsProject.instance()
+            layerIds = [layer.id() for layer in project.mapLayers().values()]
+            layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]
+            scenario_code = self.scenarioCode
+
+            with open(path) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                for index, row in enumerate(csv_reader):
+                    if index > 0 and int(row[4].strip()) != 0:
+                        linkid = f"{row[1].strip()}-{row[2].strip()}"
+                        node_from = row[1].strip() 
+                        node_to = row[2].strip() 
+                        id_linktype = row[4].strip() 
+                        length = row[5].strip() if row[5].strip() else None
+                        capacity = row[6].strip() if row[6].strip() else None
+                        name = row[7].strip() if row[7].strip() else None 
+                        description = row[8].strip() if row[8].strip() else None
+
+                        originNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = '{node_from}'")
+                        destinationNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = '{node_to}'")
+                        originPoint = QgsPointXY(originNode[0][5], originNode[0][6])
+                        destinationPoint = QgsPointXY(destinationNode[0][5], destinationNode[0][6])
+                        
+                        attributes_list.append(
+                            {
+                            'scenario_code':scenario_code, 'linkid':linkid, 'node_from':node_from, 'node_to':node_to, 'id_linktype':id_linktype, 
+                            'length':length, 'capacity':capacity, 'name':name, 'description':description,
+                            'originPoint': originPoint, 'destinationPoint': destinationPoint
+                            }
+                        )
+                    
+            if not Network.addLinksFeaturesShape(layerNetId, attributes_list, link_id_field=self.link_id_field, networkShapeFields=self.network_shape_fields ):
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error 1.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+            return True
+        except:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error 2.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()

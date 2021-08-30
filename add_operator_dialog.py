@@ -353,19 +353,6 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 			if not self.dataBaseSqlite.operatorCategoryInsertUpdate(scenarios, ope_cat_arr):	
 				messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
 				messagebox.exec_()
-				
-			"""
-			if len(ifExist) == 0:
-				if not self.dataBaseSqlite.addOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
-					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-					messagebox.exec_()
-			else: 
-				if not self.dataBaseSqlite.updateOperatorCategory(scenarios, id_operator, id_category, tariff_factor, penal_factor):
-					messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add  new Operator Category", "Error while insert data into database.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-					messagebox.exec_()
-			"""
-		
-		self.dataBaseSqlite.syncTransfers(scenarios)
 		
 		if result:
 			self.accept()

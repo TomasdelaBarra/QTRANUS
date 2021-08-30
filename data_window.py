@@ -197,13 +197,12 @@ class DataWindow(QMainWindow, FORM_CLASS):
         #self.__extract_db_files()
         self.__connect_database_sqlite()
         self.__load_scenarios()
-        self.load_data()
+        # self.load_data()
 
         # Thread to load information
-        """
         load_data_thread = threading.Thread(target=self.load_data, name='load_data')
         load_data_thread.start()
-        """
+
         self.__validate_buttons()
         self.validate_database()
         
@@ -403,7 +402,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         """
             @summary: Opens data window
         """
-        dialog = ImportsNetworkDialog(self.project_file, self.scenarioCode, parent = self)
+        dialog = ImportsNetworkDialog(self.project_file, self.scenarioCode, parent = self,  networkShapeFields=self.network_data_fields())
         dialog.show()
         result = dialog.exec_()
 
@@ -666,22 +665,22 @@ class DataWindow(QMainWindow, FORM_CLASS):
         if self.zone_shape.text() != '':
             self.btn_zones.setEnabled(False)
             self.btn_zones.setText("Zones loading...")
-            self.__load_zones_data()
+            result_zones = self.__load_zones_data()
             self.btn_zones.setText("Zones")
             self.btn_zones.setEnabled(True)
         else:
             return False
 
-        if self.network_nodes_shape.text() != '':
+        if result_zones != False and self.network_nodes_shape.text() != '':
             self.btn_nodes.setText("Nodes loading...")
             self.btn_nodes.setEnabled(False)
-            self.__load_nodes_data()
+            result_nodes = self.__load_nodes_data()
             self.btn_nodes.setText("Nodes")
             self.btn_nodes.setEnabled(True)
         else:
             return False
 
-        if self.network_links_shape.text() != '':
+        if  result_zones != False and result_nodes != False and self.network_links_shape.text() != '':
             self.btn_links.setEnabled(False)
             self.btn_links.setText("Links loading...")
             self.__load_network_data()
@@ -689,6 +688,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
             self.btn_links.setEnabled(True)
         else:   
             return False
+        
 
 
     def __load_zones_data(self, typeSql="IGNORE"):
@@ -712,7 +712,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
                 zoneNameField = self.zones_shape_name.currentText()
                 for feature in features:
                     zoneId = feature.attribute(zoneIdField)
-                    zoneName = feature.attribute(zoneNameField) if feature.attribute(zoneNameField) else None
+                    zoneName = feature.attribute(zoneNameField)[0:25] if feature.attribute(zoneNameField) else None
+                    zoneName = re.sub(r'[^A-Za-z0-9 .]', '', zoneName)
                     result = self.dataBaseSqlite.selectAll('zone', " where id = {}".format(zoneId))
                     if typeSql == 'IGNORE':
                         if not (isinstance(zoneId, QVariant) and zoneId.isNull()):
@@ -862,29 +863,50 @@ class DataWindow(QMainWindow, FORM_CLASS):
                                 description = None
                                 x = feature.attribute(xNode) if xNode else None
                                 y = feature.attribute(yNode) if yNode else None
-
+                                x = None if str(x) == 'NULL' else x
+                                y = None if str(y) == 'NULL' else y
+                                print(f'x {x}')
+                                print(f'y {y}')
+                                
                                 if not isinstance(_id, int):
                                     raise ExceptionWrongDataType(_id=_id, _field=idNode)
                                 
                                 if not isinstance(id_type, int):
                                     raise ExceptionWrongDataType(_id=_id, _field=typeNode)
                                 
+                                if x == None:
+                                    raise ExceptionNullValue(_id=_id, _field=xNode)
+
+                                if y == None:
+                                    raise ExceptionNullValue(_id=_id, _field=yNode)
+                                
                                 data_list.append((_id, x, y, name, description, id_type))
+                                
                             else:
                                 raise ExceptionFormatID(_id, typeFile='Import error in Nodes shape file')
                     self.dataBaseSqlite.addNodeFShape(scenarios_arr, data_list, typeSql=typeSql)
 
-                    return True                                                                                      
+                    return True   
+        except ExceptionNullValue as e:
+            print(f"Error ExceptionNullValue: {e}")
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Loading Nodes Error \n"+str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False 
         except ExceptionWrongDataType as e:
-                print(f"Error ExceptionWrongDataType: {e}")
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Loading Nodes Error \n"+str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-                return False
+            print(f"Error ExceptionWrongDataType: {e}")
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Loading Nodes Error \n"+str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False                                                                                   
+        except ExceptionWrongDataType as e:
+            print(f"Error ExceptionWrongDataType: {e}")
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Loading Nodes Error \n"+str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
         except ExceptionFormatID as e:
-                print(f"Error ExceptionFormatID: {e}")
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()
-                return False
+            print(f"Error ExceptionFormatID: {e}")
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
         except Exception as e:
             print(f"Error: {e}")
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Error importing node shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -909,7 +931,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
 
     def save_db_as(self):
         file_name = QtGui.QFileDialog.getSaveFileName(parent=self, caption='Choose a file name to save the DB.', directory=self.project['project_file'], filter='*.*, *.zip')
-        print(file_name)
+        
         if file_name.strip() != '':
             if(self.dataBase.save_db(self.project['project_file'], self.project.db_path, file_name, DBFiles.Scenarios, self.scenariosMatrix)):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "DB has been saved.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -968,5 +990,3 @@ class DataWindow(QMainWindow, FORM_CLASS):
         dialog = DatabaseErrorsDialog(self.project_file, self.linktypesList, self.scenarioCode, parent = self)
         dialog.show()
         result = dialog.exec_()
-
-

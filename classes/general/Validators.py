@@ -13,6 +13,8 @@ def validatorExpr(_type='alphaNum',limit=None):
 		exp = '^[A-Za-z0-9]{%s}$' % limit
 	if _type=='integer':
 		exp = '[0-9]+'
+	if _type=='alphaNumDot':
+		exp = '^[A-Za-z0-9 .]+$'
 	if _type=='any':
 		exp = '.{%s}' % limit
 

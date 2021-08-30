@@ -131,7 +131,6 @@ class Helpers(object):
                     return True
             return False
 
-
         for data_b in list_b:
             if not find_element(data_b[column], list_a):
                 list_a.append(data_b)
@@ -210,6 +209,19 @@ class ExceptionWrongDataType(Exception):
 
     def __str__(self):
         return f'Field: {self._field}  id: {self._id} data type is wrong'
-    
-       
+
+
+class ExceptionNullValue(Exception):
+    """
+    @summary: Exception for data type 
+    """
+    def __init__(self, _id, _field, message="Data type is wrong"):
+        self._id = _id
+        self._field = _field
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'Field: {self._field}  id: {self._id} value is null'
+         
                 

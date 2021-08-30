@@ -376,7 +376,7 @@ class ScenariosFiles():
             fh.write("------------------------------------------------------------------------- /\n")
             fh.write("1.0  GLOBAL PARAMETERS \n")
             fh.write("      Iterations     Convergenc \n")
-            fh.write("              {}             {}      {} /\n".format(result[0][2] or 0, result[0][3], int(result[0][4])))
+            fh.write("              {}             {}      {} /\n".format(result[0][2] or 0, result[0][3], float(result[0][4])))
             fh.write("*------------------------------------------------------------------------- /\n")
             fh.write("2.0 SOCIOECONOMIC SECTORS \n")
             fh.write("  2.1 Locational Utility Function Parameters \n")
@@ -690,12 +690,12 @@ class ScenariosFiles():
 
         # 1.0
         global_head =["Iterations","Convergenc",""]
-        qry_global = """select iterations, coalesce(nullif(convergence,''),0), 1 
+        qry_global = """select iterations, coalesce(nullif(convergence,''),0), smoothing_factor
                         from config_model
                         where type='transport'"""
 
         result_global = self.dataBaseSqlite.executeSql(qry_global) 
-        global_data = [[valor[0],valor[1],valor[2]] for valor in result_global]
+        global_data = [[valor[0],valor[1],float(valor[2])] for valor in result_global]
 
         # 2.1
         ope_simu_head =["Oper","TimeFactor","ConsolPar"]

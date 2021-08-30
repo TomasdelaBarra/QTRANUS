@@ -113,7 +113,7 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
         
 
     def remove_scenario(self, codeScenario=None):
-        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Question, "Remove scenario", "Are you sure you want to remove scenario {}?".format(codeScenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Question, "Remove scenario", "This action is not reversible and deletes all the information from the scenario {}?".format(codeScenario), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         result = messagebox.exec_()
         if result == QtWidgets.QMessageBox.Yes:
             scenarios = self.dataBaseSqlite.selectAllScenarios(codeScenario)
@@ -124,26 +124,24 @@ class ScenariosDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios", "Error while trying to eliminate scenario.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
-    
+
+
     def copy_scenario(self, codeScenario=None):
         self.copyScenarioSelected = codeScenario
 
-    def paste_scenario(self, codeScenario=None):
-        print("Copiado "+self.copyScenarioSelected, "Pegar en "+codeScenario)
-        result = self.dataBaseSqlite.selectAll( " scenario ", where=f" where code = '{codeScenario}'")
 
+    def paste_scenario(self, codeScenario=None):
+        result = self.dataBaseSqlite.selectAll( " scenario ", where=f" where code = '{codeScenario}'")
         self.dataBaseSqlite.syncScenariosDB(result[0][0], self.copyScenarioSelected)
-        
         scenarios = self.dataBaseSqlite.selectAllScenarios(codeScenario)
         
         for id_scenario in scenarios:
-            print("dentro del for", id_scenario[0], id_scenario[3])
             self.dataBaseSqlite.syncScenariosDB(id_scenario[0], id_scenario[3])
 
         self.copyScenarioSelected = None
         self.paste.setEnabled(False)
-
         return True
+    
     
     def __load_scenarios_from_db_file(self):
         if(self.project.db_path is None or self.project.db_path.strip() == ''):

@@ -191,7 +191,7 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
         
         qry = """select a.id, a.name, a.description 
                  from operator a
-                 where a.id_scenario = %s""" % (self.idScenario)
+                 where a.id_scenario = %s order by 1 asc""" % (self.idScenario)
         result = self.dataBaseSqlite.executeSql(qry)
         
         model = QtGui.QStandardItemModel()

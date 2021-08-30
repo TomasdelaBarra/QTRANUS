@@ -194,6 +194,7 @@ class QTranusProject(object):
             @type sectorsExpression: String
             @return: Boolean result of layer addition
         """
+        self.dataBaseSqlite = DataBaseSqlite(f"{self['tranus_folder']}/{self['project_name']}")
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -326,15 +327,10 @@ class QTranusProject(object):
             renderer.updateClasses(memoryLayer, modeRender, 8)
             memoryLayer.setRenderer(renderer)
             typeLayer = "zone"
-            # Create XML File ".qtranus" with the parameters of the executions
-            if FileMXML.if_exist_xml_layers(projectPath):
-                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
-                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
-                else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer)
-            else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer)
-
+            # Create XML File ".qtranus" with the parameters of the execution
+            result_save = self.dataBaseSqlite.upSertResultsZones(memoryLayer.id(), memoryLayer.name(), sectorsExpressionText, scenariosExpression, fieldName)
+            if not result_save:
+                return False
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
@@ -360,6 +356,7 @@ class QTranusProject(object):
             @type layerId: String
             @return: Boolean result of layer addition
         """
+        self.dataBaseSqlite = DataBaseSqlite(f"{self['tranus_folder']}/{self['project_name']}")
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Scenarios expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -464,20 +461,18 @@ class QTranusProject(object):
                 ranges.append(myRange)
             
             # The first parameter refers to the name of the field that contains the calculated value (expression) 
+            modeRender = QgsGraduatedSymbolRenderer.Mode(2)
             renderer = QgsGraduatedSymbolRenderer(joinedFieldName, ranges)
-            renderer.updateClasses(memoryLayer, modeRender, 8)
+            renderer.setMode(modeRender)
             renderer.setSourceColorRamp(ramp)
+            renderer.updateClasses(memoryLayer, modeRender, 8)
             memoryLayer.setRenderer(renderer)
             typeLayer = "zone"
             # Create XML File ".qtranus" with the parameters of the executions
-            if FileMXML.if_exist_xml_layers(projectPath):
-                if FileMXML.if_exist_layer(projectPath, memoryLayer.id()):
-                    FileMXML.update_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText)
-                else:
-                    FileMXML.add_layer_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, typeLayer)
-            else:
-                FileMXML.create_xml_file(memoryLayer.name(), memoryLayer.id(), scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, typeLayer)
-                
+            result_save = self.dataBaseSqlite.upSertResultsZones(memoryLayer.id(), memoryLayer.name(), sectorsExpressionText, scenariosExpression, fieldName)
+            
+            if not result_save:
+                return False
             #group.insertLayer((layersCount+2), memoryLayer)
             self['zones_shape'] = layer.source()
             self['zones_shape_id'] = layer.id()
@@ -611,7 +606,7 @@ class QTranusProject(object):
         return True
 
     def addMatrixLayer(self, progressBar, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, matrixExpressionText, method, color):
-        
+        self.dataBaseSqlite = DataBaseSqlite(f"{self['tranus_folder']}/{self['project_name']}")
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -633,8 +628,6 @@ class QTranusProject(object):
         # Creates centroids layer
         #if not self.centroids_file_path is None:
         self.load_zones_centroids_data()
-        """else:
-            self.load_zones_centroids()"""
 
         progressBar.setValue(30)
         # Gets shape's file folder
@@ -737,13 +730,10 @@ class QTranusProject(object):
         typeLayer = "matrix"
         fieldName = "Trip"
         shpField = ""
-        if FileMXML.if_exist_xml_layers(projectPath):
-            if FileMXML.if_exist_layer(projectPath, tripsMatrixLayer.id()):
-                FileMXML.update_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
-            else:
-                FileMXML.add_layer_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, shpField, typeLayer, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
-        else:
-            FileMXML.create_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, shpField, typeLayer, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
+
+        if not self.dataBaseSqlite.upSertResultsMatrix(tripsMatrixLayer.id(), tripsMatrixLayer.name(), color, originZones, destinationZones, scenariosExpression, fieldName, shpField, method, matrixExpressionText ):
+            return False
+
         progressBar.setValue(100)
         return True
 
@@ -855,7 +845,6 @@ class QTranusProject(object):
         return True
 
     def editMatrixLayer(self, progressBar, layerName, scenariosExpression, originZones, destinationZones, matrixExpression, matrixExpressionText, method, color, oldLayerId):
-        progressBar.setValue(30)
         if scenariosExpression is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Matrix expression", "There is not scenarios information.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -873,36 +862,49 @@ class QTranusProject(object):
             messagebox.exec_()
             print  ("There is not destination zones information.")
             return False
-        registry = QgsProject.instance()
-        
+    
         # Creates centroids layer
-        if not self.centroids_file_path is None:
-            self.load_zones_centroids_data()
-        else:
-            self.load_zones_centroids()
-        
+        #if not self.centroids_file_path is None:
+        self.load_zones_centroids_data()
+
+        progressBar.setValue(30)
         # Gets shape's file folder
+        registry = QgsProject.instance()
         projectPath = self.shape[0:max(self.shape.rfind('\\'), self.shape.rfind('/'))]
 
-        intMethod = 0 if method == "Color" else 1
-        #result, matrixResultData, minValue, maxValue = self.map_data.create_trip_matrix_csv_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
-        result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
+        # Set Custom Project Variable to save Project path
+        try:
+            self.centroids_file_path = self.centroids_file_path[0]
+        except:
+            self.centroids_file_path=''
 
-        if result:
-            layer = registry.mapLayersByName('Zonas_Centroids')[0]
+        tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_matrix_shape=self.centroids_file_path)
+        self.custom_variables_dict.update(tranus_dictionary)
+        QgsProject.instance().setCustomVariables(self.custom_variables_dict)
+
+        intMethod = 0 if method == "Color" else 1
+
+        result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
+        
+        registry = QgsProject.instance()
+
+        tripsMatrixLayer = registry.mapLayer(oldLayerId)
+        """if result:
+            layer = registry.mapLayersByName('Network_Nodes')[0]
             epsg = layer.crs().postgisSrid()
             group = self.get_layers_group()
-            tripsMatrixLayer = QgsVectorLayer("LineString?crs=epsg:"+str(epsg),  layerName +"_matrix", "memory")
+            tripsMatrixLayer = QgsVectorLayer("LineString?crs=epsg:"+str(epsg),  layerName +"_matrix", "memory")"""
         progressBar.setValue(50)
         
         joinedFieldName = "Trip"
         feats_arr = []
         fields = QgsFields()
         attrs = [QgsField('OrZoneId_DestZoneId', QVariant.String),QgsField('Trip', QVariant.Double)]
-
+        
         tripsMatrixLayer.dataProvider().addAttributes(attrs)
-
+        
         tripsMatrixLayer.startEditing()
+        tripsMatrixLayer.dataProvider().truncate()
         for valor in matrixList:
             geom = QgsGeometry()
             geom = geom.fromWkt(valor[1])
@@ -910,7 +912,7 @@ class QTranusProject(object):
             feat.setGeometry(geom)
             feat.setAttributes([valor[0],valor[2]])
             feats_arr.append(feat)
-
+        
         tripsMatrixLayer.dataProvider().addFeatures(feats_arr)
         tripsMatrixLayer.commitChanges()
 
@@ -963,21 +965,17 @@ class QTranusProject(object):
 
         renderer.setSourceColorRamp(ramp)
         tripsMatrixLayer.setRenderer(renderer)
-        QgsProject.instance().addMapLayer( tripsMatrixLayer, False )
-        group.insertLayer(len(QgsProject.instance().mapLayers())+1, tripsMatrixLayer)
+        """QgsProject.instance().addMapLayer( tripsMatrixLayer, False )
+        group.insertLayer(len(QgsProject.instance().mapLayers())+1, tripsMatrixLayer)"""
         
         # Create XML File ".qtranus" with the parameters of the executions
         typeLayer = "matrix"
         fieldName = "Trip"
         shpField = ""
-        registry.removeMapLayers([oldLayerId])
-        if FileMXML.if_exist_xml_layers(projectPath):
-            if FileMXML.if_exist_layer(projectPath, oldLayerId):
-                FileMXML.update_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, method=method, color=color, originZones=originZones, destinationZones=destinationZones, oldIdLayer=oldLayerId)
-            else:
-                FileMXML.add_layer_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, shpField, typeLayer, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
-        else:
-            FileMXML.create_xml_file(tripsMatrixLayer.name(), tripsMatrixLayer.id(), scenariosExpression, fieldName, matrixExpression, projectPath, matrixExpressionText, shpField, typeLayer, method=method, color=color, originZones=originZones, destinationZones=destinationZones)
+
+        if not self.dataBaseSqlite.upSertResultsMatrix(tripsMatrixLayer.id(), tripsMatrixLayer.name(), color, originZones, destinationZones, scenariosExpression, fieldName, shpField, method, matrixExpressionText ):
+            return False
+
         progressBar.setValue(100)
         return True
 

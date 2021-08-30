@@ -169,6 +169,7 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def __load_operators_tb_data(self):
+        
         if self.idScenario:
             qry = """
                 select 

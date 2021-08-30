@@ -370,7 +370,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                         from zonal_data a
                         where a.id_sector = {} and a.id_scenario = {}) zonal_data
                         on zone.id = zonal_data.id_zone
-                        where (external is null or external != 0)
+                        where (external is null or external = 0)
                         order by zone.id""".format(id_sector, id_prevScenario[0][0])
                 
                 # Imports Zonal Data
@@ -398,7 +398,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     where a.id_sector = {} and a.id_scenario = {}) zonal_data
                     on zone.id = zonal_data.id_zone
                     order by zone.id""".format(id_sector, id_prevScenario[0][0])
-
+                
                 result_prev = self.dataBaseSqlite.executeSql(sql_prev)
                 result_imp_prev = self.dataBaseSqlite.executeSql(sql_import_prev)
                 result_exp_prev = self.dataBaseSqlite.executeSql(sql_exp_prev)
@@ -472,7 +472,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             for x in range(0,columsCount):
                 header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
             
-            print(f""" ESCENATIO PREVIO {id_prevScenario}""")
+            
             #Internal Data
             for indice, valor in enumerate(result):
                 x = 0
@@ -494,7 +494,7 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                             itemText.setForeground(QColor("black"))
                     self.internal_data_table.setItem(indice, x, itemText)
                     x+=1
-            
+                    
             #Imports Zonal Data
             for index, valor in enumerate(result_imp):
                 self.vertical_header_imp.append(valor[0])

@@ -34,8 +34,7 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         self.project = parent.project
         self.codeZone = codeZone
         self.tranus_folder = tranus_folder
-        self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder )
-
+        self.dataBaseSqlite = DataBaseSqlite( self.tranus_folder )
         # Linking objects with controls
         self.id = self.findChild(QtWidgets.QLineEdit, 'id')
         self.name = self.findChild(QtWidgets.QLineEdit, 'name')
@@ -44,27 +43,22 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         self.internal_cost_factor = self.findChild(QtWidgets.QLineEdit, 'internal_cost_factor')
         self.buttonBox = self.findChild(QtWidgets.QDialogButtonBox, 'buttonBox')
         self.def_internal_cost_factor = None
-
         # Control Actions
         self.external.clicked.connect(self.evaluate_external)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save_new_zone)
-
-
         # Validations
         self.id.setValidator(validatorExpr('integer'))
         self.id.textChanged.connect(self.check_state)
-        """self.name.setValidator(validatorExpr('alphaNum'))
-        self.name.textChanged.connect(self.check_state)"""
+        self.name.setValidator(validatorExpr('alphaNumDot'))
+        self.name.textChanged.connect(self.check_state)
+        self.name.setMaxLength(25)
         self.internal_cost_factor.setValidator(validatorExpr('decimal'))
         self.internal_cost_factor.textChanged.connect(self.check_state)
-        self.name.setMaxLength(10)
-
-
+        
         #Loads
         self.__get_scenarios_data()
         self.evaluate_external()
         self.__loadId()
-
         if self.codeZone is not None:
             self.setWindowTitle("Edit Zone")
             self.load_default_data()
@@ -83,7 +77,6 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.codeZone is None:
             self.id.setText(str(self.dataBaseSqlite.maxIdTable(" zone ")))
 
-
     def check_state(self, *args, **kwargs):
         sender = self.sender()
         validator = sender.validator()
@@ -95,7 +88,6 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
         elif state == QtGui.QValidator.Invalid:
             color = '#f6989d' # red
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
-
 
     def open_help(self):
         """
@@ -118,7 +110,6 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.internal_cost_factor.setText('')
 
     def save_new_zone(self):
-
         if self.id is None or self.id.text().strip() == '':
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Zone", "Please write the zone id.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -163,8 +154,6 @@ class AddZoneDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def load_default_data(self):
         data = self.dataBaseSqlite.selectAll('zone', ' where id = {}'.format(self.codeZone))
-        """print(self.codeZone)"""
-        print(data[0][3])
         self.id.setText(str(data[0][0]))
         self.name.setText(str(data[0][1]))
         externalVal = True if data[0][2]==1 else False 

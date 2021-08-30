@@ -14,6 +14,8 @@ from .classes.general.Helpers import Helpers
 from .scenarios_model import ScenariosModel
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.data.DataBaseSqlite import DataBaseSqlite
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'zonelayer.ui'))
@@ -28,6 +30,7 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.tranus_folder = tranus_folder
         self.project = parent.project
+        self.dataBaseSqlite = DataBaseSqlite( self.tranus_folder )
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
         self.layerId = layerId
@@ -284,27 +287,26 @@ class ZoneLayerDialog(QtWidgets.QDialog, FORM_CLASS):
     
     # Load data to edit the zones layer
     def __load_default_data(self):
-        projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
-        print("projectPath: {} LayerId {}".format(projectPath, self.layerId))
-        # Get data from XML File with the parameters
-        expression, field, name, scenario, fieldName = FileM.find_layer_data(projectPath, self.layerId)
+        data = self.dataBaseSqlite.selectAll(' results_zones ', f""" where id = '{self.layerId}'""")
+    
+        if data:
+            self.layerName.setText(data[0][1])
+            self.expression.setText(data[0][2])
 
-        self.layerName.setText(name)
-        self.expression.setText(expression)
-        indexFields = self.fields.findText(field, Qt.MatchFixedString)
-        self.fields.setCurrentIndex(indexFields)
-        
-        scenario = scenario.split(",")
-        scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
-        indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
-        self.base_scenario.setCurrentIndex(indexBaseScenario)
-
-        if len(scenario) == 3:           
-            scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
-            indexOperators = self.operators.findText(scenario[2] , Qt.MatchFixedString)
-            self.operators.setCurrentIndex(indexOperators)
+            indexFields = self.fields.findText(data[0][4], Qt.MatchFixedString)
+            self.fields.setCurrentIndex(indexFields)
+            scenario = data[0][3]
+            scenario = scenario.split(",")
+            scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
+            indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
+            self.base_scenario.setCurrentIndex(indexBaseScenario)
             
-            scenario[1] = scenario[1].replace("'", "").strip()
-            indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
-            self.alternateScenario.setCurrentIndex(indexAlternateScenario)
+            if len(scenario) == 3:           
+                scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
+                indexOperators = self.operators.findText(scenario[2] , Qt.MatchFixedString)
+                self.operators.setCurrentIndex(indexOperators)
+                
+                scenario[1] = scenario[1].replace("'", "").strip()
+                indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
+                self.alternateScenario.setCurrentIndex(indexAlternateScenario)
             

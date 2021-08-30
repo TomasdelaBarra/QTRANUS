@@ -41,7 +41,8 @@ class DataBaseSqlite():
 		@type input: String object
 		"""
 		cursor = conn.cursor()
-		tables = ["""
+		tables = [
+		    """
 			CREATE TABLE IF NOT EXISTS project_files (
 				zone_shape_file      TEXT,
 				zone_shape_file_id   TEXT,
@@ -347,6 +348,42 @@ class DataBaseSqlite():
 				trip      	  REAL,
 				factor        REAL
 			);
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS results_zones (
+				id     TEXT,
+				name   TEXT,
+				sectors_expression   TEXT,
+				scenario      TEXT,
+				field   TEXT
+			);
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS results_network (
+				id     TEXT,
+				name   TEXT,
+				color   TEXT,
+				scenario      TEXT,
+				field   TEXT,
+				id_field_name TEXT,
+				level TEXT,
+				method TEXT,
+				sectors_expression TEXT
+			);
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS results_matrix (
+				id     TEXT,
+				name   TEXT,
+				color   TEXT,
+				origin_zones  TEXT,
+				destination_zones  TEXT,
+				scenario  TEXT,
+				field   TEXT,
+				id_field_name TEXT,
+				method TEXT,
+				sectors_expression TEXT
+			);
 			"""]
 	
 		indexes = ["""CREATE UNIQUE INDEX if NOT EXISTS idx_zone_id 
@@ -390,7 +427,13 @@ class DataBaseSqlite():
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_operator_category_id_scenario_id_operator_id_category
 				   ON operator_category (id_scenario, id_operator, id_category);""",
 				   """CREATE UNIQUE INDEX if NOT EXISTS idx_link_type_operator_id_scenario_id_linktype_id_operator
-				   ON link_type_operator (id_scenario, id_linktype, id_operator);"""]
+				   ON link_type_operator (id_scenario, id_linktype, id_operator);""",
+				   """CREATE UNIQUE INDEX if NOT EXISTS idx_results_zones_id 
+					ON results_zones (id);""",
+				   """CREATE UNIQUE INDEX if NOT EXISTS idx_results_network_id 
+					ON results_network (id);""",
+				   """CREATE UNIQUE INDEX if NOT EXISTS idx_results_matrix_id 
+					ON results_matrix (id);"""]
 
 		# Types of routes: 1 Passes and Stops (passes_stops); 2 Passes Only (passes_only), 3 Can not Pass (cannot_pass)
 		# Types of Nodes: 1 Zone Centroid, 2 External, 0 Node
@@ -416,7 +459,7 @@ class DataBaseSqlite():
 		conn.close()
 		return True
 
-	#def insertBaseParameters(self, zone_shape, zone_shape_id, network_shape, network_id, nodes_shape, nodes_shape_id):
+
 	def insertBaseParameters(self, dataList):
 		conn = self.connectionSqlite()
 		sql = f"""select count(*) from project_files"""
@@ -602,8 +645,8 @@ class DataBaseSqlite():
 		sql = f"""INSERT OR REPLACE INTO  transfer_operator_cost (id_scenario, id_operator_from, id_operator_to, cost) 
 			VALUES (?, ?, ?, ?)"""
 
-		cursor.executemany(sql, data_arr)
-		conn.commit()			
+		# cursor.executemany(sql, data_arr)
+		# conn.commit()			
 		conn.close()
 
 		return True
@@ -730,7 +773,7 @@ class DataBaseSqlite():
 			sql_arr_node.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6]))
 
 		for row in data_linktype:
-			sql_arr_linktype.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+			sql_arr_linktype.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
 		
 		for row in data_linktype_ope:
 			sql_arr_linktype_ope.append((id_scenario, row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
@@ -752,26 +795,30 @@ class DataBaseSqlite():
 		
 		for row in data_zonal_data:
 			sql_arr_zonal_data.append((id_scenario, row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13]))
-
-		cursor.executemany(sql, sql_arr)
-		cursor.executemany(sql_cat, sql_arr_cat)
-		cursor.executemany(sql_ope, sql_arr_ope)
-		cursor.executemany(sql_ope_cat, sql_arr_ope_cat)
-		cursor.executemany(sql_cost, sql_arr_cost)
-		cursor.executemany(sql_route, sql_arr_route)
-		cursor.executemany(sql_node, sql_arr_node)
-		cursor.executemany(sql_linktype, sql_arr_linktype)
-		cursor.executemany(sql_linktype_ope, sql_arr_linktype_ope)
-		cursor.executemany(sql_link, sql_arr_link)
-		cursor.executemany(sql_exotrip, sql_arr_exotrip)
-		cursor.executemany(sql_sector, sql_arr_sector)
-		cursor.executemany(sql_intersector, sql_arr_intersector)
-		cursor.executemany(sql_intersector_cat, sql_arr_intersector_cat)
-		cursor.executemany(sql_zonal_data, sql_arr_zonal_data)
-		conn.commit()			
-		conn.close()
-		
-		return True
+		try:
+			cursor.executemany(sql, sql_arr)
+			cursor.executemany(sql_cat, sql_arr_cat)
+			cursor.executemany(sql_ope, sql_arr_ope)
+			cursor.executemany(sql_ope_cat, sql_arr_ope_cat)
+			cursor.executemany(sql_cost, sql_arr_cost)
+			cursor.executemany(sql_route, sql_arr_route)
+			cursor.executemany(sql_node, sql_arr_node)
+			cursor.executemany(sql_linktype, sql_arr_linktype)
+			cursor.executemany(sql_linktype_ope, sql_arr_linktype_ope)
+			cursor.executemany(sql_link, sql_arr_link)
+			cursor.executemany(sql_exotrip, sql_arr_exotrip)
+			cursor.executemany(sql_sector, sql_arr_sector)
+			cursor.executemany(sql_intersector, sql_arr_intersector)
+			cursor.executemany(sql_intersector_cat, sql_arr_intersector_cat)
+			cursor.executemany(sql_zonal_data, sql_arr_zonal_data)
+			conn.commit()			
+			conn.close()
+			return True
+		except Exception as e:
+			print(e)
+			conn.commit()			
+			conn.close()
+			return False
 
 
 	def ifExist(self, table, field, code):
@@ -1417,10 +1464,8 @@ class DataBaseSqlite():
 		sql = """INSERT OR """+str(typeSql)+""" INTO node (id_scenario, id, x, y, name, description, id_type) 
 			values (?, ?, ?, ?, ?, ?, ?);"""
 		
-		print("Dentro de SQLITE")
 		for row in data_list:
 			for id_scenario in scenarios:
-				print((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
 				sql_arr.append((id_scenario[0], row[0], row[1], row[2], row[3], row[4], row[5]))
 		
 		cursor.executemany(sql, sql_arr)
@@ -2685,4 +2730,94 @@ class DataBaseSqlite():
 				return True
 		except Exception as e:
 			return False
-		
+	
+	def upSertResultsZones(self, id, name, sectors_expression, scenario, field):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""INSERT OR REPLACE INTO  results_zones ( id, name, sectors_expression, scenario, field)  VALUES ("{id}", "{name}", "{sectors_expression}", "{scenario}", "{field}");"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False
+	
+
+	def deleteResultsZone(self, id):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""delete from results_zones where id = '{id}';"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False
+
+
+	def upSertResultsNetwork(self, id, name, color, scenario, field, id_field_name, level, method, sectors_expression):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""INSERT OR REPLACE INTO  results_network ( id, name, color, scenario, field, id_field_name, level, method, sectors_expression )  
+			        VALUES ("{id}", "{name}", "{color}", "{scenario}", "{field}", "{id_field_name}", "{level}", "{method}", "{sectors_expression}");"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False
+	
+
+	def deleteResultsNetwork(self, id):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""delete from results_network where id = '{id}';"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False
+
+	
+	def upSertResultsMatrix(self, id, name, color, origin_zones, destination_zones, scenario, field, id_field_name, method, sectors_expression ):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""INSERT OR REPLACE INTO  results_matrix ( id, name, color, origin_zones, destination_zones, scenario, field, id_field_name, method, sectors_expression )  
+					VALUES ( "{id}", "{name}", "{color}", "{origin_zones}", "{destination_zones}", "{scenario}", "{field}", "{id_field_name}", "{method}", "{sectors_expression}");"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False
+	
+
+	def deleteResultsMatrix(self, id):
+		try:
+			conn = self.connectionSqlite()
+			cursor = conn.cursor()
+			
+			sql =  f"""delete from results_matrix where id = '{id}';"""
+			
+			cursor.execute(sql)
+			conn.commit()
+
+			return True
+		except Exception as e:
+			return False

@@ -21,6 +21,7 @@ from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.FileManagement import FileManagement as FileM
 from .classes.general.Helpers import Helpers as HP
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'networklayer.ui'))
@@ -36,6 +37,7 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         super(NetworkLayerDialog, self).__init__(parent)
         self.setupUi(self)
         self.tranus_folder = tranus_folder
+        self.dataBaseSqlite = DataBaseSqlite( self.tranus_folder )
         self.project = parent.project
         self.network = Network()
         self.level = None
@@ -435,11 +437,11 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             tranus_dictionary = dict(project_qtranus_folder=projectPath, project_qtranus_network_shape=self.project.network_link_shape_path)
             self.project.custom_variables_dict.update(tranus_dictionary)
             QgsProject.instance().setCustomVariables(self.project.custom_variables_dict)
-
+            
             if not self.layerId: 
-                result = self.network.addNetworkLayer(self.progressBar, self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path, self.method.currentText(), expressionNetworkText, color)
+                result = self.network.addNetworkLayer(self.progressBar, self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path, self.method.currentText(), expressionNetworkText, color, self.tranus_folder)
             else:
-                result = self.network.editNetworkLayer(self.progressBar, self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path, self.method.currentText(), self.layerId, expressionNetworkText, color)
+                result = self.network.editNetworkLayer(self.progressBar, self.layerName.text(), scenariosExpression, networkExpression, self.variablesList.currentText(), self.level, self.project['tranus_folder'], self.project.get_layers_group(), self.project.network_link_shape_path, self.method.currentText(), self.layerId, expressionNetworkText, color, self.tranus_folder)
             
             if not result:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network", "Could not create network layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -450,67 +452,67 @@ class NetworkLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             self.accept()
         else:
             print("New network layer was not created.")
-        #print("Color Ramp {} ".format(self.buttonColorRamp.colorRampName()))
+        
         return True
 
     # Load data to edit the zones layer
     def __load_default_data(self):
-        projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
+        data = self.dataBaseSqlite.selectAll(' results_network ', where=f" where id = '{self.layerId}'")
         
-        # Get data from XML File with the parameters
-        expression, field, name, scenario, fieldName, method, level, color = FileM.find_layer_data(projectPath, self.layerId)
-        
-        self.layerName.setText(name)
-        
-        if level == "1":
-            self.total.click()
-            self.rbtn_total.setChecked(True)
-        elif level == "2":
-            self.rbtn_operators.setChecked(True)
-            self.operators.click()
-        elif level == "3":
-            self.rbtn_routes.setChecked(True)
-            self.routes.click()
-        
-        self.expression.setText(expression)
-        
-        scenario = scenario.split(",")
-        scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
+        if data:
+            name, color, scenario, field, level, method, expression = data[0][1], data[0][2], data[0][3], data[0][4], data[0][6], data[0][7], data[0][8]
 
-        indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
-        self.base_scenario.setCurrentIndex(indexBaseScenario)
-
-        indexVariable = self.variablesList.findText(field, Qt.MatchFixedString)
-        self.variablesList.setCurrentIndex(indexVariable)
-
-        indexMethod = self.method.findText(method, Qt.MatchFixedString)
-        self.method.setCurrentIndex(indexMethod)
-
-        if method == 'Size':
-            qcolor = QColor()
-            qcolor.setRgb(int(color))
-            self.buttonColor.setColor(qcolor)
+            self.layerName.setText(name)
             
-        if method == 'Color':
-            color = literal_eval(color)
-            arrColor1 = color['color1'].split(",")
-            arrColor2 = color['color2'].split(",")
-            arrColor1 = list(map(lambda x:int(x),arrColor1))
-            arrColor2 = list(map(lambda x:int(x),arrColor2))
-
-            qcolor1 = QColor(arrColor1[0], arrColor1[1], arrColor1[2])
-            qcolor2 = QColor(arrColor2[0], arrColor2[1], arrColor2[2])
-
-            qColorRamp = QgsGradientColorRamp()
-            qColorRamp.setColor1(qcolor1)
-            qColorRamp.setColor2(qcolor2)
-            self.buttonColorRamp.setColorRamp(qColorRamp)
-
-        if len(scenario) == 3:           
-            scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
-            indexOperators = self.scenarioOperator.findText(scenario[2] , Qt.MatchFixedString)
-            self.scenarioOperator.setCurrentIndex(indexOperators)
+            if level == "1":
+                self.total.click()
+                self.rbtn_total.setChecked(True)
+            elif level == "2":
+                self.rbtn_operators.setChecked(True)
+                self.operators.click()
+            elif level == "3":
+                self.rbtn_routes.setChecked(True)
+                self.routes.click()
             
-            scenario[1] = scenario[1].replace("'", "").strip()
-            indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
-            self.alternateScenario.setCurrentIndex(indexAlternateScenario)
+            self.expression.setText(expression)
+            
+            scenario = scenario.split(",")
+            scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
+
+            indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
+            self.base_scenario.setCurrentIndex(indexBaseScenario)
+
+            indexVariable = self.variablesList.findText(field, Qt.MatchFixedString)
+            self.variablesList.setCurrentIndex(indexVariable)
+
+            indexMethod = self.method.findText(method, Qt.MatchFixedString)
+            self.method.setCurrentIndex(indexMethod)
+
+            if method == 'Size':
+                qcolor = QColor()
+                qcolor.setRgb(int(color))
+                self.buttonColor.setColor(qcolor)
+                
+            if method == 'Color':
+                color = literal_eval(color)
+                arrColor1 = color['color1'].split(",")
+                arrColor2 = color['color2'].split(",")
+                arrColor1 = list(map(lambda x:int(x),arrColor1))
+                arrColor2 = list(map(lambda x:int(x),arrColor2))
+
+                qcolor1 = QColor(arrColor1[0], arrColor1[1], arrColor1[2])
+                qcolor2 = QColor(arrColor2[0], arrColor2[1], arrColor2[2])
+
+                qColorRamp = QgsGradientColorRamp()
+                qColorRamp.setColor1(qcolor1)
+                qColorRamp.setColor2(qcolor2)
+                self.buttonColorRamp.setColorRamp(qColorRamp)
+
+            if len(scenario) == 3:           
+                scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
+                indexOperators = self.scenarioOperator.findText(scenario[2] , Qt.MatchFixedString)
+                self.scenarioOperator.setCurrentIndex(indexOperators)
+                
+                scenario[1] = scenario[1].replace("'", "").strip()
+                indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
+                self.alternateScenario.setCurrentIndex(indexAlternateScenario)

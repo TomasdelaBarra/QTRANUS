@@ -18,6 +18,7 @@ from .classes.general.FileManagement import FileManagement as FileM
 from .scenarios_model import ScenariosModel
 from .classes.ExpressionData import ExpressionData
 from .scenarios_model_sqlite import ScenariosModelSqlite
+from .classes.data.DataBaseSqlite import DataBaseSqlite
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'matrixlayer.ui'))
@@ -29,6 +30,7 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
         self.parent = parent
         self.tranus_folder = tranus_folder
+        self.dataBaseSqlite = DataBaseSqlite( self.tranus_folder )
         self.project = parent.project
         self.proj = QgsProject.instance()
         self.tempLayerName = ''
@@ -113,72 +115,6 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.layerName.setText(self.tempLayerName)
         else:
             self.tempLayerName = self.layerName.text()
-    
-    # Load data to edit the zones layer
-    def __load_default_data(self):
-        projectPath = self.project.shape[0:max(self.project.shape.rfind('\\'), self.project.shape.rfind('/'))]
-        
-        # Get data from XML File with the parameters
-        expression, field, name, scenario, id_field_name, originZones, destinationZones, method, color = FileM.find_layer_data(projectPath, self.layerId)
-        print(expression, field, name, scenario, id_field_name, originZones, destinationZones, method, color)
-
-        scenario = scenario.split(",")
-        scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
-
-        self.layerName.setText(name)
-        self.expression.setText(expression)
-
-        indexMethod = self.method.findText(method, Qt.MatchFixedString)
-        self.method.setCurrentIndex(indexMethod)
-
-        indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
-        self.base_scenario.setCurrentIndex(indexBaseScenario)
-
-        if len(scenario) == 3:           
-            scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
-            indexOperators = self.operators.findText(scenario[2] , Qt.MatchFixedString)
-            self.operators.setCurrentIndex(indexOperators)
-
-            scenario[1] = scenario[1].replace("'", "").strip()
-            indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
-            self.alternateScenario.setCurrentIndex(indexAlternateScenario)
-
-        originZones = originZones.replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
-        originZones = originZones.split(",")
-
-        destinationZones = destinationZones.replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
-        destinationZones = destinationZones.split(",")
-
-        for item in originZones:
-            selectionOrigin = self.originList.findItems(item, Qt.MatchFixedString)
-            indexOrigin = self.originList.indexFromItem( selectionOrigin[0])
-            self.originList.setCurrentIndex(indexOrigin)
-
-        for item in destinationZones:
-            selectionDestination = self.destinationList.findItems(item, Qt.MatchFixedString)
-            indexDestination = self.destinationList.indexFromItem( selectionDestination[0])
-            self.destinationList.setCurrentIndex(indexDestination)
-
-        if method == 'Size':
-            qcolor = QColor()
-            qcolor.setRgb(int(color))
-            self.buttonColor.setColor(qcolor)
-            
-        if method == 'Color':
-            color = literal_eval(color)
-            arrColor1 = color['color1'].split(",")
-            arrColor2 = color['color2'].split(",")
-            arrColor1 = list(map(lambda x:int(x),arrColor1))
-            arrColor2 = list(map(lambda x:int(x),arrColor2))
-
-            qcolor1 = QColor(arrColor1[0], arrColor1[1], arrColor1[2])
-            qcolor2 = QColor(arrColor2[0], arrColor2[1], arrColor2[2])
-
-            qColorRamp = QgsGradientColorRamp()
-            qColorRamp.setColor1(qcolor1)
-            qColorRamp.setColor2(qcolor2)
-            self.buttonColorRamp.setColorRamp(qColorRamp)
-
           
     def method_changed(self, event):
         if self.method.currentText() == "Color":
@@ -488,4 +424,68 @@ class MatrixLayerDialog(QtWidgets.QDialog, FORM_CLASS):
             return False, None, None, None
 
         return scenariosExpressionResult and matrixExpressionResult, scenariosExpressionStack, matrixExpressionList, self.expression.text()
-    
+
+
+    # Load data to edit the zones layer
+    def __load_default_data(self):
+        data = self.dataBaseSqlite.selectAll(' results_matrix ', where=f" where id = '{self.layerId}'")
+        if data:
+            # Get data from XML File with the parameters
+            name, color, originZones, destinationZones, scenario, field, method, expression = data[0][1], data[0][2], data[0][3], data[0][4], data[0][5], data[0][6], data[0][8], data[0][9]
+            print( field, method, expression )
+            scenario = scenario.split(",")
+            scenario[0] = scenario[0].replace("'", "").replace("[", "").replace("]", "")
+
+            self.layerName.setText(name)
+            self.expression.setText(expression)
+
+            indexMethod = self.method.findText(method, Qt.MatchFixedString)
+            self.method.setCurrentIndex(indexMethod)
+
+            indexBaseScenario = self.base_scenario.findText(scenario[0], Qt.MatchFixedString)
+            self.base_scenario.setCurrentIndex(indexBaseScenario)
+
+            if len(scenario) == 3:           
+                scenario[2] = scenario[2].replace("'", "").replace("]", "").strip()
+                indexOperators = self.operators.findText(scenario[2] , Qt.MatchFixedString)
+                self.operators.setCurrentIndex(indexOperators)
+
+                scenario[1] = scenario[1].replace("'", "").strip()
+                indexAlternateScenario = self.alternateScenario.findText(scenario[1], Qt.MatchFixedString)
+                self.alternateScenario.setCurrentIndex(indexAlternateScenario)
+
+            originZones = originZones.replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
+            originZones = originZones.split(",")
+
+            destinationZones = destinationZones.replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
+            destinationZones = destinationZones.split(",")
+
+            for item in originZones:
+                selectionOrigin = self.originList.findItems(item, Qt.MatchFixedString)
+                indexOrigin = self.originList.indexFromItem( selectionOrigin[0])
+                self.originList.setCurrentIndex(indexOrigin)
+
+            for item in destinationZones:
+                selectionDestination = self.destinationList.findItems(item, Qt.MatchFixedString)
+                indexDestination = self.destinationList.indexFromItem( selectionDestination[0])
+                self.destinationList.setCurrentIndex(indexDestination)
+
+            if method == 'Size':
+                qcolor = QColor()
+                qcolor.setRgb(int(color))
+                self.buttonColor.setColor(qcolor)
+                
+            if method == 'Color':
+                color = literal_eval(color)
+                arrColor1 = color['color1'].split(",")
+                arrColor2 = color['color2'].split(",")
+                arrColor1 = list(map(lambda x:int(x),arrColor1))
+                arrColor2 = list(map(lambda x:int(x),arrColor2))
+
+                qcolor1 = QColor(arrColor1[0], arrColor1[1], arrColor1[2])
+                qcolor2 = QColor(arrColor2[0], arrColor2[1], arrColor2[2])
+
+                qColorRamp = QgsGradientColorRamp()
+                qColorRamp.setColor1(qcolor1)
+                qColorRamp.setColor2(qcolor2)
+                self.buttonColorRamp.setColorRamp(qColorRamp)    

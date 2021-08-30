@@ -108,8 +108,9 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
         self.scenarioSelectedIndex = selectedIndex
         self.scenarioCode = selectedIndex.model().itemFromIndex(selectedIndex).text().split(" - ")[0]
         scenarioData = self.dataBaseSqlite.selectAll('scenario', " where code = '{}'".format(self.scenarioCode))
-        self.idScenario = scenarioData[0][0]
-        self.load_default_data()
+        if scenarioData:
+            self.idScenario = scenarioData[0][0]
+            self.load_default_data()
 
 
     def __validateSave(self):

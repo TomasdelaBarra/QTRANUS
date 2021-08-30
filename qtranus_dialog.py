@@ -310,9 +310,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tranus_folder.setText('')
         self.zone_shape.setText('')
         self.zones_shape_fields.clear()
-        self.centroid_shape.setText('')
         self.network_links_shape.setText('')
-        self.centroid_shape.setText('')
         self.network_links_shape.setText('')
         self.network_nodes_shape.setText('')
 
