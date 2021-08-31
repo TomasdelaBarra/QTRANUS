@@ -42,7 +42,10 @@ class ImportCsvData(QtWidgets.QDialog, FORM_CLASS):
         self.filename = self.findChild(QtWidgets.QLineEdit, 'filename')
         self.ln_sheetname = self.findChild(QtWidgets.QLineEdit, 'ln_sheetname')
         self.filename_btn = self.findChild(QtWidgets.QToolButton, 'filename_btn')
+        self.help = self.findChild(QtWidgets.QPushButton, 'btn_help')
+        
         self.filename_btn.clicked.connect(self.select_file)
+        self.help.clicked.connect(self.open_help)
 
         self.progress_bar = self.findChild(QtWidgets.QProgressBar, 'progress_bar')
         self.progress_bar.setVisible(False)

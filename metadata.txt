@@ -13,7 +13,7 @@
 name=qtranus
 qgisMinimumVersion=3.2
 description=qtranus
-version=1.0.1
+version=1.0.2
 author=Tomas de la Barra, Luis Yanez
 about=Qtranus is an GUI based on Tranus. Tranus is an integrated land use and transport modeling system, the most advanced, comprehensive, flexible and user friendly of its kind. Use this software to model cities or regions, to estimate the future location of activities, the real estate market, and the multimodal transportation system with freight and/or passengers. 
 email=delabarra@gmail.com
