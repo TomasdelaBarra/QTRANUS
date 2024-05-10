@@ -32,18 +32,18 @@ class BatchFiles():
                                     f'imploc {codeScenario} -J -o location_indicators_{codeScenario}.csv',
                                     f'imploc {codeScenario} -C -o unit_consumption_{codeScenario}.csv',
                                     f'imploc {codeScenario} -T -o total_consumption_{codeScenario}.csv'],
-                        'Assigment':[f'fluj {codeScenario} -I', 
+                        'Assignment':[f'fluj {codeScenario} -I', 
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv',
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assignment_{codeScenario}.csv',
                                     f'mats {codeScenario} -Q -o trip_matrix_{codeScenario}_i.csv']
                         }
         else:
             # Base Sceanario 
             programs = {'Path Search': [f'pasos {codeScenario}', f'impas {codeScenario} -P -M -o {codeScenario}\path_{codeScenario}.csv'], 
-                        'Initial Assigment':[f'trans {codeScenario} -I', 
+                        'Initial Assignment':[f'trans {codeScenario} -I', 
                                              f'cost {codeScenario}'],
                         'Location':[f'cost {codeScenario}', 
                                     f'lcal {codeScenario} %s ' % ('-f' if self.fixed_transportable else '') ,
@@ -51,12 +51,12 @@ class BatchFiles():
                                     f'imploc {codeScenario} -J -o location_indicators_{codeScenario}.csv',
                                     f'imploc {codeScenario} -C -o unit_consumption_{codeScenario}.csv',
                                     f'imploc {codeScenario} -T -o total_consumption_{codeScenario}.csv'],
-                        'Assigment':[f'fluj {codeScenario}', 
+                        'Assignment':[f'fluj {codeScenario}', 
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',
                                     f'imptra {codeScenario} -S -o route_profile_{codeScenario}.csv',
-                                    f'imptra {codeScenario} -A -k -f 3 -o Assigment_{codeScenario}.csv',
+                                    f'imptra {codeScenario} -A -k -f 3 -o Assignment_{codeScenario}.csv',
                                     f'mats {codeScenario} -Q -o trip_matrix_{codeScenario}_i.csv']
                         }
 
@@ -96,21 +96,21 @@ class BatchFiles():
             fh.close()
 
 
-    def validate_generate_assigment(self):
+    def validate_generate_assignment(self):
         
         for value in self.programsListSelected:
             print(value, value[1])
-            if value[1]=='Assigment':
+            if value[1]=='Assignment':
                 a = ''
         return 
 
 
-    def read_assigments(self):
+    def read_assignments(self):
         resultScenario = self.dataBaseSqlite.selectAll(' scenario ', ' where id = {}'.format(self.id_scenario))
         codeScenario = resultScenario[0][1]
 
         self.tranus_folder = ""
 
-        fh = open("%s/%s" % (self.tranus_folder, f"assigment_{codeScenario}_tmp.csv"), "r", encoding="utf-8")
+        fh = open("%s/%s" % (self.tranus_folder, f"assignment_{codeScenario}_tmp.csv"), "r", encoding="utf-8")
 
         return 

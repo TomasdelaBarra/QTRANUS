@@ -497,8 +497,8 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 	def get_symbol_dict(self, symbol):
 		""" Return dictionary with main elements of symbol """
 		symbol_dict = dict()
-
-		symbol_dict['type'] = symbol.type()
+		
+		symbol_dict['type'] = 1 # Line SymbolType
 		symbol_dict['layers_list'] = []
 
 		for index in range(0, symbol.symbolLayerCount()):

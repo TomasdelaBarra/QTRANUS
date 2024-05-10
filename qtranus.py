@@ -1327,8 +1327,9 @@ class QTranus:
 
     
     def get_symbol_object(self, symbol_srt):
-        """ Return dictionary with objects of symbol """
+        """ Return dictionary with objects symbols """
 		# TODO: resolver tema de la symbologia correcta
+        print(symbol_srt)
         symbol_obj = json.loads(symbol_srt.replace("'",'"'))
         symbol_layers = QgsLineSymbol()
 

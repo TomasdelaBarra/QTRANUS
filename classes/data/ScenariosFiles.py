@@ -174,7 +174,7 @@ class ScenariosFiles():
                 from 
                     zonal_data a 
                 join zone b on a.id_zone = b.id
-                where b.external is null and id_zone > 0 
+                where (b.external is null or b.external = 0) and id_zone > 0 
                 and min_production = max_production 
                 /* and min_production > 0 
                 and max_production > 0 */ and id_scenario = {id_base_scenario} """
@@ -859,7 +859,7 @@ class ScenariosFiles():
                     coalesce(nullif(min_production,''),0) min_production, 
                     coalesce(nullif(max_production,''),0) max_production
                     from zonal_data 
-                    where id_zone != 0 and id_scenario = {} and (min_production != 0 or max_production != 0)  order by 1,2 """.format(id_scenario)
+                    where id_zone != 0 and id_scenario = {} and ((min_production is not null and min_production != 0 and min_production != '') or (max_production is not null and max_production != 0 and max_production != '')) order by 1,2 """.format(id_scenario)
         result_prod = self.dataBaseSqlite.executeSql(qry_prod)
         int_prod_data =  [[valor[0],valor[1],valor[2],valor[3]] for valor in result_prod]
 

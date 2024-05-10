@@ -210,4 +210,4 @@ class WorkerSyncThread(QThread):
             
         except Exception as e:
             print(e)
-            self.error_signal.emit("An error has occurred")
+            self.error_signal.emit(" has happend")

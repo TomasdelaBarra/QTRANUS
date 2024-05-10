@@ -41,13 +41,13 @@ def main(parameters, arguments):
         print ("Plugin ID: %s" % plugin_id)
         print ("Version ID: %s" % version_id)
     except xmlrpclib.ProtocolError as err:
-        print ("A protocol error occurred")
+        print ("A protocol error")
         print ("URL: %s" % hide_password(err.url, 0))
         print ("HTTP/HTTPS headers: %s" % err.headers)
         print ("Error code: %d" % err.errcode)
         print ("Error message: %s" % err.errmsg)
     except xmlrpclib.Fault as err:
-        print ("A fault occurred")
+        print ("A fault has happend")
         print ("Fault code: %d" % err.faultCode)
         print ("Fault string: %s" % err.faultString)
 

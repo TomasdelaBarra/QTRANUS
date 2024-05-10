@@ -66,10 +66,10 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rd_allprograms = self.findChild(QtWidgets.QRadioButton, 'rd_allprograms')
         self.rd_selected_programs = self.findChild(QtWidgets.QRadioButton, 'rd_selected_programs')
         self.chck_path_search = self.findChild(QtWidgets.QCheckBox,'chck_path_search')
-        self.chck_initial_assigment = self.findChild(QtWidgets.QCheckBox,'chck_initial_assigment')
+        self.chck_initial_assignment = self.findChild(QtWidgets.QCheckBox,'chck_initial_assignment')
         self.chck_location = self.findChild(QtWidgets.QCheckBox,'chck_location')
         self.chck_fixed_transportable = self.findChild(QtWidgets.QCheckBox,'chck_fixed_transportable')
-        self.chck_assigment = self.findChild(QtWidgets.QCheckBox,'chck_assigment')
+        self.chck_assignment = self.findChild(QtWidgets.QCheckBox,'chck_assignment')
         self.tree_batch = self.findChild(QtWidgets.QTreeView,'tree_batch')
         self.tree_batch.setRootIsDecorated(False)
         self.te_ouput = self.findChild(QtWidgets.QTextEdit,'te_ouput')
@@ -210,7 +210,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             @type file_name: String
         """
         try:
-            programsDict = {'PATHS':'Path Search', 'TRANS /I':'Initial Assigment', 'LOC':'Location', 'TRANS':'Assigment'}
+            programsDict = {'PATHS':'Path Search', 'TRANS /I':'Initial Assignment', 'LOC':'Location', 'TRANS':'Assignment'}
             self.programListBatch = []
             if file_name[0]:
                 for value in [line.split(",") for line in open(file_name[0])]:
@@ -231,7 +231,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             @type file_name: String
         """
         try:
-            programsDict = {'Path Search':'PATHS', 'Initial Assigment':'TRANS /I', 'Location':'LOC', 'Assigment':'TRANS'}
+            programsDict = {'Path Search':'PATHS', 'Initial Assignment':'TRANS /I', 'Location':'LOC', 'Assignment':'TRANS'}
             self.programListBatch = []
 
             if file_name[0]:
@@ -260,7 +260,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
     def finish_process(self):
         self.btn_run.setEnabled(True)
         
-        if  ("Assigment" in self.programs_list) and os.path.isfile(os.path.join(self.tranus_folder, f"trip_matrix_{self.scenarioCode}_i.csv")):
+        if  ("Assignment" in self.programs_list) and os.path.isfile(os.path.join(self.tranus_folder, f"trip_matrix_{self.scenarioCode}_i.csv")):
             if not Helpers.transform_trips_matrix(self.scenarioCode, self.tranus_folder):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generating matrix files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
@@ -271,19 +271,19 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.programs_list = []
     
         if self.rd_allprograms.isChecked():
-            self.programs_list = ['Path Search', 'Initial Assigment', 'Location', 'Assigment'] if self.is_base_scenario(self.scenarioCode) else ['Path Search', 'Location', 'Assigment']
+            self.programs_list = ['Path Search', 'Initial Assignment', 'Location', 'Assignment'] if self.is_base_scenario(self.scenarioCode) else ['Path Search', 'Location', 'Assignment']
     
         if self.chck_path_search.isChecked():
             self.programs_list.append('Path Search')
 
-        if self.chck_initial_assigment.isChecked():
-            self.programs_list.append('Initial Assigment')
+        if self.chck_initial_assignment.isChecked():
+            self.programs_list.append('Initial Assignment')
 
         if self.chck_location.isChecked():
             self.programs_list.append('Location')
 
-        if self.chck_assigment.isChecked():
-            self.programs_list.append('Assigment')
+        if self.chck_assignment.isChecked():
+            self.programs_list.append('Assignment')
 
         if self.chck_fixed_transportable.isChecked():
             self.fixed_transportable = True
@@ -342,25 +342,25 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         
         if self.rd_allprograms.isChecked():
             self.chck_path_search.setEnabled(False)
-            self.chck_initial_assigment.setEnabled(False)
+            self.chck_initial_assignment.setEnabled(False)
             self.chck_location.setEnabled(False)
             self.chck_fixed_transportable.setEnabled(False)
-            self.chck_assigment.setEnabled(False)
+            self.chck_assignment.setEnabled(False)
             self.chck_path_search.setChecked(False)
-            self.chck_initial_assigment.setChecked(False)
+            self.chck_initial_assignment.setChecked(False)
             self.chck_location.setChecked(False)
             self.chck_fixed_transportable.setChecked(False)
-            self.chck_assigment.setChecked(False)
+            self.chck_assignment.setChecked(False)
         else:
             self.chck_path_search.setEnabled(True)
             self.chck_location.setEnabled(True)
-            self.chck_assigment.setEnabled(True)
+            self.chck_assignment.setEnabled(True)
 
             if self.scenarioData[0][3]:
                 self.chck_fixed_transportable.setEnabled(False)
-                self.chck_initial_assigment.setEnabled(False)
+                self.chck_initial_assignment.setEnabled(False)
             else:
-                self.chck_initial_assigment.setEnabled(True)
+                self.chck_initial_assignment.setEnabled(True)
                 self.chck_fixed_transportable.setEnabled(True)
 
 
@@ -431,8 +431,8 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             self.batch_file = BatchFiles(self.project_file, pluginDir=self.plugin_dir, statusBar=self.statusBar, programsListSelected=self.programsListSelected, id_scenario=self.idScenario, fixed_transportable=self.fixed_transportable)
             self.file = self.batch_file.generate_bath_file()
 
-            # If rum Trans Create Assigment PENDIENTE 
-            self.batch_file.validate_generate_assigment()
+            # If rum Trans Create Assignment PENDIENTE 
+            self.batch_file.validate_generate_assignment()
 
             if self.file:
                 os.chdir(self.tranus_folder)

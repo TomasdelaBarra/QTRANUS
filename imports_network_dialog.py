@@ -181,22 +181,26 @@ class ImportsNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
 
     def __load_csv_opers(self, path):
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            data_list = []
+            scenario_code = self.scenarioCode
+            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+        
             try:
-                for index, row in enumerate(csv_reader):
-                    if index > 1:
-                        _id = row[0].strip()
-                        name = row[1].strip().replace('"','')
-                        description = row[2].strip().replace('"','')
-                        id_operator = row[3].strip()
-                        frequency_from = row[4].strip()
-                        frequency_to = row[5].strip()
-                        target_occ = float(row[6].strip())*100
-                        max_fleet = row[7].strip()
-                        follows_schedule = row[8].strip()
-                        data_list.append((_id, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, follows_schedule))   
-                self.dataBaseSqlite.addFFileRoute(scenarios, data_list)
+                with open(path) as csv_file:
+                    csv_reader = csv.reader(csv_file, delimiter=',')
+                    data_list = []
+                    for index, row in enumerate(csv_reader):
+                        if index > 1:
+                            _id = row[0].strip()
+                            name = row[1].strip().replace('"','')
+                            description = row[2].strip().replace('"','')
+                            id_operator = row[3].strip()
+                            frequency_from = row[4].strip()
+                            frequency_to = row[5].strip()
+                            target_occ = float(row[6].strip())*100
+                            max_fleet = row[7].strip()
+                            follows_schedule = row[8].strip()
+                            data_list.append((_id, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, follows_schedule))   
+                    self.dataBaseSqlite.addFFileRoute(scenarios, data_list)
             except:
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()

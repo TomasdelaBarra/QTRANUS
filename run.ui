@@ -90,7 +90,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="chck_initial_assigment">
+               <widget class="QCheckBox" name="chck_initial_assignment">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -98,7 +98,7 @@
                  <string notr="true">margin-left: 20</string>
                 </property>
                 <property name="text">
-                 <string>Initial Assigment</string>
+                 <string>Initial Assignment</string>
                 </property>
                </widget>
               </item>
@@ -129,7 +129,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="chck_assigment">
+               <widget class="QCheckBox" name="chck_assignment">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -137,7 +137,7 @@
                  <string notr="true">margin-left: 20</string>
                 </property>
                 <property name="text">
-                 <string>Assigment</string>
+                 <string>Assignment</string>
                 </property>
                </widget>
               </item>
