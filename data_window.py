@@ -1078,7 +1078,7 @@ class WorkerSyncThread(QThread):
         typeSql ='IGNORE'
         try:
             if not layer.isValid():
-                self.error_signal.emit("Layer Zones is invalid")
+                self.error_signal.emit("Layer Zones is not valid")
                 return False
             else:
                 # Loading Zones
@@ -1241,7 +1241,7 @@ class WorkerSyncThread(QThread):
             
         except Exception as e:
             print(e)
-            self.error_signal.emit(" has happend")
+            self.error_signal.emit(" has happened")
 
 
 

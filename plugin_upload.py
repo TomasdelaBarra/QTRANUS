@@ -47,7 +47,7 @@ def main(parameters, arguments):
         print ("Error code: %d" % err.errcode)
         print ("Error message: %s" % err.errmsg)
     except xmlrpclib.Fault as err:
-        print ("A fault has happend")
+        print ("A fault has happened")
         print ("Fault code: %d" % err.faultCode)
         print ("Fault string: %s" % err.faultString)
 

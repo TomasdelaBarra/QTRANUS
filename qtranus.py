@@ -226,7 +226,7 @@ class QTranus:
             # Get last id route selected 
             if len(indexes) > 3:
                 id_route_selected = indexes[len(indexes)-2].model().itemFromIndex(indexes[len(indexes)-2]).text()
-            print("ID selected  " ,id_route_selected)
+            
             index_scenario = self.scenarios_tree.selectedIndexes()
             scenario_cod_selected = index_scenario[0].model().itemFromIndex(index_scenario[0]).text()[:3]
             
@@ -534,6 +534,7 @@ class QTranus:
     
     def update_routes(self):
         # UI cursor loading 
+        
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             # Routes tree index
@@ -573,7 +574,7 @@ class QTranus:
             memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_routes", "memory")
 
             memory_data = memory_route_lyr.dataProvider()
-            memory_data.addAttributes([QgsField("route_id",  QVariant.Int), QgsField("link_id",  QVariant.String)])
+            memory_data.addAttributes([QgsField("route_id",  QVariant.String), QgsField("link_id",  QVariant.String)])
 
             # Get features of the base layer
             qry = f"""select a.linkid 
@@ -648,7 +649,7 @@ class QTranus:
                 feat.setGeometry(geom)
                 feat.setAttributes(['', attributte])
                 feat_arr.append(feat)
-                
+
             memory_route_lyr.startEditing()
             memory_route_lyr.dataProvider().addFeatures(feat_arr)
             memory_route_lyr.commitChanges()
@@ -692,7 +693,10 @@ class QTranus:
             symbol = QgsLineSymbol()
             symbol.setColor(QColor(4291677645))
             symbol.setWidth(0.2)
-            cat = QgsRendererCategory('', symbol, f"""Base Network""")
+            cat = QgsRendererCategory()
+            cat.setValue('')
+            cat.setSymbol(symbol)
+            cat.setLabel(f"""Base Network""")
             categories.append(cat)
             
             categorized_renderer = QgsCategorizedSymbolRenderer('route_id', categories)
