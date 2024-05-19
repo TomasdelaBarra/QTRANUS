@@ -186,7 +186,8 @@ class NetworkDataAccess(object):
             @return: Matrix rows
         """
         rowsData = None
-        rowsData = oriDestMatrix[(oriDestMatrix['OperName'] == operator)]
+        rowsData = oriDestMatrix[(oriDestMatrix['OperName'] == operator.ljust(25))]
+        
         if rowsData is not None:
             if rowsData.size > 0:
                 return rowsData
@@ -344,6 +345,12 @@ class NetworkDataAccess(object):
         operand1 = None
         operand2 = None
         matrixData = None
+        """
+        print(networkMatrixData.size)
+        print(networkExpression[0].data)
+        print("dentro evaluate levels")
+        raise Exception("dentro evaluate levels")
+        """
         try:
             if networkMatrixData is not None:
                 if networkMatrixData.size > 0:
@@ -355,13 +362,16 @@ class NetworkDataAccess(object):
                         networkExpressionData = networkExpression
                         
                     generalOperands = Stack()
-                    
+                    # print(oriDestPairMatrix)
                     for pair in np.nditer(oriDestPairMatrix):
+                        
                         oriDestPairMatrix = self.__get_network_rows(pair['Orig'], pair['Dest'], networkMatrixData)
+                        
                         if oriDestPairMatrix is not None:
                             expCounter = 0
                             for item in networkExpressionData.data:
                                 expCounter +=1
+                                
                                 if ExpressionData.is_operator(item):
                                     operand2 = generalOperands.pop()
                                     if type(operand2) is not np.ndarray:
@@ -370,7 +380,7 @@ class NetworkDataAccess(object):
                                                 operand2 = float(operand2)
                                             else:
                                                 operand2 = self.__evaluate_network_expression(operand2, variable, level, oriDestPairMatrix)
-                                                                                
+                                                                        
                                     operand1 = generalOperands.pop()
                                     if type(operand1) is not np.ndarray:
                                         if operand1 is not None:
@@ -380,7 +390,7 @@ class NetworkDataAccess(object):
                                                 operand1 = self.__evaluate_network_expression(operand1, variable, level, oriDestPairMatrix)
                                     
                                     rowData = self.__execute_network_expression(operand1, operand2, item, variable, networkMatrixData.dtype)
-                                    
+                                    # print(f"print dentro de rowdata {rowData}")
                                     if expCounter < stackLen:
                                         generalOperands.push(rowData)
                                     else:
@@ -391,8 +401,18 @@ class NetworkDataAccess(object):
                                                 matrixData = np.concatenate((matrixData, rowData))
                                     
                                 else:
-                                    if stackLen == 1: 
+                                    if stackLen == 1:
+                                        """ 
+                                        print("dentro stackLen 1")
+                                        print(item)  # HOV
+                                        print(variable) # Dem/Cap
+                                        print(level) # 2
+                                        print(oriDestPairMatrix) 
+                                        # [('1-103', 1, 103, '          ', 1, 0.2, '    -1', '0.00', 3252, 3252, 'Level A', 1, 'SOV                      ', -1, 'SOV                      ', 2245., 2245., 2245., '   1.00', 2245.06, 25, 25, '    0.', '   0.00', 69.08) 
+                                        """
+                                        
                                         rowData = self.__evaluate_network_expression(item, variable, level, oriDestPairMatrix)
+                                        # print(f"print dentro de rowdata2 {rowData}")
                                         
                                         if rowData is not None:
                                             if matrixData is None:
@@ -406,11 +426,9 @@ class NetworkDataAccess(object):
             print(inst)
             matrixData = None
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Error", "Unexpected error: {0}".format(inst), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
         except:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network expression", "Unexpected error: {0}".format(sys.exc_info()[0]), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error:")
             matrixData = None
         finally:
             del rowData
@@ -454,7 +472,6 @@ class NetworkDataAccess(object):
         if operator is None:
             print ("There is no operator to perform the operation.")
             return None
-        
         
         op1 = None
         op2 = None
@@ -556,8 +573,11 @@ class NetworkDataAccess(object):
         """
         rowData = None
         rowsData = None
+
         if int(level) == int(Level.Operators):
+            
             rowsData = self.__get_network_rows_by_operator(item, oriDestMatrix)
+            
 
         if int(level) == int(Level.Routes):
             rowsData = self.__get_network_rows_by_route(item, oriDestMatrix)
@@ -619,7 +639,7 @@ class NetworkDataAccess(object):
     
         matrixData = None
         types = oriDestPairs.dtype
-        #print("DENTRO DE __evaluate_scenario types {} oriDestPairs {} level {} Level.Total {} ".format(types, oriDestPairs, level, Level.Total))
+        # print("DENTRO DE __evaluate_scenario types {} oriDestPairs {} level {} Level.Total {} ".format(types, oriDestPairs, level, Level.Total))
         if oriDestPairs is not None:
             if level == Level.Total:
                 matrixData = self.__evaluate_total(networkMatrix.data_matrix, oriDestPairs, variable)
@@ -667,13 +687,18 @@ class NetworkDataAccess(object):
                     
                     matrixData =  self.__evaluate_scenarios(operand1, operand2, links, variable, item)                   
                 else:
-                    #print("dentro de la data else")
+                    # print("dentro de la data else network data access")
                     if stackLen == 1:
                         #print("dentro de la data else if ")
                         networkMatrix, links = self.__get_scenario_data(item, projectPath)
-                        #print("dentro de la data else if {} links {}".format(networkMatrix, links))
+                        # print("dentro de la data else if {} links {}".format(networkMatrix, links))
+                        # print(f" network expression {networkExpression}")
+                        """print(links)
+                        print(networkMatrix.__str__())
+                        print(scenariosExpression.data)
+                        raise Exception("Network expression")"""
                         matrixData = self.__evaluate_scenario(networkMatrix, links, networkExpression, variable, level, projectPath)
-                        #print("DATAMATRIX {} ".format(matrixData))
+                        # print("DATAMATRIX {} ".format(matrixData))
 
                     else:
                         generalOperands.push(item)
@@ -714,14 +739,15 @@ class NetworkDataAccess(object):
         maxValue = float(-1e100)
         #print(" dentro create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
         if level == Level.Total or len(networkExpression) == 1:
-            #print(" dentro del primer create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
+            
+            # print(" dentro del primer create_network_memory layerName {}, scenariosExpression {}, networkExpression {}, variable {}, level {}, projectPath {} ".format(layerName, scenariosExpression, networkExpression, variable, level, projectPath))
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
-            messagebox = QMessageBox.warning(None, "Network matrix data", "There is not data to evaluate.")
-            #messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", "", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-            print ("There is not data to evaluate.")
+            messagebox = QMessageBox.warning(None, "Network matrix data", "There is no data to evaluate.")
+            #messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is no data to evaluate.", "", self, buttons = QtWidgets.QMessageBox.Ok)
+            # messagebox.exec_()
+            print ("There is no data to evaluate.")
             return False, None, minValue, maxValue
         
         for value in networkMatrixResult:
@@ -771,9 +797,9 @@ class NetworkDataAccess(object):
             networkMatrixResult = self.__evaluate_network_scenarios_expression(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         
         if networkMatrixResult is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is not data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Network matrix data", "There is no data to evaluate.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-            print ("There is not data to evaluate.")
+            print ("There is no data to evaluate.")
             return False
         
         csvFile = open(projectPath + "\\" + layerName + ".csv", "w")

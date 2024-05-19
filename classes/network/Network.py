@@ -148,7 +148,7 @@ class Network(object):
             QMessageBox.warning(None, "Network expression", "There is not scenarios information.")
             print  ("There is not scenarios information.")
             return False
-        
+
         result, resultData, minValue, maxValue = self.network_data_access.create_network_memory(layerName, scenariosExpression, networkExpression, variable, level, projectPath)
         progressBar.setValue(15)
         registry = QgsProject.instance()
