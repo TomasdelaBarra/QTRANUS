@@ -204,7 +204,7 @@ class NetworkDataAccess(object):
             @return: Matrix rows
         """
         rowsData = None
-        rowsData = oriDestMatrix[(oriDestMatrix['RouteName'] == route)]
+        rowsData = oriDestMatrix[(oriDestMatrix['RouteName'] == route.ljust(25))]
         if rowsData is not None:
             if rowsData.size > 0:
                 return rowsData
