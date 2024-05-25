@@ -565,11 +565,13 @@ class ExpressionData(object):
                     trip1 = itemOp1['Trips']
                     trip2 = itemOp2['Trips']
                     result = ExpressionData.perform_arithmetic(trip1, trip2, operator)
-                    
+                     
                     rowData = itemOp1.astype([(itemOp1.dtype.names[0], itemOp1.dtype[0]), 
                                     (itemOp1.dtype.names[1], itemOp1.dtype[1]), 
                                     (itemOp1.dtype.names[2], itemOp1.dtype[2]), 
                                     (itemOp1.dtype.names[3], itemOp1.dtype[3]), 
+                                    (itemOp1.dtype.names[4], itemOp1.dtype[4]), 
+                                    (itemOp1.dtype.names[5], itemOp1.dtype[5]), 
                                     (itemOp1.dtype.names[6], itemOp1.dtype[6]) if len(itemOp1.dtype) == 7 else (itemOp1.dtype.names[4], itemOp1.dtype[4])])
                     
                     rowData['Trips'] = result
