@@ -60,7 +60,7 @@ class QTranusDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         resolution_dict = Helpers.screenResolution(85)
-        self.resize(resolution_dict['width'], 0) # for adjust height to content
+        self.resize(int(resolution_dict['width']), int(0)) # for adjust height to content
 
         self.project = project
         self.projectInst = QgsProject.instance()

@@ -10,7 +10,7 @@ import re
 import math
 
 
-if python_version_tuple() >= ("3", "3", "0"):
+if int(python_version_tuple()[1]) >= int(("3", "3", "0")[1]):
     from collections.abc import Iterable
 else:
     from collections import Iterable
