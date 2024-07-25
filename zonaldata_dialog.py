@@ -472,7 +472,6 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
             for x in range(0,columsCount):
                 header.setSectionResizeMode(x, QtWidgets.QHeaderView.ResizeToContents)
             
-            
             #Internal Data
             for indice, valor in enumerate(result):
                 x = 0
