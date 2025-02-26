@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/QTranus" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
