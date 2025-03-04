@@ -139,28 +139,32 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                 result = dialog.exec_()
                 self.__get_links_data()
         if opt == remove:
-            id_scenario = self.idScenario
-            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
-            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Are you sure?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No )
+            response = messagebox.exec_()
             
-            self.dataBaseSqlite.removeLink(scenarios, linkSelected)
+            if response == QtWidgets.QMessageBox.Yes:
+                id_scenario = self.idScenario
+                scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
+                scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
+                
+                self.dataBaseSqlite.removeLink(scenarios, linkSelected)
 
-            resultLink = self.dataBaseSqlite.selectAll( ' link ', where=f" linkid = '{linkSelected}' ")
+                resultLink = self.dataBaseSqlite.selectAll( ' link ', where=f" linkid = '{linkSelected}' ")
 
-            if not resultLink:   
-                try:
-                    project = QgsProject.instance()
-                    layerIds = [layer.id() for layer in project.mapLayers().values()]
-                    layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]    
-                    
-                    if not Network.deleteLinkFeatureShape(layerNetId, scenario_code, linkSelected, networkShapeFields=self.network_shape_fields):
+                if not resultLink:   
+                    try:
+                        project = QgsProject.instance()
+                        layerIds = [layer.id() for layer in project.mapLayers().values()]
+                        layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]    
+                        
+                        if not Network.deleteLinkFeatureShape(layerNetId, scenario_code, linkSelected, networkShapeFields=self.network_shape_fields):
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                            messagebox.exec_()
+                    except:
                         messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                         messagebox.exec_()
-                except:
-                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                    messagebox.exec_()
 
-            self.__get_links_data()
+                self.__get_links_data()
             
 
     def deleteLinkShape(self, linkId):
