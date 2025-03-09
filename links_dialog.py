@@ -158,10 +158,10 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                         layerNetId = [ value for value in layerIds if re.match('Network_Links',value)][0]    
                         
                         if not Network.deleteLinkFeatureShape(layerNetId, scenario_code, linkSelected, networkShapeFields=self.network_shape_fields):
-                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Something was wrong removing link from attribute table.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                             messagebox.exec_()
                     except:
-                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "something was wrong with the elimination.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Something was wrong with shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                         messagebox.exec_()
 
                 self.__get_links_data()
