@@ -150,11 +150,13 @@ class ImportCsvData(QtWidgets.QDialog, FORM_CLASS):
                         trips = row[2].strip()
                         iter += 1
                         percent = iter * 100 / tot_rows if tot_rows > 0 else 1
-                        self.progress_bar.setValue(percent)
-                        data_trips.append((id_from, id_to, id_category, trips))
+                        self.progress_bar.setValue(int(percent))
+                        if id_from.isdigit() and id_to.isdigit():
+                            data_trips.append((id_from, id_to, id_category, trips))
                     result = self.dataBaseSqlite.bulkLoadExogenousTrips(scenarios, data_trips)
-                    self.progress_bar.setValue(percent)
-                except:
+                    self.progress_bar.setValue(int(percent))
+                except Exception as e:
+                    print("ERROR importando archivo %s", repr(e))
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Import Files Error.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                     messagebox.exec_()
                 finally:

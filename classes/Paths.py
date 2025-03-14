@@ -22,6 +22,7 @@ class Paths(object):
             @summary: Load Path by scenario files scenarios
         """
         regex_paths_data = r'[\s{2,}\d]\s\w+\s.*\n\s+-?\d:\s+\d+\s+>\s+-?\d.*'
+        # regex_paths_data = r'[\s{2,}\d]\s\w+\s.*\n((\s+-?\d:\s+\d+\s+>\s+-?\d.*)*)'
         result_dict = dict()
         result_data_return = []
         filename = os.path.join(self.tranus_folder, self.scenario_code, f"path_{self.scenario_code}.csv")
@@ -29,7 +30,9 @@ class Paths(object):
             if os.path.exists(filename):
                 with open(filename, "r") as file:
                     file = file.read()
-                    result = re.findall(regex_paths_data, file)
+                    result = re.findall(regex_paths_data, file, re.MULTILINE)
+                    print("RESULT")
+                    print(result)
                     for line in result:
                         data = line.split('\n')
                         result_data = data[0].split()
@@ -46,6 +49,9 @@ class Paths(object):
                         desutilities_data['uchrgs'] = result_data[10]
                         desutilities_data['gencost'] = result_data[11]
                         paths_data = [value.split(":") for value in data[1].split(">")]
+                        print("Paths DATA")
+                        print(len(data))
+                        print(data) 
                         result_data_return.append((desutilities_data, paths_data))
                 return result_data_return    
             else:
