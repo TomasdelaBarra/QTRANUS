@@ -5,12 +5,13 @@ from .DataBaseSqlite import DataBaseSqlite
 from ..libraries.tabulate import tabulate
 
 class BatchFiles():
-    def __init__(self, project_file, pluginDir, statusBar=None, programsListSelected=None, fixed_transportable=None, id_scenario=None):
+    def __init__(self, project_file, pluginDir, statusBar=None, programsListSelected=None, fixed_transportable=None, id_scenario=None, transport_only=None):
         self.project_file = project_file
         self.tranus_folder = self.uriSegmentation(project_file)
         self.statusBar = statusBar
         self.programsListSelected = programsListSelected
         self.fixed_transportable = fixed_transportable
+        self.transport_only = transport_only
         self.id_scenario = id_scenario
         self.plugin_dir = pluginDir
         self.dataBaseSqlite = DataBaseSqlite(self.project_file)
@@ -51,7 +52,7 @@ class BatchFiles():
                                     f'imploc {codeScenario} -J -o location_indicators_{codeScenario}.csv',
                                     f'imploc {codeScenario} -C -o unit_consumption_{codeScenario}.csv',
                                     f'imploc {codeScenario} -T -o total_consumption_{codeScenario}.csv'],
-                        'Assignment':[f'fluj {codeScenario}', 
+                        'Assignment':[f'fluj {codeScenario} %s ' % ('-I' if self.transport_only else ''), 
                                     f'trans {codeScenario} -N -z',
                                     f'cost {codeScenario}',
                                     f'imptra {codeScenario} -J -o transport_indicators_{codeScenario}.csv',

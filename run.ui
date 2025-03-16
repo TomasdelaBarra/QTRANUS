@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>943</width>
+    <width>687</width>
     <height>320</height>
    </rect>
   </property>
@@ -66,6 +66,13 @@
                <widget class="QRadioButton" name="rd_allprograms">
                 <property name="text">
                  <string>All Programs</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rd_transport_only">
+                <property name="text">
+                 <string>Transport only</string>
                 </property>
                </widget>
               </item>
