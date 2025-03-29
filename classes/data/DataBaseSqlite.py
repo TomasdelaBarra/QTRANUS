@@ -1085,20 +1085,23 @@ class DataBaseSqlite():
 
 
 	def removeLink(self, scenarios, linkid):
+
+		linkid_b = f'{linkid.split("-")[1]}-{linkid.split("-")[0]}'
+		
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 		for scenario in scenarios:
-			sql = f""" delete from link where linkid = '{linkid}' and id_scenario = {scenario[0]}"""
+			sql = f""" delete from link where linkid in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 
 		for scenario in scenarios:
-			sql = f""" delete from link_route where id_link = '{linkid}' and id_scenario = {scenario[0]}"""
+			sql = f""" delete from link_route where id_link in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 
 		for scenario in scenarios:
-			sql = f""" delete from intersection_delay where id_link = '{linkid}' and id_scenario = {scenario[0]}"""
+			sql = f""" delete from intersection_delay where id_link in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
 			cursor.execute(sql)
 			conn.commit()
 		return True
