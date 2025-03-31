@@ -64,6 +64,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btn_save_batch = self.findChild(QtWidgets.QPushButton, 'btn_save_batch')
         self.btn_load_batch = self.findChild(QtWidgets.QPushButton, 'btn_load_batch')
         self.rd_allprograms = self.findChild(QtWidgets.QRadioButton, 'rd_allprograms')
+        self.rd_transport_only = self.findChild(QtWidgets.QRadioButton, 'rd_transport_only')
         self.rd_selected_programs = self.findChild(QtWidgets.QRadioButton, 'rd_selected_programs')
         self.chck_path_search = self.findChild(QtWidgets.QCheckBox,'chck_path_search')
         self.chck_initial_assignment = self.findChild(QtWidgets.QCheckBox,'chck_initial_assignment')
@@ -76,6 +77,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tab_run = self.findChild(QtWidgets.QTabWidget,'tab_run')
         self.layout_status_bar = self.findChild(QtWidgets.QVBoxLayout,'layout_status_bar')
         self.fixed_transportable = None
+        self.transport_only = None
         self.statusBar = QStatusBar(self)
         self.layout_status_bar.addWidget(self.statusBar)
 
@@ -272,6 +274,12 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
     
         if self.rd_allprograms.isChecked():
             self.programs_list = ['Path Search', 'Initial Assignment', 'Location', 'Assignment'] if self.is_base_scenario(self.scenarioCode) else ['Path Search', 'Location', 'Assignment']
+        
+        if self.rd_transport_only.isChecked():
+            self.programs_list = ['Path Search', 'Assignment']
+            self.transport_only = True
+        else:
+            self.transport_only = False
     
         if self.chck_path_search.isChecked():
             self.programs_list.append('Path Search')
@@ -428,7 +436,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             self.scenarios_files.generate_single_scenario(self.idScenario)
             
             self.tab_run.setCurrentIndex(1)
-            self.batch_file = BatchFiles(self.project_file, pluginDir=self.plugin_dir, statusBar=self.statusBar, programsListSelected=self.programsListSelected, id_scenario=self.idScenario, fixed_transportable=self.fixed_transportable)
+            self.batch_file = BatchFiles(self.project_file, pluginDir=self.plugin_dir, statusBar=self.statusBar, programsListSelected=self.programsListSelected, id_scenario=self.idScenario, fixed_transportable=self.fixed_transportable, transport_only=self.transport_only)
             self.file = self.batch_file.generate_bath_file()
 
             # If rum Trans Create Assignment PENDIENTE 
