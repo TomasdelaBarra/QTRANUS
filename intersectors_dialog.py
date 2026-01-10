@@ -259,7 +259,7 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __load_sector_cb_data(self):
         id_scenario = self.idScenario
-        sectors = self.dataBaseSqlite.selectAll(' sector ', where=f" where id_scenario = {id_scenario}")
+        sectors = self.dataBaseSqlite.selectAll(' sector ', where=f" where id_scenario = {id_scenario}", orderby=" order by id asc")
         for value in sectors:
             self.cb_sector.addItem(f"{value[0]} {value[2]}", value[0])
 
@@ -272,23 +272,35 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario and sectorId and results:
             self.sustitute.setText(str(results[0][7]))
             # Default data of the table
-            sql = f"""select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {self.idScenario} and id_sector = {sectorId}"""
+            sql = f"""
+                with sectors as (
+                        select * 
+                        from sector),
+                intersectors as (
+                    select  a.id, a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+                    from sector a 
+                    left join inter_sector_inputs b 
+                    on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) 
+                    where a.id_scenario = {self.idScenario} and id_sector = {sectorId} order by a.id asc)
+                select distinct a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors
+                from sectors a
+                left join intersectors b on a.id = b.id order by a.id asc;
+                """
 
             resultA_prev = None
 
             sqlB = """select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = %s and id_sector = %s""" % (self.idScenario, sectorId)
+                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = %s and id_sector = %s order by a.id asc""" % (self.idScenario, sectorId)
 
             resultA_prev = None
             resultB_prev = None
             if id_prevScenario:
                 sql_prev = f"""select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId}"""
+                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
                 resultA_prev = self.dataBaseSqlite.executeSql(sql_prev)
 
                 sqlB_prev = f"""select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId}"""
+                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
                 resultB_prev = self.dataBaseSqlite.executeSql(sqlB_prev)
 
             resultA = self.dataBaseSqlite.executeSql(sql)
@@ -298,13 +310,13 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             if len(resultA)==0:
                 sql = """select a.id||" "||a.name sector, '' min_demand, '' max_demand, '' elasticity, '' substitute, '' exog_prod_attractors, '' ind_prod_attractors 
                   from sector a 
-                  where id_scenario = {}""".format(self.idScenario)
+                  where id_scenario = {} order by a.id asc """.format(self.idScenario)
                 resultA = self.dataBaseSqlite.executeSql(sql)
 
             if len(resultB)==0:
                 sql = """select a.id||" "||a.name category, '' type, '' time_factor, '' volume_factor, '' flow_to_product, '' flow_to_consumer 
                     from category a
-                    where id_scenario = {}""".format(self.idScenario)
+                    where id_scenario = {} order by a.id asc """.format(self.idScenario)
                 resultB = self.dataBaseSqlite.executeSql(sql)
 
             self.intersectors_table.setRowCount(len(resultA))
