@@ -284,23 +284,61 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                     where a.id_scenario = {self.idScenario} and id_sector = {sectorId} order by a.id asc)
                 select distinct a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors
                 from sectors a
-                left join intersectors b on a.id = b.id order by a.id asc;
+                left join intersectors b on a.id = b.id order by a.id asc
                 """
 
             resultA_prev = None
 
-            sqlB = """select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = %s and id_sector = %s order by a.id asc""" % (self.idScenario, sectorId)
+            sqlB = """with categories as (
+                        select * from category
+                    ), 
+                    intersector_transport as (
+                        select a.id, a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+                        from category a 
+                        left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario 
+                        where a.id_scenario = %s and id_sector = %s order by a.id asc)
+                    select distinct a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+                    from categories a 
+                    left join intersector_transport b on (a.id = b.id) order by a.id asc""" % (self.idScenario, sectorId)
 
             resultA_prev = None
             resultB_prev = None
             if id_prevScenario:
                 sql_prev = f"""select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
                   from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
+
+                sql_prev = f"""
+                with sectors as (
+                        select * 
+                        from sector),
+                intersectors as (
+                    select  a.id, a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+                    from sector a 
+                    left join inter_sector_inputs b 
+                    on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) 
+                    where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc)
+                select distinct a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors
+                from sectors a
+                left join intersectors b on a.id = b.id order by a.id asc
+                """
+
                 resultA_prev = self.dataBaseSqlite.executeSql(sql_prev)
 
                 sqlB_prev = f"""select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
                     from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
+
+                sqlB_prev = f"""with categories as (
+                        select * from category
+                    ), 
+                    intersector_transport as (
+                        select a.id, a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+                        from category a 
+                        left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario 
+                        where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc)
+                    select distinct a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+                    from categories a 
+                    left join intersector_transport b on (a.id = b.id) order by a.id asc"""
+
                 resultB_prev = self.dataBaseSqlite.executeSql(sqlB_prev)
 
             resultA = self.dataBaseSqlite.executeSql(sql)
@@ -363,7 +401,7 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                     itemText.setText(Helpers.decimalFormat(str(data)))
 
                     if resultB_prev:
-                        print(resultB[indice], resultB_prev[indice])
+                        # print(resultB[indice], resultB_prev[indice])
                         if resultB[indice][z] != resultB_prev[indice][z]:
                             itemText.setForeground(QColor("green"))
                             font.setBold(True)
