@@ -304,9 +304,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
             resultA_prev = None
             resultB_prev = None
             if id_prevScenario:
-                sql_prev = f"""select a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
-                  from sector a left join inter_sector_inputs b on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
-
                 sql_prev = f"""
                 with sectors as (
                         select * 
@@ -323,9 +320,6 @@ class IntersectorsDialog(QtWidgets.QDialog, FORM_CLASS):
                 """
 
                 resultA_prev = self.dataBaseSqlite.executeSql(sql_prev)
-
-                sqlB_prev = f"""select a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
-                    from category a left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc """
 
                 sqlB_prev = f"""with categories as (
                         select * from category
