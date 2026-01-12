@@ -125,7 +125,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
         linkSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
 
         edit = menu.addAction(QIcon(self.plugin_dir+"/icons/edit-layer.svg"),'Edit Link')
-        remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Link')
+        # remove = menu.addAction(QIcon(self.plugin_dir+"/icons/remove-scenario.svg"),'Remove Link')
 
         opt = menu.exec_(self.links_tree.viewport().mapToGlobal(position))
 
@@ -138,6 +138,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                 dialog.show()
                 result = dialog.exec_()
                 self.__get_links_data()
+        """
         if opt == remove:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Are you sure?", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No )
             response = messagebox.exec_()
@@ -165,7 +166,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                         messagebox.exec_()
 
                 self.__get_links_data()
-            
+        """    
 
     def deleteLinkShape(self, linkId):
         
