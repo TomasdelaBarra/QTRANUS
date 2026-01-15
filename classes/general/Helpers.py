@@ -172,6 +172,32 @@ class Helpers(object):
         except:
             return False
 
+    @staticmethod   
+    def get_diff_arrays(list_a, list_b):
+        """
+        @summary: 
+        Compares two lists of tuples and returns the elements of list_a whose first two values ​​do not exist in list_b.
+
+        Arguments:
+
+        list_a -- Main list of tuples.
+        list_b -- Reference list for comparison.
+        """
+        
+        # Step 1: Create a set with the identifiers (index 0 and 1) from list b.
+        # This optimizes the search from O(n) to O(1) for each element.
+        keys_in_b = {(item[0], item[1]) for item in list_b}
+        
+        # Step 2: Filter elements from list_a.
+        # Keep the entire tuple if its first two values are not in the set.
+        difference = [
+            item for item in list_a 
+            if (item[0], item[1]) not in keys_in_b
+        ]
+        
+        return difference
+
+
 class ExceptionGeometryType(Exception):
     """
     @summary: Exception for type geometry of the shapes

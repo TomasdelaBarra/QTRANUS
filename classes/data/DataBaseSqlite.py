@@ -558,12 +558,56 @@ class DataBaseSqlite():
 			return False
 
 
+	def getScenarioId(self, codeScenario):
+		"""Return the ID of a scenario given its code."""
+		conn = self.connectionSqlite()
+		try:
+			cursor = conn.cursor()
+			cursor.execute("select id from scenario where code = ?", (codeScenario,))
+			row = cursor.fetchone()
+			conn.close()
+			return row[0] if row else None
+		except Exception:
+			conn.close()
+			return None
+
+	
+	def deleteExtraLinks(self, dataArray):
+		""" Delete extra links not in the shape file from the database."""
+		conn = self.connectionSqlite()
+
+		sql_delete = """ delete from link where id_scenario = ? and linkid = ? """
+
+		try:
+			cursor = conn.cursor()
+			cursor.executemany(sql_delete, dataArray)
+			print(f"Rows affected (executemany): {cursor.rowcount}")
+			conn.commit()
+			conn.close()
+			return True
+		except Exception as e:
+			print(f"Error deleting extra links: {e}")
+			conn.close()
+			return False
+
+
+	def replaceScenarioCode(self, data_array):
+		""" Replace scenario code with scenario ID in the given data array."""
+		data_array_new = []
+		for data in data_array:
+			data_new = list(data)
+			data_new[0] = self.getScenarioId(data_new[0])
+			data_array_new.append(tuple(data_new))
+		return data_array_new
+
+
 	def validateConnection(self):
 		try:
 			self.dataBaseStructure(self.conn)
 			return True
 		except:
 			return False
+
 
 	def previousScenario(self,id_scenario):
 		conn = self.connectionSqlite()
@@ -1406,7 +1450,32 @@ class DataBaseSqlite():
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], row[8], 1))
 				else:
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], str(row[8])))
-		
+		cursor.executemany(sql, sql_arr)
+		conn.commit()
+		conn.close()
+		return True
+
+	
+	def addLinkFShapeFile(self, scenarios, data_list, typeSql='IGNORE'):
+		conn = self.connectionSqlite()
+		cursor = conn.cursor()
+		sql_arr = []
+
+		sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name) 
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
+
+		if typeSql=='REPLACE':
+			sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name, used_in_scenario) 
+				values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
+		for row in data_list:
+			if typeSql=='REPLACE':
+				sql_arr.append((int(row[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], row[8], 1))
+			else:
+				sql_arr.append((int(row[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], str(row[8])))
+
+
 		cursor.executemany(sql, sql_arr)
 		conn.commit()
 		conn.close()

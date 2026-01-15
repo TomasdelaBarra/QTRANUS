@@ -142,6 +142,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_l1e_economic_sector_definitions = self.findChild(QtWidgets.QAction, 'actionL1E_Economic_Sector_Definitions')
         self.actn_l2e_activity_increments = self.findChild(QtWidgets.QAction, 'actionL2E_Activity_Increments')
         self.actn_l3e_activity_increments_and_decrements = self.findChild(QtWidgets.QAction, 'actionL3E_Activity_Increments_and_Decrements')
+        self.actn_delete_extra_links = self.findChild(QtWidgets.QAction, 'actionDelete_extra_links')
         
         #self.buttonBox.button(QtWidgets.QDialogButtonBox.SaveAll).setText('Save as...')
 
@@ -184,6 +185,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
         self.actn_p0e_transport_parameters.triggered.connect(self.generate_p0e_file)
         self.actn_p1e_network.triggered.connect(self.generate_p1e_file)
         self.actn_t1e_assignment_parameters.triggered.connect(self.generate_t1e_file)
+        self.actn_delete_extra_links.triggered.connect(self.delete_extra_links_action)
 
         self.scenario_tree.clicked.connect(self.select_scenario)
 
@@ -880,6 +882,114 @@ class DataWindow(QMainWindow, FORM_CLASS):
             return False
 
 
+    def delete_extra_links_action(self):
+        shape = self.network_links_shape.text()
+        layer = QgsVectorLayer(shape, 'Network_Links', 'ogr')
+        result = self.dataBaseSqlite.selectAll(' scenario ', where=" where cod_previous = ''", columns=' code ')
+        scenarios_arr = self.dataBaseSqlite.selectAllScenarios(result[0][0])
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        try:
+            if not layer.isValid():
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Shape Network is Invalid.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+                return False
+            else:
+                network_shape_fields = [field.name() for field in layer.fields()]
+                features = layer.getFeatures()
+                parent = self.parent()
+                data_list = []
+                for feature in layer.getFeatures():
+                    scenarioField = self.links_shape_codscenario.currentText()
+                    linkIdField = self.links_shape_fields.currentText()
+                    linkNameField = self.links_shape_name.currentText()
+                    typeField = self.links_shape_type.currentText()
+                    lengthField = self.links_shape_length.currentText()
+                    directionField = self.links_shape_direction.currentText()
+                    capacityField = self.links_shape_capacity.currentText()
+                    
+                    linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
+                    # print(linkId.typeName())
+                    if not (isinstance(linkId, QVariant) and linkId.isNull()): 
+                        if re.findall(r'\d+-\d+',linkId):
+                            
+                            Or_node = linkId.split('-')[0]
+                            Des_node = linkId.split('-')[1]
+                            name = feature.attribute(linkNameField) if linkNameField != 'Select' else None
+                            codScenario = feature.attribute(scenarioField) if scenarioField != 'Select' else None
+                            idType = feature.attribute(typeField) if typeField != 'Select' else None
+                            #two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
+                            two_way = feature.attribute(directionField) if directionField != 'Select' else None 
+                            length = feature.attribute(lengthField) if lengthField != 'Select' else None
+                            capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
+
+                            # Optional parameter
+                            codScenario = None if isinstance(codScenario, QVariant) else codScenario
+                            name = None if isinstance(name, QVariant) and name.isNull() else name
+                            resultOrNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Or_node}")
+                            resultDesNode = self.dataBaseSqlite.selectAll(" node ", where=f" where id = {Des_node}")
+                            name = None if isinstance(name, QVariant) else name
+                            idType = None if isinstance(idType, QVariant) else idType
+                            length = None if isinstance(length, QVariant) else length
+                            two_way = None if isinstance(two_way, QVariant) else two_way
+                            capacity = None if isinstance(capacity, QVariant) else capacity
+                            if resultOrNode and resultDesNode:
+                                data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
+                                if two_way != None:
+                                    data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
+                            
+                        else:
+                            raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')             
+                qry = """select 
+                        distinct b.code, linkid, node_from, node_to, id_linktype, length, two_way, capacity, a.name
+                        from link a
+                        join scenario b on (a.id_scenario = b.id)"""
+
+                result = self.dataBaseSqlite.executeSql(qry)
+        
+                # result: database data
+                # data_list: network shape file data
+                resultList = Helpers.union_elements_by_column(result, data_list)
+
+                self.delete_extra_links(result, data_list)
+                
+                QApplication.restoreOverrideCursor()
+                return True
+        except ExceptionFormatID as e:
+            print("Error ExceptionFormatID: ", e)
+            QApplication.restoreOverrideCursor()
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+        except Exception as e:
+            print("Error: ", e)
+            QApplication.restoreOverrideCursor()
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Data", "Import error in network Shape File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
+
+    def delete_extra_links(self, database_array, shape_array):
+        """Delete extra links found in database that are not present in shape."""
+        # difference: list of rows where
+        #   difference[i][0] -> scenario code
+        #   difference[i][1] -> link id
+        difference = Helpers.get_diff_arrays(database_array, shape_array)
+        data_array = []
+        for row in difference:
+            if not row:
+                continue
+            scenario_code = row[0]
+            link_id = row[1]
+            scenario_id = self.dataBaseSqlite.getScenarioId(scenario_code)
+            if scenario_id is not None and link_id is not None:
+                data_array.append((scenario_id, link_id))
+        
+        if data_array:
+            self.dataBaseSqlite.deleteExtraLinks(data_array)
+        return True
+
+        
     def __load_nodes_data(self, typeSql="IGNORE"):
         shape = self.network_nodes_shape.text()
         layer = QgsVectorLayer(shape, 'Network_Nodes', 'ogr')
@@ -913,8 +1023,6 @@ class DataWindow(QMainWindow, FORM_CLASS):
                                 y = feature.attribute(yNode) if yNode else None
                                 x = None if str(x) == 'NULL' else x
                                 y = None if str(y) == 'NULL' else y
-                                print(f'x {x}')
-                                print(f'y {y}')
                                 
                                 if not isinstance(_id, int):
                                     raise ExceptionWrongDataType(_id=_id, _field=idNode)
@@ -1217,10 +1325,11 @@ class WorkerSyncThread(QThread):
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
                                 if two_way != None:
-                                    data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
+                                   data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:
-                            self.error_signal.emit(f"Invalid layer id {linkId}")             
+                            self.error_signal.emit(f"Invalid layer id {linkId}") 
+                  
                 qry = """select 
                         distinct b.code, linkid, node_from, node_to, id_linktype, length, two_way, capacity, a.name
                         from link a
@@ -1230,12 +1339,10 @@ class WorkerSyncThread(QThread):
         
                 # result: database data
                 # data_list: network shape file data
-                resultList = Helpers.union_elements_by_column(result, data_list)
-
-                if typeSql=='REPLACE':
-                    resultList = data_list
-
-                self.dataBaseSqlite.addLinkFFShape(scenarios_arr, resultList, typeSql=typeSql)
+                # resultList = Helpers.union_elements_by_column(result, data_list)
+                data_list = self.dataBaseSqlite.replaceScenarioCode(data_list)
+                
+                self.dataBaseSqlite.addLinkFShapeFile(scenarios_arr, data_list, typeSql=typeSql)
                 self.loading_signal.emit(dict(type='links', status=False))
                 return True
             

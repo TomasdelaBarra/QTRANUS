@@ -335,6 +335,8 @@
      <addaction name="actionOverwriteZones"/>
      <addaction name="actionOverwriteNodes"/>
      <addaction name="actionOverwriteLinks"/>
+     <addaction name="separator"/>
+     <addaction name="actionDelete_extra_links"/>
     </widget>
     <addaction name="actionImportNetwork"/>
     <addaction name="menu"/>
@@ -451,6 +453,11 @@
   <action name="actionOverwriteLinks">
    <property name="text">
     <string>Links</string>
+   </property>
+  </action>
+  <action name="actionDelete_extra_links">
+   <property name="text">
+    <string>Clear links</string>
    </property>
   </action>
  </widget>
