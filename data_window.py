@@ -1342,8 +1342,18 @@ class WorkerSyncThread(QThread):
                 # resultList = Helpers.union_elements_by_column(result, data_list)
                 data_list = self.dataBaseSqlite.replaceScenarioCode(data_list)
                 
-                self.dataBaseSqlite.addLinkFShapeFile(scenarios_arr, data_list, typeSql=typeSql)
+                """ self.dataBaseSqlite.addLinkFShapeFile(scenarios_arr, data_list, typeSql=typeSql)
+                self.loading_signal.emit(dict(type='links', status=False))"""
+
+
+                resultList = Helpers.union_elements_by_column(result, data_list)
+
+                if typeSql=='REPLACE':
+                    resultList = data_list
+
+                self.dataBaseSqlite.addLinkFFShape(scenarios_arr, resultList, typeSql=typeSql)
                 self.loading_signal.emit(dict(type='links', status=False))
+
                 return True
             
         except Exception as e:

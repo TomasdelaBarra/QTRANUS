@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from qgis.core import  QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest, QgsPointXY
+from qgis.core import  Qgis, QgsProject, QgsVectorLayer, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsLineSymbolLayer, QgsSimpleLineSymbolLayer, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsMarkerLineSymbolLayer, QgsSimpleMarkerSymbolLayer, QgsSimpleMarkerSymbolLayerBase, QgsWkbTypes, QgsPoint, QgsFeatureRequest, QgsPointXY
 
 from ..general.FileManagement import FileManagement as FileMXML
 from ..general.Helpers import Helpers as HP
@@ -159,7 +159,7 @@ class Network(object):
             # Source shape, name of the new shape, providerLib
             layer = QgsVectorLayer(networkLinkShapePath, layerName+"_network", 'ogr')
             epsg = layer.crs().postgisSrid()
-            intMethod = 0 if method == "Color" else 1
+            intMethod = Qgis.GraduatedMethod.Color if method == "Color" else Qgis.GraduatedMethod.Size
             progressBar.setValue(20)
 
             if not layer.isValid():
@@ -183,13 +183,13 @@ class Network(object):
             memoryLayer.startEditing()
             
             num = 30
-            progressBar.setValue(num)
+            progressBar.setValue(int(num))
             progressInterval = 70/len(resultData)
 
             for rowItem in np.nditer(resultData):
                 value = 0
                 num += progressInterval
-                progressBar.setValue(num)
+                progressBar.setValue(int(num))
 
                 it = memoryLayer.getFeatures( "LINKID  = '{0}'".format(str(rowItem['Id']).replace("b","").replace("'","")))
                 for id_feature in it:
@@ -469,14 +469,14 @@ class Network(object):
             memory_data.addFeatures(feats)
 
             num = 30
-            progressBar.setValue(num)
+            progressBar.setValue(int(num))
             progressInterval = 70/len(resultData)
 
             memoryLayer.startEditing()
             for rowItem in np.nditer(resultData):
                 value = 0
                 num += progressInterval
-                progressBar.setValue(num)
+                progressBar.setValue(int(num))
 
                 it = memoryLayer.getFeatures( "LINKID  = '{0}'".format(str(rowItem['Id']).replace("b","").replace("'","")))
                 for id_feature in it:
