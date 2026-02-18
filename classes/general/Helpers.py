@@ -171,10 +171,10 @@ class Helpers(object):
             return True
         except:
             return False
-
+    """
     @staticmethod   
     def get_diff_arrays(list_a, list_b):
-        """
+        
         @summary: 
         Compares two lists of tuples and returns the elements of list_a whose first two values ​​do not exist in list_b.
 
@@ -182,7 +182,7 @@ class Helpers(object):
 
         list_a -- Main list of tuples.
         list_b -- Reference list for comparison.
-        """
+        
         
         # Step 1: Create a set with the identifiers (index 0 and 1) from list b.
         # This optimizes the search from O(n) to O(1) for each element.
@@ -196,6 +196,47 @@ class Helpers(object):
         ]
         
         return difference
+    """
+
+    @staticmethod
+    def get_diff_arrays(lista_a, lista_b):
+        """Return the elements that are in lista_a but NOT in lista_b."""
+        # Convert to set to perform the difference operation efficiently
+        set_a = set(lista_a)
+        set_b = set(lista_b)
+        
+        # Set subtraction extracts the elements unique to set_a
+        diferencia = set_a - set_b
+        
+        # Return result as a list
+        return list(diferencia)
+
+    
+    @staticmethod
+    def find_element(lista_tuplas, indice, valor_buscado):
+        resultado = [t for t in lista_tuplas if t[indice] == valor_buscado]
+    
+        return resultado
+
+    
+    @staticmethod
+    def delete_duplicated_values(lista_tuplas, indice_objetivo):
+        # Conjunto para rastrear valores ya vistos (los sets son rápidos para búsquedas)
+        valores_unicos = list({tupla[indice_objetivo] for tupla in lista_tuplas})
+                
+        return valores_unicos
+        
+    
+    @staticmethod
+    def buscar_por_id(valor_buscado, lista_tuplas):
+        """
+        Busca una tupla en la lista basándose en el valor de la posición [1].
+        Retorna la tupla si la encuentra, de lo contrario retorna None.
+        """
+        for tupla in lista_tuplas:
+            if tupla[1] == valor_buscado:
+                return tupla
+        return None
 
 
 class ExceptionGeometryType(Exception):

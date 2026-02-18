@@ -576,8 +576,24 @@ class DataBaseSqlite():
 		""" Delete extra links not in the shape file from the database."""
 		conn = self.connectionSqlite()
 
-		sql_delete = """ delete from link where id_scenario = ? and linkid = ? """
+		sql_delete = """ delete from link where linkid = ? """
 
+		# Normalizar el arreglo de entrada para que executemany()
+		# reciba una lista de tuplas del tipo [(linkid,), ...]
+		if not dataArray:
+			conn.close()
+			return True
+
+		# Si viene como lista simple de ids [1, 2, 3] o ['1','2']
+		first = dataArray[0]
+		if isinstance(first, (int, float, str)):
+			dataArray = [(value,) for value in dataArray]
+		elif not isinstance(first, (tuple, list)):
+			# Cualquier otro tipo lo convertimos igualmente a tupla
+			dataArray = [(first,)]
+
+		print(f"DENTRO DE DELETE EXTRA FIELD: {dataArray}")
+	
 		try:
 			cursor = conn.cursor()
 			cursor.executemany(sql_delete, dataArray)

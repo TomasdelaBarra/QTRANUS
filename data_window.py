@@ -935,8 +935,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             capacity = None if isinstance(capacity, QVariant) else capacity
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
-                                if two_way != None:
-                                    data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
+                                # if two_way != None:
+                                #    data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:
                             raise ExceptionFormatID(linkId, typeFile='Import error in Network shape file')             
@@ -968,9 +968,9 @@ class DataWindow(QMainWindow, FORM_CLASS):
             messagebox.exec_()
             return False
 
-
+    """
     def delete_extra_links(self, database_array, shape_array):
-        """Delete extra links found in database that are not present in shape."""
+        
         # difference: list of rows where
         #   difference[i][0] -> scenario code
         #   difference[i][1] -> link id
@@ -987,6 +987,23 @@ class DataWindow(QMainWindow, FORM_CLASS):
         
         if data_array:
             self.dataBaseSqlite.deleteExtraLinks(data_array)
+        return True
+    """
+
+    def delete_extra_links(self, database_array, shape_array):
+        
+        # difference: list of rows where
+        #   difference[i][0] -> scenario code
+        #   difference[i][1] -> link id
+        difference = Helpers.get_diff_arrays(Helpers.delete_duplicated_values(database_array, 1), Helpers.delete_duplicated_values(shape_array, 1))
+
+        print("DATABASE:   ", Helpers.find_element(database_array, 1, '799-2813'))
+        print("SHAPE:   ", Helpers.find_element(shape_array, 1, '799-2813'))
+        print("UNIQUE DIFFERENCE: ", difference)
+
+        if difference:
+            self.dataBaseSqlite.deleteExtraLinks(difference)
+
         return True
 
         
@@ -1324,8 +1341,8 @@ class WorkerSyncThread(QThread):
                             capacity = None if isinstance(capacity, QVariant) else capacity
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
-                                if two_way != None:
-                                   data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
+                                # if two_way != None:
+                                #   data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:
                             self.error_signal.emit(f"Invalid layer id {linkId}") 
