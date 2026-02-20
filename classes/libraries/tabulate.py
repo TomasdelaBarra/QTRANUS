@@ -445,7 +445,7 @@ def _isnumber(string):
     True
     >>> _isnumber("spam")
     False
-    >>> _isnumber("123e45678")
+    >>> _isnumber("125678")
     False
     >>> _isnumber("inf")
     True
