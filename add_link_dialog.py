@@ -63,7 +63,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.description = self.findChild(QtWidgets.QLineEdit, 'description')
 
         # Data Section
-        self.two_way = self.findChild(QtWidgets.QCheckBox, 'two_way')
+        # self.two_way = self.findChild(QtWidgets.QCheckBox, 'two_way')
         self.used_in_scenario = self.findChild(QtWidgets.QCheckBox, 'used_in_scenario')
         self.length = self.findChild(QtWidgets.QLineEdit, 'length')
         self.capacity = self.findChild(QtWidgets.QLineEdit, 'capacity')
@@ -482,7 +482,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         id_type = self.cb_type.itemData(self.cb_type.currentIndex())
         id_origin = self.cb_origin.itemData(self.cb_origin.currentIndex())
         id_destination = self.cb_destination.itemData(self.cb_destination.currentIndex())
-        two_way = 1 if self.two_way.isChecked() else 0
+        two_way = 1 if False else 0
         used_in_scenario = 1 if self.used_in_scenario.isChecked() else 0
 
         if not id_type:
@@ -516,7 +516,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             print("DENTRO DE CAPACITY")
             print(self.capacity.text())
             
-            newLink = self.dataBaseSqlite.addLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
+            newLink = self.dataBaseSqlite.addLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, False, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
             # Add Link to Shape
             project = QgsProject.instance()
             layerIds = [layer.id() for layer in project.mapLayers().values()]
@@ -528,7 +528,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             destinationPoint = QgsPointXY(destinationNode[0][5], destinationNode[0][6])
             linkId = f'{id_origin}-{id_destination}'
 
-            if not Network.addLinkFeatureShape(layerNetId, originPoint, destinationPoint, scenario_code, linkId, name, id_origin, id_destination, id_type, self.length.text(), two_way, self.capacity.text(), networkShapeFields=self.network_shape_fields):
+            if not Network.addLinkFeatureShape(layerNetId, originPoint, destinationPoint, scenario_code, linkId, name, id_origin, id_destination, id_type, self.length.text(), False, self.capacity.text(), networkShapeFields=self.network_shape_fields):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add new Link", "Errors when the figure was being added to layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
                 return False
@@ -538,7 +538,7 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
                 messagebox.exec_() 
                 return False
         else:
-            newLink = self.dataBaseSqlite.updateLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, two_way, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
+            newLink = self.dataBaseSqlite.updateLinkFDialog(scenarios, id_origin, id_destination, id_type, name, description, False, used_in_scenario, self.length.text(), self.capacity.text(), delay_data, self.id_routes_arr_selected, self.turns_delays_arr)
             try:
                 project = QgsProject.instance()
                 layerIds = [layer.id() for layer in project.mapLayers().values()]
@@ -668,8 +668,8 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
                 else:
                     self.delay.setStyleSheet("")
            
-            two_way = True if data[0][9]==1 else False 
-            self.two_way.setChecked(two_way)
+            # two_way = True if data[0][9]==1 else False 
+            # self.two_way.setChecked(two_way)
 
             used_in_scenario = True if data[0][10]==1 else False 
             self.used_in_scenario.setChecked(used_in_scenario)

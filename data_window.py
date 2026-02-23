@@ -824,7 +824,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             codScenario = feature.attribute(scenarioField) if scenarioField != 'Select' else None
                             idType = feature.attribute(typeField) if typeField != 'Select' else None
                             #two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
-                            two_way = feature.attribute(directionField) if directionField != 'Select' else None 
+                            two_way = feature.attribute(directionField) if directionField != 'Select' else None
                             length = feature.attribute(lengthField) if lengthField != 'Select' else None
                             capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
 
@@ -840,7 +840,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             capacity = None if isinstance(capacity, QVariant) else capacity
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
-                                if two_way != None:
+                                if isinstance(two_way, int) and two_way == 1:
                                     data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:

@@ -294,10 +294,12 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                 item = QtGui.QStandardItem()
                 item.setText(result[x][z])
                 if z == 0:
-                    if result[x][z].split(" ")[0] != '0' and result[x][z].split(" ")[0] != '':
+                    if result[x][z].split(" ")[0] != '1':
+                        item.setIcon(QIcon(self.plugin_dir+"/icons/one-way-road.png"))
+                    elif result[x][z].split(" ")[0] != '0' and result[x][z].split(" ")[0] != '':
                         item.setIcon(QIcon(self.plugin_dir+"/icons/two-way-road.png"))
                     else:
-                        item.setIcon(QIcon(self.plugin_dir+"/icons/one-way-road.png"))
+                        item.setIcon(QIcon(self.plugin_dir+"/icons/two-way-road.png"))
                     item.setText(result[x][z].split(" ")[1])
                 
                 
