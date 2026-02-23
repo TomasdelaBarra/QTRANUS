@@ -824,7 +824,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             codScenario = feature.attribute(scenarioField) if scenarioField != 'Select' else None
                             idType = feature.attribute(typeField) if typeField != 'Select' else None
                             #two_way = 1 if (feature.attribute(directionField) if directionField != 'Select' else None)  == 0 else None
-                            two_way = feature.attribute(directionField) if directionField != 'Select' else None
+                            two_way = feature.attribute(directionField) if directionField != 'Select' else None 
                             length = feature.attribute(lengthField) if lengthField != 'Select' else None
                             capacity = feature.attribute(capacityField) if capacityField != 'Select' else None
 
@@ -840,7 +840,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                             capacity = None if isinstance(capacity, QVariant) else capacity
                             if resultOrNode and resultDesNode:
                                 data_list.append((codScenario, f"{Or_node}-{Des_node}", Or_node, Des_node, idType, length, two_way, capacity, name))
-                                if isinstance(two_way, int) and two_way == 1:
+                                if two_way != None:
                                     data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:
@@ -960,6 +960,8 @@ class DataWindow(QMainWindow, FORM_CLASS):
                     self.delete_extra_links(result, data_list)
                     
                     QApplication.restoreOverrideCursor()
+
+                    self.statusbar.showMessage("Success: links data has been cleaned", 4000)
                     return True
         except ExceptionFormatID as e:
             print("Error ExceptionFormatID: ", e)
