@@ -169,7 +169,7 @@
                 <widget class="QListWidget" name="resultsList"/>
                </item>
                <item>
-                <widget class="QCommandLinkButton" name="results">
+                <widget class="QCommandLinkButton" name="reports">
                  <property name="text">
                   <string>Create</string>
                  </property>

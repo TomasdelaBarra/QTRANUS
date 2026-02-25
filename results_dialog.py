@@ -16,6 +16,7 @@ from .scenarios_model import ScenariosModel
 from .zonelayer_dialog import ZoneLayerDialog
 from .matrixlayer_dialog import MatrixLayerDialog
 from .networklayer_dialog import NetworkLayerDialog
+from .results_reports_dialog import ResultsReportsDialog
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.data.DataBaseSqlite import DataBaseSqlite
 
@@ -45,6 +46,7 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_btn = self.findChild(QtWidgets.QCommandLinkButton, 'zones')
         self.network_btn = self.findChild(QtWidgets.QCommandLinkButton, 'network')
         self.matrix_btn = self.findChild(QtWidgets.QCommandLinkButton, 'matrix')
+        self.reports_btn = self.findChild(QtWidgets.QCommandLinkButton, 'reports')
         self.scenarios = self.findChild(QtWidgets.QTreeView, 'scenarios')
         
         # Control Actions
@@ -55,7 +57,8 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.zones_btn.clicked.connect(self.zone_layer_dialog)
         self.network_btn.clicked.connect(self.network_layer_dialog)
         self.matrix_btn.clicked.connect(self.matrix_layer_dialog)
-        
+        self.reports_btn.clicked.connect(self.reports_dialog)
+
         # Loads
         #self.__reload_scenarios()
         self.__load_scenarios()
@@ -122,6 +125,17 @@ class ResultsDialog(QtWidgets.QDialog, FORM_CLASS):
             self.zones_dialog.show()
             result = self.zones_dialog.exec_()
             self.__load_layers_list()
+
+    
+    def reports_dialog(self):
+        """
+            @summary: Opens reports window
+        """
+        
+        self.reports_dialog = ResultsReportsDialog(self.tranus_folder, parent=self)
+        self.reports_dialog.show()
+        result = self.reports_dialog.exec_()
+        self.__load_layers_list()
 
 
     def eventFilter(self, source, event):
