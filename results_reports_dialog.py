@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from string import *
 import os, re, webbrowser
+import subprocess
+import platform
 
+from PyQt5 import QtCore
 from PyQt5 import QtGui, uic
 from PyQt5 import QtWidgets
 from PyQt5.Qt import QDialogButtonBox
@@ -35,6 +38,7 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.idScenario = idScenario
         self._type = _type
         self._idCategory = _idCategory
+        self.plugin_dir = os.path.dirname(__file__)
         self.dataBaseSqlite = DataBaseSqlite(self.tranus_folder)
         self.filename_path = None
 
@@ -50,13 +54,49 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.save)
         #self.buttonBox.button(QtWidgets.QDialogButtonBox.Close).clicked.connect(self.close)
 
+        # Run process
+        self.process = QtCore.QProcess(self)
+        self.env = QtCore.QProcessEnvironment.systemEnvironment()
+        self.programs_dir = self.plugin_dir.replace("\\","/")+"/programs"
+
+        # Set Path Variable for QProcess Instance
+        if self.programs_dir not in self.env.value("Path"):
+            self.env.insert("Path", self.programs_dir)
+
+        # QProcess emits `readyRead` when there is data to be read
+        self.process.setProcessEnvironment(self.env)
+
 
     def select_file(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption="Select a file", directory=str(self.tranus_folder), filter="*.*, *.csv")
-        if file_name:
-            self.filename_path = file_name[0]
-            self.filename.setText(file_name[0])
+        print(str(self.tranus_folder))
+        # 1) Si ya tenemos un directorio válido, solo lo mostramos
+        if self.filename_path and os.path.isdir(self.filename_path):
+            self.filename.setText(self.filename_path)
+            return
+
+        # 2) Si no existe, permitimos que el usuario seleccione o cree uno nuevo
+        options = QtWidgets.QFileDialog.ShowDirsOnly
+        folder = self.clear_name_file(str(self.tranus_folder))
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            parent=self,
+            caption="Select or create a directory",
+            directory=str(folder),
+            options=options
+        )
+
+        if directory:
+            # Si el usuario eligió un directorio, lo usamos
+            if not os.path.isdir(directory):
+                try:
+                    os.makedirs(directory, exist_ok=True)
+                except Exception:
+                    directory = ''
+
+        if directory and os.path.isdir(directory):
+            self.filename_path = directory
+            self.filename.setText(directory)
         else:
+            self.filename_path = None
             self.filename.setText('')
 
 
@@ -69,92 +109,72 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def save(self):
+        # self.run_imptra_indicators()
+        print(self.tranus_folder)
+        print(self.filename_path)
+        self.ejecutar_comando_sistema()
         if self.filename_path is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Please Select File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-        elif self.ln_sheetname.text() is None:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Please Write Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Reports Data", "Please Select File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
-            """
-            if self._type == 'transfers':
-                self.import_transfers()
-            elif self._type == 'exogenous_trips':
-                self.import_exogenous_trips()
-            """
-            """loc = self.filename_path
-            wb = xlrd.open_workbook(loc) 
-            sheet_names = wb.sheet_names()
-            if self.ln_sheetname.text() in sheet_names:
-                sheet = wb.sheet_by_name(self.ln_sheetname.text()) 
-                id_scenario = self.idScenario
-                scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
-                scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
-                header = 1 if self.header.isChecked() else 0
-                for i in range(header,sheet.nrows): 
-                    id_origin = str(sheet.row_values(i, 0)[0]).split(' ')[0]
-                    id_destination = str(sheet.row_values(i, 0)[1]).split(' ')[0]
-                    tariff = sheet.row_values(i, 0)[2]
-                    try:
-                        id_origin = int(float(id_origin))
-                        id_destination = int(float(id_destination))
-                        tariff = float(tariff)
-                    except:
-                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Row (%s) Invalid." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                        messagebox.exec_()
-                        break
-
-                    result_ori = self.dataBaseSqlite.selectAll(' operator ', where = " where id = %s" % id_origin)
-                    result_dest = self.dataBaseSqlite.selectAll(' operator ', where = " where id = %s" % id_destination)
-                    if len(result_ori)==0 or len(result_dest)==0:
-                        messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Invalid Operator in row (%s)." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                        messagebox.exec_()
-                        break
-                    else:
-                        resultado = self.dataBaseSqlite.addTransferOperator(scenarios, id_origin, id_destination, tariff)
-            else:
-                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Invalid Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                messagebox.exec_()"""
-
             self.close()
 
-    """
-    def import_exogenous_trips(self):
-        loc = self.filename_path
-        wb = xlrd.open_workbook(loc) 
-        sheet_names = wb.sheet_names()
-        data_trips = []
-        if self.ln_sheetname.text() in sheet_names:
-            sheet = wb.sheet_by_name(self.ln_sheetname.text()) 
-            id_category = self._idCategory
-            id_scenario = self.idScenario
-            scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
-            scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
-            header = 1 if self.header.isChecked() else 0
-            for i in range(header,sheet.nrows): 
-                id_from = str(sheet.row_values(i, 0)[0])
-                id_to = str(sheet.row_values(i, 0)[1])
-                trips = sheet.row_values(i, 0)[2]
-                try:
-                    id_origin = int(float(id_from))
-                    id_destination = int(float(id_to))
-                    trips = float(trips)
-                except:
-                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Row (%s) Invalid." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                    messagebox.exec_()
-                    break
 
-                result_ori = self.dataBaseSqlite.selectAll(' zone ', where = " where id = %s" % id_from)
-                result_dest = self.dataBaseSqlite.selectAll(' zone ', where = " where id = %s" % id_to)
-                if len(result_ori)==0 or len(result_dest)==0:
-                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import", "Invalid zone in row (%s)." % i, ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-                    messagebox.exec_()
-                    break
-                
-                else:
-                    data_trips.append((id_from, id_to, id_category, trips))
-            resultado = self.dataBaseSqlite.bulkLoadExogenousTrips(scenarios, data_trips)
+    def run_imptra_indicators(self):
+        if not self.idScenario:
+            return
+        scenario = "25A"
+        os.chdir(self.tranus_folder)
+
+        # Ejecuta: imptra <escenario> -J -o transport_indicators_<escenario>.csv
+        result = self.process.start("imptra", [scenario, "-P", "-o", f"{self.filename_path}/route_profile_{scenario}.csv"])
+
+
+    def clear_name_file(self, ruta):
+        """
+        Busca la última barra invertida y sustituye 
+        lo que sigue por un espacio.
+        """
+        # 1. Encontrar el índice de la última barra invertida '\'
+        indice = ruta.rfind('\\')
+        
+        # 2. Si se encuentra la barra invertida
+        if indice != -1:
+            # Tomamos la parte anterior a la barra (incluyéndola)
+            # y le sumamos un espacio en blanco
+            nueva_ruta = ruta[:indice + 1] + " "
+            return nueva_ruta
         else:
-            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Import Data", "Invalid Sheet name.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
-            messagebox.exec_()
-    """
+            # Si no hay '\', devolvemos la ruta original o un mensaje
+            return ruta
+
+
+    def ejecutar_comando_sistema(self):
+        # Detectamos el sistema operativo para elegir el comando correcto
+        # 'ls' para Linux/Mac, 'dir' para Windows
+        os.chdir(self.clear_name_file(self.tranus_folder))
+        print(self.filename_path)
+        scenario = '25A'
+        file_name = f"route_profile_{scenario}.csv"
+        print(file_name)
+        comando = f"C:\\Users\\USUARIO\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\QTRANUS\\programs\\imptra.exe 25A -S -o {file_name}"
+
+        try:
+            # Ejecutamos el comando
+            # shell=False es más seguro para evitar inyecciones de código
+            resultado = subprocess.run(
+                comando, 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+
+            # Imprimimos lo que el sistema respondió
+            print("--- Comando ejecutado con éxito ---")
+            print(resultado.stdout)
+
+        except subprocess.CalledProcessError as e:
+            # Si el comando falla, capturamos el error
+            print(f"Error al ejecutar el comando: {e}")
+
+    

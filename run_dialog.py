@@ -257,7 +257,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         except:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while generating files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
-
+            
 
     def finish_process(self):
         self.btn_run.setEnabled(True)
@@ -266,7 +266,6 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             if not Helpers.transform_trips_matrix(self.scenarioCode, self.tranus_folder):
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Run", "Error while generating matrix files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
                 messagebox.exec_()
-        
 
 
     def add_to_batch(self):
@@ -304,6 +303,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return True
 
+
     def populate_tableview(self):
 
         model = QtGui.QStandardItemModel()
@@ -322,6 +322,7 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tree_batch.setColumnWidth(0, 60)
             
         return True
+
 
     def populateTableViewFromBatchFile(self):
         
@@ -342,9 +343,11 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             
         return True
 
+
     def removeItems():
         indexes = self.administrators_tree.selectedIndexes()
         administratorSelected = indexes[0].model().itemFromIndex(indexes[0]).text()
+
 
     def validate_buttons(self):
         
@@ -382,7 +385,6 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.scenarioData:
             self.idScenario = self.scenarioData[0][0]
             self.validate_buttons()
-        
 
 
     def open_help(self):
@@ -404,7 +406,6 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.select_scenario(self.scenario_tree.selectedIndexes()[0])
                
-    
 
     def __find_scenario_data(self, scenarioCode):
         """
