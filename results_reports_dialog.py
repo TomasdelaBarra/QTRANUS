@@ -109,7 +109,7 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def save(self):
-        # self.run_imptra_indicators()
+        self.run_imptra_indicators()
         print(self.tranus_folder)
         print(self.filename_path)
         self.ejecutar_comando_sistema()
@@ -125,9 +125,10 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
             return
         scenario = "25A"
         os.chdir(self.tranus_folder)
+        print(f"FOLDER {self.tranus_folder} scneario {scenario}")
 
         # Ejecuta: imptra <escenario> -J -o transport_indicators_<escenario>.csv
-        result = self.process.start("imptra", [scenario, "-P", "-o", f"{self.filename_path}/route_profile_{scenario}.csv"])
+        result = self.process.start("imptra", [scenario, "-P", "-o", f"{self.filename_path}/test_from_program_{scenario}.csv"])
 
 
     def clear_name_file(self, ruta):
@@ -153,11 +154,10 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
         # Detectamos el sistema operativo para elegir el comando correcto
         # 'ls' para Linux/Mac, 'dir' para Windows
         os.chdir(self.clear_name_file(self.tranus_folder))
-        print(self.filename_path)
         scenario = '25A'
         file_name = f"route_profile_{scenario}.csv"
-        print(file_name)
-        comando = f"C:\\Users\\USUARIO\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\QTRANUS\\programs\\imptra.exe 25A -S -o {file_name}"
+        
+        comando = f"C:\\Users\\USUARIO\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\QTRANUS\\programs\\imptra.exe 25A -P -o {file_name}"
 
         try:
             # Ejecutamos el comando
