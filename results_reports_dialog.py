@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 from string import *
 import os, re, webbrowser
-import subprocess
-import platform
+import subprocess, platform
 
-from PyQt5 import QtCore
-from PyQt5 import QtGui, uic
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, uic 
 from PyQt5.Qt import QDialogButtonBox
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
@@ -19,6 +16,7 @@ from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
 from .classes.libraries import xlrd
+from .classes.general.Helpers import Helpers
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'results_reports.ui'))
@@ -109,26 +107,12 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def save(self):
-        self.run_imptra_indicators()
-        print(self.tranus_folder)
-        print(self.filename_path)
-        self.ejecutar_comando_sistema()
+        self.exec_command()
         if self.filename_path is None:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Reports Data", "Please Select File.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         else:
             self.close()
-
-
-    def run_imptra_indicators(self):
-        if not self.idScenario:
-            return
-        scenario = "25A"
-        os.chdir(self.tranus_folder)
-        print(f"FOLDER {self.tranus_folder} scneario {scenario}")
-
-        # Ejecuta: imptra <escenario> -J -o transport_indicators_<escenario>.csv
-        result = self.process.start("imptra", [scenario, "-P", "-o", f"{self.filename_path}/test_from_program_{scenario}.csv"])
 
 
     def clear_name_file(self, ruta):
@@ -150,24 +134,31 @@ class ResultsReportsDialog(QtWidgets.QDialog, FORM_CLASS):
             return ruta
 
 
-    def ejecutar_comando_sistema(self):
+    def exec_command(self):
         # Detectamos el sistema operativo para elegir el comando correcto
         # 'ls' para Linux/Mac, 'dir' para Windows
         os.chdir(self.clear_name_file(self.tranus_folder))
         scenario = '25A'
         file_name = f"route_profile_{scenario}.csv"
-        
-        comando = f"C:\\Users\\USUARIO\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins\\QTRANUS\\programs\\imptra.exe 25A -P -o {file_name}"
+        env = os.environ.copy()
+        print(f"Ejecutando comando en: {os.getcwd()}")
+        print(f"PROGRAM DIR: {Helpers.clear_path(self.programs_dir) + "/"}")
+        comando = f"imptra.exe 25A -P -o {file_name}"
 
         try:
             # Ejecutamos el comando
             # shell=False es más seguro para evitar inyecciones de código
             resultado = subprocess.run(
-                comando, 
+                comando,
+                env={'PATH': f"{Helpers.clear_path(self.programs_dir)};{env.get('PATH', '')}"},  # Aseguramos que el programa se encuentre en el PATH
+                shell=True,
                 capture_output=True, 
                 text=True, 
                 check=True
             )
+
+            Helpers.delete_header(file_name)
+            Helpers.remove_negative_routes(file_name)
 
             # Imprimimos lo que el sistema respondió
             print("--- Comando ejecutado con éxito ---")

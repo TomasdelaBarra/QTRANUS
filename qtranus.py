@@ -46,6 +46,7 @@ from qgis.core import  QgsMessageLog, QgsProject, QgsVectorLayer, QgsFeature, Qg
 from qgis.gui import QgsQueryBuilder
 
 from .classes.data.DataBaseSqlite import DataBaseSqlite
+from .classes.general.Helpers import Helpers
 from .classes.libraries.tabulate import tabulate
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .qtranus_project import QTranusProject
@@ -1086,8 +1087,8 @@ class QTranus:
                     self.tbl_desutilities.setItem(1,  i, QTableWidgetItem(str(value[0]['chargs'])))
                     self.tbl_desutilities.setItem(2,  i, QTableWidgetItem(str(value[0]['uchrgs'])))
                     self.tbl_desutilities.setItem(3,  i, QTableWidgetItem(str(value[0]['dist'])))
-                    self.tbl_desutilities.setItem(4,  i, QTableWidgetItem(str(datetime.timedelta(float(value[0]['lnktme'])))))
-                    self.tbl_desutilities.setItem(5,  i, QTableWidgetItem(str(datetime.timedelta(float(value[0]['waittme'])))))
+                    self.tbl_desutilities.setItem(4,  i, QTableWidgetItem(Helpers.time_format(float(value[0]['lnktme']))))
+                    self.tbl_desutilities.setItem(5,  i, QTableWidgetItem(Helpers.time_format(float(value[0]['waittme']))))
                     self.tbl_desutilities.setItem(6,  i, QTableWidgetItem(str(value[0]['moncos'])))
                     i += 1
             

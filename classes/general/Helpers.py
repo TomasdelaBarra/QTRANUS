@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import re
-import os
+import re, os, csv
 
 class Helpers(object):
 
@@ -237,6 +236,69 @@ class Helpers(object):
             if tupla[1] == valor_buscado:
                 return tupla
         return None
+
+    @staticmethod
+    def delete_header(filename, num_lines=4):
+        """
+        @summary: Remove the first `num_lines` lines from a text file.
+        Reads all lines, discards the header, and overwrites the file.
+        """
+        # 1. Read all lines from the file
+        with open(filename, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        # 2. Remove the first `num_lines` lines
+        final_lines = lines[num_lines:]
+
+        # 3. Overwrite the same file
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.writelines(final_lines)
+
+    
+    
+    @staticmethod
+    def remove_negative_routes(filename):
+        """
+        @summary: Filter the routes file, keeping only rows where RutId > 0
+        and rewrite the same file with the filtered records.
+        """
+
+        filtered_rows = []
+        headers = []
+
+        with open(filename, mode='r', encoding='utf-8') as csvfile:
+            lector = csv.DictReader(csvfile, delimiter='\t') 
+            headers = lector.fieldnames
+            
+            for fila in lector:
+                if int(fila['RutId']) > 0:
+                    filtered_rows.append(fila)
+
+        
+        with open(filename, mode='w', encoding='utf-8', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=headers, delimiter=',')
+            
+            writer.writeheader()
+            writer.writerows(filtered_rows)
+
+    @staticmethod
+    def clear_path(text):
+        """
+        Recibe un string y cambia todas las ocurrencias de "/" por "\".
+        """
+        return text.replace("/", "\\")
+
+
+    @staticmethod
+    def time_format(valor_decimal):
+        total_seconds = int(valor_decimal * 3600)
+        
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        # Use f-strings to fill with 0 on the left side
+        return f"{hours:02}:{minutes:02}:{seconds:02}"  
 
 
 class ExceptionGeometryType(Exception):
