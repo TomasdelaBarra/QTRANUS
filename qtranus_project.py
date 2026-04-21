@@ -644,7 +644,7 @@ class QTranusProject(object):
         self.custom_variables_dict.update(tranus_dictionary)
         QgsProject.instance().setCustomVariables(self.custom_variables_dict)
 
-        intMethod = 0 if method == "Color" else 1
+        intMethod = QgsGraduatedSymbolRenderer.GraduatedColor if method == "Color" else QgsGraduatedSymbolRenderer.GraduatedSize
 
         result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
         
@@ -761,7 +761,7 @@ class QTranusProject(object):
         # Gets shape's file folder
         registry = QgsProject.instance()
 
-        intMethod = 0 if method == "Color" else 1
+        intMethod = QgsGraduatedSymbolRenderer.GraduatedColor if method == "Color" else QgsGraduatedSymbolRenderer.GraduatedSize if method == "Size" else 1
         result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
         print("matrixList {}".format(matrixList))
         if result:
@@ -882,7 +882,7 @@ class QTranusProject(object):
         self.custom_variables_dict.update(tranus_dictionary)
         QgsProject.instance().setCustomVariables(self.custom_variables_dict)
 
-        intMethod = 0 if method == "Color" else 1
+        intMethod = QgsGraduatedSymbolRenderer.GraduatedColor if method == "Color" else QgsGraduatedSymbolRenderer.GraduatedSize if method == "Size" else 1
 
         result, matrixResultData, minValue, maxValue, matrixList = self.map_data.create_trip_matrix_memory_file(layerName, scenariosExpression, originZones, destinationZones, matrixExpression, projectPath)
         
