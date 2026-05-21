@@ -137,8 +137,9 @@ class QTranus:
                 QCoreApplication.installTranslator(self.translator)
 
         self.project = QTranusProject(QgsProject.instance(), iface)
-        # Create the dialog (after translation) and keep reference
-        self.dlg = QTranusDialog(self, project=self.project)
+        # Create the configuration dialog on demand in run() to avoid
+        # reusing a stale modal QWidget instance across openings.
+        self.dlg = None
     
         # Declare instance attributes
         self.actions = []
@@ -1327,8 +1328,7 @@ class QTranus:
         """Run method that performs all the real work"""
         QgsMessageLog.logMessage("Abriendo", 'QTranus')
 
-        self.dlg.show()
-
+        self.dlg = QTranusDialog(self, project=self.project, parent=self.iface.mainWindow())
         self.dlg.exec_()
 
     

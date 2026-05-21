@@ -1151,10 +1151,12 @@ class MapData(object):
         matrixList = []
         """dataRow = ['OrZoneId_DestZoneId', 'Geom', 'Trip']
         matrixList.append(dataRow)"""
-
+        print("DENTRO ORIGIN ZONES")
+        print(originZones)
         originZoneCentroid = None
         destinationZoneCentroid = None
         for trip in np.nditer(matrixResult):
+            print(originZoneCentroid)
             if originZoneCentroid is None:
                 originZoneCentroid = next((c for c in self.zoneCentroids if c.id == trip.item(0)[0]))
             else:
