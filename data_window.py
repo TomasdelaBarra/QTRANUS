@@ -1,7 +1,7 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os, re, webbrowser, time
 from string import *
-import threading
+import threading, traceback
 
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtGui, uic
@@ -23,6 +23,7 @@ from .classes.data.Scenario import Scenario
 from .classes.data.Scenarios import Scenarios
 from .classes.data.ScenariosModel import ScenariosModel
 from .classes.data.ScenariosFiles import ScenariosFiles
+from .classes.CustomExceptions import InvalidLinkIdFormat
 from .scenarios_dialog import ScenariosDialog
 from .sectors_dialog import SectorsDialog
 from .intersectors_dialog import IntersectorsDialog
@@ -816,7 +817,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                     linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
                     # print(linkId.typeName())
                     if not (isinstance(linkId, QVariant) and linkId.isNull()): 
-                        if re.findall(r'\d+-\d+',linkId):
+                        if isinstance(linkId, str) and re.match(r'^\d+-\d+$', linkId):
                             
                             Or_node = linkId.split('-')[0]
                             Des_node = linkId.split('-')[1]
@@ -917,7 +918,7 @@ class DataWindow(QMainWindow, FORM_CLASS):
                         linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
                         # print(linkId.typeName())
                         if not (isinstance(linkId, QVariant) and linkId.isNull()): 
-                            if re.findall(r'\d+-\d+',linkId):
+                            if isinstance(linkId, str) and re.match(r'^\d+-\d+$', linkId):
                                 
                                 Or_node = linkId.split('-')[0]
                                 Des_node = linkId.split('-')[1]
@@ -1228,7 +1229,7 @@ class WorkerSyncThread(QThread):
                 for feature in features:
                     zoneId = feature.attribute(zoneIdField)
                     zoneName = feature.attribute(zoneNameField)[0:25] if feature.attribute(zoneNameField) else None
-                    zoneName = re.sub(r'[^A-Za-z0-9 .]', '', zoneName)
+                    zoneName = re.sub(r'[^A-Za-z0-9 .]', '', zoneName or '')
                     result = self.dataBaseSqlite.selectAll('zone', " where id = {}".format(zoneId))
                     if typeSql == 'IGNORE':
                         if not (isinstance(zoneId, QVariant) and zoneId.isNull()):
@@ -1325,7 +1326,7 @@ class WorkerSyncThread(QThread):
                     linkId = feature.attribute(linkIdField) if linkIdField != 'Select' else '0-0'
                     # print(linkId.typeName())
                     if not (isinstance(linkId, QVariant) and linkId.isNull()): 
-                        if re.findall(r'\d+-\d+',linkId):
+                        if isinstance(linkId, str) and re.match(r'^\d+-\d+$', linkId):
                             
                             Or_node = linkId.split('-')[0]
                             Des_node = linkId.split('-')[1]
@@ -1353,7 +1354,7 @@ class WorkerSyncThread(QThread):
                                 #   data_list.append((codScenario, f"{Des_node}-{Or_node}", Des_node, Or_node, idType, length, two_way, capacity, name))
                             
                         else:
-                            self.error_signal.emit(f"Invalid layer id {linkId}") 
+                            raise InvalidLinkIdFormat(f"Invalid layer id {linkId}") 
                   
                 qry = """select 
                         distinct b.code, linkid, node_from, node_to, id_linktype, length, two_way, capacity, a.name
@@ -1382,10 +1383,12 @@ class WorkerSyncThread(QThread):
                 return True
             
         except Exception as e:
-            print(e)
-            self.error_signal.emit(" has happened")
+            print("¡Error detected!")
+            print("-" * 40)
+            traceback.print_exc()  # Esto imprime el rastro con la línea
+            print("-" * 40)
+            self.error_signal.emit(" has happened " + str(e))
 
 
 
- 
-        
+

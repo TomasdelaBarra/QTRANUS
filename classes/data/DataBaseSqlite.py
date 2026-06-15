@@ -722,6 +722,7 @@ class DataBaseSqlite():
 		sql_arr_ope_cat = []
 		sql_arr_cost = []
 		sql_arr_route = []
+		sql_arr_link_route = []
 		sql_arr_node = []
 		sql_arr_linktype = []
 		sql_arr_linktype_ope = []
@@ -740,6 +741,7 @@ class DataBaseSqlite():
 			data_ope_cat = self.selectAll(" operator_category ", columns=" id_scenario, id_operator, id_category, tariff_factor, penal_factor ", where=f" where id_scenario = {result[0][0]}")
 			data_cost = self.selectAll(" transfer_operator_cost ", columns=" id_scenario, id_operator_from, id_operator_to, cost ", where=f" where id_scenario = {result[0][0]}")
 			data_route = self.selectAll(" route ", columns="id, id_scenario, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, used, follows_schedule",  where=f" where id_scenario = {result[0][0]}")
+			data_link_route = self.selectAll(" link_route ", columns="id_scenario, id_link, id_route, type_route",  where=f" where id_scenario = {result[0][0]}")
 			data_node = self.selectAll(" node ", where=f" where id_scenario = {result[0][0]}")
 			data_linktype = self.selectAll(" link_type ", where=f" where id_scenario = {result[0][0]}")
 			data_linktype_ope = self.selectAll(" link_type_operator ", columns=" id_scenario, id_linktype, id_operator, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost ", where=f" where id_scenario = {result[0][0]}")
@@ -757,6 +759,7 @@ class DataBaseSqlite():
 			data_cat = self.selectAll(" category ", where=f" where id_scenario = {result_scenario[0][0]}")
 			data_cost = self.selectAll(" transfer_operator_cost ", columns=" id_scenario, id_operator_from, id_operator_to, cost ", where=f" where id_scenario = {result_scenario[0][0]}")
 			data_route = self.selectAll(" route ", columns="id, id_scenario, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, used, follows_schedule", where=f" where id_scenario = {result_scenario[0][0]}")
+			data_link_route = self.selectAll(" link_route ", columns="id_scenario, id_link, id_route, type_route",  where=f" where id_scenario = {result_scenario[0][0]}")
 			data_node = self.selectAll(" node ", where=f" where id_scenario = {result_scenario[0][0]}")
 			data_linktype = self.selectAll(" link_type ", where=f" where id_scenario = {result_scenario[0][0]}")
 			data_linktype_ope = self.selectAll(" link_type_operator ", columns=" id_scenario, id_linktype, id_operator, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost ", where=f" where id_scenario = {result_scenario[0][0]}")
@@ -784,6 +787,9 @@ class DataBaseSqlite():
 
 		sql_route = f"""INSERT OR REPLACE INTO  route (id, id_scenario, name, description, id_operator, frequency_from, frequency_to, target_occ, max_fleet, used, follows_schedule) 
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+
+		sql_link_route = f"""INSERT OR REPLACE INTO  link_route (id_scenario, id_link, id_route, type_route) 
+			VALUES (?, ?, ?, ?)"""
 
 		sql_node = f"""INSERT OR REPLACE INTO  node (id, id_scenario, id_type,  name,  description,  x, y) 
 			VALUES (?, ?, ?, ?, ?, ?, ?)"""
@@ -830,6 +836,9 @@ class DataBaseSqlite():
 		for row in data_route:
 			sql_arr_route.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
 		
+		for row in data_link_route:
+			sql_arr_link_route.append((id_scenario, row[1], row[2], row[3]))
+		
 		for row in data_node:
 			sql_arr_node.append((row[0], id_scenario, row[2], row[3], row[4], row[5], row[6]))
 
@@ -863,6 +872,7 @@ class DataBaseSqlite():
 			cursor.executemany(sql_ope_cat, sql_arr_ope_cat)
 			cursor.executemany(sql_cost, sql_arr_cost)
 			cursor.executemany(sql_route, sql_arr_route)
+			cursor.executemany(sql_link_route, sql_arr_link_route)
 			cursor.executemany(sql_node, sql_arr_node)
 			cursor.executemany(sql_linktype, sql_arr_linktype)
 			cursor.executemany(sql_linktype_ope, sql_arr_linktype_ope)

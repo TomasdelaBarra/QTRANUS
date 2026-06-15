@@ -5,5 +5,11 @@ class InputFileSourceError(Exception):
     def __init__(self, arg):
         self.strerror = arg
         self.args = {arg}
-    
+
+class InvalidLinkIdFormat(Exception):
+    """Error for invalid LinkId format."""
+    def __init__(self, arg):
+        self.strerror = arg
+        self.args = {arg}
+
 

@@ -137,9 +137,11 @@ class QTranus:
                 QCoreApplication.installTranslator(self.translator)
 
         self.project = QTranusProject(QgsProject.instance(), iface)
-        # Create the configuration dialog on demand in run() to avoid
-        # reusing a stale modal QWidget instance across openings.
-        self.dlg = None
+        # Create the dialog (after translation) and keep reference
+        self.dlg = QTranusDialog(self, project=self.project)
+
+        # OBLIGATORIO: Evita que QGIS destruya el objeto C++ al cerrar la ventana
+        self.dlg.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
     
         # Declare instance attributes
         self.actions = []
@@ -147,9 +149,8 @@ class QTranus:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'QTranus')
         self.toolbar.setObjectName(u'QTranus')
-
-        # TODO: delete when the load scenario process is finished
-        # self.addScenariosSection()
+        
+        
 
         
     def open_add_route_window(self):
@@ -1328,7 +1329,8 @@ class QTranus:
         """Run method that performs all the real work"""
         QgsMessageLog.logMessage("Abriendo", 'QTranus')
 
-        self.dlg = QTranusDialog(self, project=self.project, parent=self.iface.mainWindow())
+        # Si quieres que sea modal (bloquee QGIS hasta cerrar), usa solo exec_()
+        # Si prefieres que sea libre, usa self.dlg.show() y quita el exec_()
         self.dlg.exec_()
 
     
