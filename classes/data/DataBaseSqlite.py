@@ -2778,14 +2778,25 @@ class DataBaseSqlite():
 		except Exception as e:
 			return False
 
-	def executeSql(self,sql):
+	def executeSql(self, sql, params=None):
+		"""
+		Ejecuta una consulta SQL de forma segura parametrizando los valores.
+		:param sql: El string de la consulta con marcadores de posición '?'
+		:param params: Una tupla o lista con los valores limpios (opcional)
+		"""
 		conn = self.connectionSqlite()
 		try:
-			data = conn.execute(sql)
+			if params is not None:
+				data = conn.execute(sql, params)
+			else:
+				data = conn.execute(sql)
+				
 			result = data.fetchall()
 			conn.close()
 			return result
 		except Exception as e:
+			# Es una buena práctica registrar o imprimir el error para debuggear si algo falla
+			print(f"Error ejecutando SQL: {e}")
 			return False
 
 

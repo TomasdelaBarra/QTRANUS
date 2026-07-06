@@ -1,0 +1,3012 @@
+Run started:2026-07-06 05:49:39.282542+00:00
+
+Test results:
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:361:22
+360	        if self.codeLink:
+361	            qry = f"""select id_node node_to, delay
+362	            from intersection_delay 
+363	            where id_link = '{id_origin}-{id_destination}'
+364	            and id_scenario = {self.idScenario}""" 
+365	            result_a = self.dataBaseSqlite.executeSql(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:367:26
+366	            if not result_a:
+367	                qry = f"""select node_to, delay 
+368	                    from link
+369	                    where node_from = {id_destination} 
+370	                    and id_scenario = {self.idScenario}
+371	                    order by 1"""
+372	        else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:373:22
+372	        else:
+373	            qry = f"""select node_to, delay 
+374	                    from link
+375	                    where node_from = {id_destination} 
+376	                    and id_scenario = {self.idScenario}
+377	                    order by 1"""
+378	        qry = f"""select distinct node_to, b.delay 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:378:18
+377	                    order by 1"""
+378	        qry = f"""select distinct node_to, b.delay 
+379	            from link a
+380	            left join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
+381	            where node_from = {id_destination} 
+382	            and a.id_scenario = {self.idScenario} and node_to != {id_origin} order by 1"""
+383	        qry = f"""select todo.node_to, sum(delay)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:383:18
+382	            and a.id_scenario = {self.idScenario} and node_to != {id_origin} order by 1"""
+383	        qry = f"""select todo.node_to, sum(delay)
+384	            from 
+385	            (
+386	                select distinct node_to, b.delay 
+387	                from link a
+388	                left join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
+389	                where node_from = {id_destination}
+390	                and a.id_scenario = {self.idScenario} and node_to != {id_origin} and b.id is null
+391	                union
+392	                select b.id_node, b.delay 
+393	                from link a
+394	                join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
+395	                where a.id_scenario = {self.idScenario} and b.id_link = '{id_origin}-{id_destination}'
+396	                order by 1 )
+397	            todo 
+398	            group by 1"""
+399	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_link_dialog.py:678:22
+677	            # Routes
+678	            qry = f"""select distinct c.id||' '||c.name, b.type_route
+679	                    from link a
+680	                    join link_route b on (a.linkid = b.id_link) and (a.id_scenario = b.id_scenario)
+681	                    join route c on (b.id_route = c.id) and (a.id_scenario = c.id_scenario)
+682	                    where a.linkid = '{self.codeLink}' and a.id_scenario = {self.idScenario}
+683	                    order by 1"""
+684	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_linktype_dialog.py:403:9
+402			if self.linkTypeSelected:
+403				sql = """select a.id||' '||a.name, b.speed, b.charges, b.penaliz, b.distance_cost,
+404						  b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost 
+405					 	from 
+406						operator a
+407						left join link_type_operator b on a.id = b.id_operator
+408						where b.id_linktype = {} """.format(self.linkTypeSelected)
+409				existOperatorLinkType = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_linktype_dialog.py:414:9
+413			if self.linkTypeSelected and len(existOperatorLinkType) > 0:
+414				sql = """
+415					WITH operator_base as (
+416							SELECT id, name, id_scenario from operator
+417						),
+418						link_type_data as (
+419							select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
+420							b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost, a.id_scenario
+421							from 
+422							operator a
+423							left join link_type_operator b on (a.id = b.id_operator) and (a.id_scenario = b.id_scenario)
+424							where b.id_linktype = {0} and a.id_scenario = {1}
+425						)
+426						select case WHEN b.name is null then a.id||' '||a.name else b.name end name, b.speed, b.charges, b.penaliz, 
+427							b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
+428						from 
+429							operator_base a
+430						left join link_type_data b on a.id = b.id and a.id_scenario = b.id_scenario 
+431						WHERE a.id_scenario = {1}
+432						""".format(self.linkTypeSelected, self.idScenario)
+433			else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_linktype_dialog.py:434:9
+433			else:
+434				sql = """select a.id||' '||a.name, '' speed, '' charges, '' penaliz, '' distance_cost,
+435						 '' equiv_vahicules, '' overlap_factor, '' margin_maint_cost 
+436					 	from
+437					 		operator a 
+438					 	where id_scenario = %s
+439						""" % (self.idScenario)
+440			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_operator_dialog.py:567:8
+566			if self.operatorSelected:
+567				sql =""" select a.name category, b.penal_factor, b.tariff_factor 
+568						from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+569						where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
+570				existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_operator_dialog.py:576:8
+575			# Table data
+576			sql = """with base as (
+577				select a.id||' '||a.name category, b.penal_factor, b.tariff_factor, a.id
+578				from category a 
+579				join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+580				where {0} and a.id_scenario = {1}
+581			),
+582			operator_only as (
+583				select id||' '||name category, '' penal_factor, '' tariff_factor, id
+584				from category where id_scenario = {1}
+585			)
+586			SELECT * FROM
+587				base
+588			UNION
+589				select * from 
+590				operator_only
+591				where category not in (select category from base)
+592			ORDER BY 4""".format(operatorSql, self.idScenario)
+593			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_operator_dialog.py:597:9
+596			if id_prevScenario and self.operatorSelected:
+597				sql = """with base as (
+598					select a.id||' '||a.name category, b.penal_factor, b.tariff_factor 
+599					from category a 
+600					join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
+601					where b.id_operator = {0} and a.id_scenario = {1}
+602				),
+603				operator_only as (
+604					select id||' '||name category, '' penal_factor, '' tariff_factor 
+605					from category where id_scenario = {1}
+606				)
+607				select * from 
+608					base
+609				UNION
+610					select * from 
+611					operator_only
+612					where category not in (select category from base)""".format(self.operatorSelected, id_prevScenario[0][0])
+613	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\add_routes_links_dialog.py:108:14
+107	
+108	        qry = """select a.id||' '||a.name route
+109	                from 
+110	                route a
+111	                join operator b 
+112	                on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
+113	                where a.id_scenario = %s and id_operator in (%s) %s order by 1""" % (self.idScenario, ids_operators, criteria)
+114	        
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\administrators_dialog.py:194:18
+193	        if self.idScenario:
+194	            qry = """select a.id, a.name, a.description 
+195	                     from administrator a
+196	                     where id_scenario = %s""" % (self.idScenario)
+197	            result = self.dataBaseSqlite.executeSql(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\categories_dialog.py:170:18
+169	
+170	        sql = f"""select a.id, a.name, a.description
+171	                from category a 
+172	                where id_scenario = {self.idScenario}"""
+173	                
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:466:12
+465			conn = self.connectionSqlite()
+466			sql = f"""select count(*) from project_files"""
+467	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:471:13
+470			if result[0][0]>0:
+471				sql = f""" update project_files set zone_shape_file = '{dataList['zone_shape_file']}', zone_shape_file_id =  '{dataList['zone_shape_file_id']}', zone_shape_file_name = '{dataList['zone_shape_file_name']}',
+472					link_shape_file = '{dataList['link_shape_file']}', link_shape_file_origin = '{dataList['link_shape_file_origin']}', link_shape_file_destination = '{dataList['link_shape_file_destination']}', 
+473					link_shape_file_codscenario = '{dataList['link_shape_file_codscenario']}', link_shape_file_id = '{dataList['link_shape_file_id']}', link_shape_file_name = '{dataList['link_shape_file_name']}',
+474					link_shape_file_type = '{dataList['link_shape_file_type']}', link_shape_file_length = '{dataList['link_shape_file_length']}', link_shape_file_direction = '{dataList['link_shape_file_direction']}',
+475					link_shape_file_capacity = '{dataList['link_shape_file_capacity']}',
+476					node_shape_file = '{dataList['node_shape_file']}', node_shape_file_id = '{dataList['node_shape_file_id']}', 
+477					node_shape_file_name = '{dataList['node_shape_file_name']}', node_shape_file_type = '{dataList['node_shape_file_type']}', 
+478					node_shape_file_x = '{dataList['node_shape_file_x']}', node_shape_file_y = '{dataList['node_shape_file_y']}'"""
+479			else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:480:13
+479			else:
+480				sql = f""" insert into project_files (zone_shape_file, zone_shape_file_id, zone_shape_file_name, link_shape_file, 
+481					link_shape_file_codscenario, link_shape_file_origin, link_shape_file_destination, link_shape_file_id, link_shape_file_name, link_shape_file_type, link_shape_file_length, link_shape_file_direction, 
+482					link_shape_file_capacity, node_shape_file, node_shape_file_id, node_shape_file_name, node_shape_file_type,
+483					node_shape_file_x, node_shape_file_y) values (
+484					'{dataList['zone_shape_file']}','{dataList['zone_shape_file_id']}','{dataList['zone_shape_file_name']}',
+485					'{dataList['link_shape_file']}','{dataList['link_shape_file_codscenario']}','{dataList['link_shape_file_origin']}','{dataList['link_shape_file_destination']}','{dataList['link_shape_file_id']}',
+486					'{dataList['link_shape_file_name']}','{dataList['link_shape_file_type']}','{dataList['link_shape_file_length']}','{dataList['link_shape_file_direction']}',
+487					'{dataList['link_shape_file_capacity']}','{dataList['node_shape_file']}','{dataList['node_shape_file_id']}',
+488					'{dataList['node_shape_file_name']}','{dataList['node_shape_file_type']}','{dataList['node_shape_file_x']}', 
+489					'{dataList['node_shape_file_y']}')"""
+490	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:498:12
+497			conn = self.connectionSqlite()
+498			sql = f"""select id_input_sector, substitute 
+499						from inter_sector_inputs 
+500						where id_scenario = {id_scenario} and id_sector = {id_sector}
+501						and substitute != '' and substitute is not null
+502					"""
+503			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:516:8
+515			conn = self.connectionSqlite()
+516			sql = """select id_route from link_route
+517					where id_link = '{}' and id_scenario = {} and type_route = 2
+518					""".format(id_link, id_scenario)
+519			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:523:23
+522			
+523			sql_restricted = f"""select 
+524						id_node
+525						from intersection_delay 
+526						where id_link = '{id_link}' and id_scenario = {id_scenario} and delay = -1"""
+527			data_res = conn.execute(sql_restricted)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:540:8
+539			
+540			sql = """WITH RECURSIVE
+541			hierarchy_scenario(n) AS (
+542					VALUES('%s')
+543				UNION
+544					SELECT code FROM scenario, hierarchy_scenario
+545				 		WHERE scenario.cod_previous=hierarchy_scenario.n
+546			)
+547			SELECT * FROM scenario
+548			WHERE scenario.code IN hierarchy_scenario
+549			ORDER BY %s;""" % (codeScenario, orderby)
+550	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:630:8
+629			conn = self.connectionSqlite()
+630			sql = """with base as (
+631				select cod_previous
+632				from scenario where id = %s
+633				)
+634				select id 
+635				from scenario 
+636				where code = (select base.cod_previous from base)""" % (id_scenario)
+637	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:648:8
+647	
+648			qry = """select cost 
+649					  from transfer_operator_cost 
+650					  where id_operator_from = {0} 
+651					  and id_operator_to = {1} 
+652					  and id_scenario = {2}""".format(id_operator_from, id_operator_to, id_scenario)
+653	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:665:8
+664			
+665			qry = """
+666				select id_operator, speed, charges, penaliz, distance_cost, equiv_vahicules, overlap_factor, margin_maint_cost
+667				from link_type_operator
+668				where id_scenario = {0} and id_linktype = {1} and id_operator = {2}
+669				""".format(id_scenario, id_linktype, id_operator)
+670	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:683:9
+682			for id_scenario in scenarios:
+683				sql = """with id_from as (
+684						select 
+685						id_scenario, id
+686						from 
+687						operator
+688						where id_scenario = {0}
+689					),
+690					id_to as (
+691						select 
+692						id, basics_boarding_tariff tariff_to
+693						from 
+694						operator
+695						where id_scenario = {0}
+696					)
+697					select a.id_scenario, a.id id_from, b.id id_to, b.tariff_to 
+698					from id_from a, id_to b
+699					where id_scenario = {0}""".format(id_scenario[0])
+700					
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:896:8
+895		def ifExist(self, table, field, code):
+896			sql = """select * from {} where {} = '{}'""".format(table, field, code)
+897			conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:913:9
+912			for valor in scenarios:
+913				sql = "insert into exogenous_trips \
+914					(id_scenario, id_zone_from, id_zone_to, id_category, {4}) \
+915					values ({0},{1},{2},{3},{5});".format(valor[0], id_zone_from, id_zone_to, id_category, column, value)
+916			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:965:14
+964				for link in links_list:
+965					sql = f"""delete from link_route 
+966						where id_scenario = {scenario[0]} and id_route = {link[1]} and id_link = '{link[0]}'"""
+967					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:994:14
+993				if two_way:
+994					sql = f"""insert into link (id_scenario, linkid, id_linktype,
+995				        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+996				        	values ({id_scenario[0]}, '{id_origin}-{id_destination}', {id_linktype}, {two_way}, {used_in_scenario},
+997				        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
+998					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1004:15
+1003					if not result:
+1004						sql = f"""insert into link (id_scenario, linkid, id_linktype,
+1005					        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+1006					        	values ({id_scenario[0]}, '{id_destination}-{id_origin}', {id_linktype}, {two_way}, {used_in_scenario},
+1007					        	{id_destination}, {id_origin}, {length}, {capacity} {values})"""
+1008						cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1011:14
+1010				else:
+1011					sql = f"""insert into link (id_scenario, linkid, id_linktype,
+1012				        	two_way, used_in_scenario, node_from, node_to, length, capacity {columns}) 
+1013				        	values ({id_scenario[0]}, '{id_origin}-{id_destination}', {id_linktype}, {two_way}, {used_in_scenario},
+1014				        	{id_origin}, {id_destination}, {length}, {capacity} {values})"""
+1015	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1021:14
+1020				for id_route in id_routes_arr_selected:
+1021					sql = f"""insert into  link_route (id_scenario, id_link, id_route, type_route) 
+1022						values ({id_scenario[0]}, '{id_origin}-{id_destination}', {int(id_route[0])}, {int(id_route[1])})"""
+1023					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1028:15
+1027					if turn[1]:
+1028						sql = f"""insert into intersection_delay (id_scenario, id_link, id_node, delay) 
+1029							values ({id_scenario[0]}, '{id_origin}-{id_destination}', {turn[0]}, {turn[1]})"""
+1030						
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1086:13
+1085			for id_scenario in scenarios:
+1086				sql = f"""update link set id_linktype = {id_linktype}, two_way = {two_way}, 
+1087						 used_in_scenario = {used_in_scenario}, length = {length}, capacity = {capacity} {columns_values}
+1088						 where linkid = '{id_origin}-{id_destination}' and id_scenario = {id_scenario[0]}"""
+1089				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1097:14
+1096	
+1097					sql = f"""update link  set id_linktype = {id_linktype}, two_way = {two_way}, 
+1098						length = {length}, capacity = {capacity}, used_in_scenario = {used_in_scenario}
+1099						where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
+1100					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1104:14
+1103				elif two_way == 'null':
+1104					sql = f"""update link  set two_way = null
+1105						where linkid = '{id_destination}-{id_origin}' and id_scenario = {id_scenario[0]}"""
+1106					
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1118:16
+1117						if result:
+1118							sql = f"""update link_route set type_route = {int(id_route[1])} where id_scenario = {id_scenario[0]} and id_link = '{id_origin}-{id_destination}' and id_route = {int(id_route[0])}"""
+1119						else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1120:16
+1119						else:
+1120							sql = f"""insert into link_route (id_scenario, id_link, id_route, type_route) values ({id_scenario[0]}, '{id_origin}-{id_destination}', {int(id_route[0])}, {int(id_route[1])})"""
+1121						
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1133:17
+1132							if result:
+1133								sql = f""" update intersection_delay set delay = {turn[1]} where id_scenario={id_scenario[0]} and id_link='{id_origin}-{id_destination}' and id_node={turn[0]} """
+1134								cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1137:17
+1136							else:
+1137								sql = f""" insert into intersection_delay (id_scenario, id_link, id_node, delay) values ({id_scenario[0]}, '{id_origin}-{id_destination}', {turn[0]},  {turn[1]}) """
+1138								cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1150:13
+1149			for id_scenario in scenarios:
+1150				sql = f"""update link set {column}='{value}'
+1151						 where linkid = '{linkId}' and id_scenario = {id_scenario[0]}"""
+1152	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1164:13
+1163			for scenario in scenarios:
+1164				sql = f""" delete from link where linkid in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
+1165				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1169:13
+1168			for scenario in scenarios:
+1169				sql = f""" delete from link_route where id_link in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
+1170				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1174:13
+1173			for scenario in scenarios:
+1174				sql = f""" delete from intersection_delay where id_link in ('{linkid}', '{linkid_b}') and id_scenario = {scenario[0]}"""
+1175				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1186:9
+1185			for scenario in scenarios:
+1186				sql = """delete from link_route where id_link = '{0}'
+1187					and id_scenario = {1} and id_route = {2};""".format(id_link, scenario[0], route)
+1188				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1199:9
+1198			if value !='':
+1199				sql = """
+1200					update exogenous_trips set {4}={5}
+1201					where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_category={3} ;
+1202					""".format(id_scenario, id_zone_from, id_zone_to, id_category, column, value)
+1203			else: 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1204:9
+1203			else: 
+1204				sql = """
+1205					delete from exogenous_trips
+1206					where id_scenario={0} and id_zone_from={1} and id_zone_to={2} and id_category={3} ;
+1207					""".format(id_scenario, id_zone_from, id_zone_to, id_category)	
+1208	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1243:9
+1242			else:
+1243				sql = "insert into scenario (code, name, cod_previous) values ('{}','{}','{}');".format(code, name, cod_previous)
+1244				conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1257:9
+1256			for id_scenario in scenarios:
+1257				sql = """insert into link_type (id_scenario, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology)
+1258				 values ({}, {},'{}','{}',{},{},{},{},{},{},"{}");""".format(id_scenario[0], id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology)
+1259				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1271:9
+1270			for id_scenario in scenarios:
+1271				sql = """update link_type set name='{}', description='{}', id_administrator={}, capacity_factor={}, min_maintenance_cost={}, perc_speed_reduction_vc={}, perc_max_speed_reduction={}, vc_max_reduction={}, symbology="{}"
+1272			 	where id = {} and id_scenario = {};""".format(name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology, id, id_scenario[0])
+1273				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1285:9
+1284			for scenarios in id_scenario:
+1285				sql = """update link_type_operator set {0} = {1} where id_linktype = {2} and id_operator = {3} and id_scenario = {4};""".format(column, value, id_linktype, id_operator, id_scenario);
+1286				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1320:9
+1319			for id_scenario in scenarios:
+1320				sql = """delete from link_type where id_scenario = {} and  id = {};""".format(id_scenario[0], id)
+1321				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1324:9
+1323	
+1324				sql = """delete from link_type_operator where id_scenario = {} and id_linktype = {};""".format(id_scenario[0], id)
+1325				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1339:10
+1338				for id_scenario in scenarios:
+1339					sql = """insert into route (id, id_scenario, name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color)
+1340				 	values ({},{},'{}','{}',{},{},{},{},{},{},{});""".format(id, id_scenario[0], name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color)
+1341					
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1374:9
+1373			for id_scenario in scenarios:
+1374				sql = """update route set name='{}', description='{}', id_operator={}, frequency_from={}, frequency_to={}, max_fleet={},  used={}, follows_schedule={}, color={}
+1375					where id={} and id_scenario = {}""".format(name, description, id_operator, frequency_from, frequency_to, max_fleet, used, follows_schedule, color, id, id_scenario[0])
+1376				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1389:9
+1388	
+1389				sql = """delete from route where id = {} and id_scenario = {};""".format(id, id_scenario[0])
+1390				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1399:9
+1398			if external is None and internal_cost_factor is None:
+1399				sql = "insert into zone (id, name) values ({},'{}');".format(id, name)
+1400			elif external==0:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1401:9
+1400			elif external==0:
+1401				sql = "insert into zone (id, name, external, internal_cost_factor) values ({},'{}',{},{});".format(id, name, external, internal_cost_factor)
+1402			else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1403:9
+1402			else:
+1403				sql = "insert into zone (id, name, external) values ({},'{}',{});".format(id, name, 1)
+1404	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1433:9
+1432			for id_scenario in scenarios:
+1433				sql = "insert into link (id_scenario, linkid, node_from, node_to) values ({},'{}',{},{});".format(id_scenario[0], linkid, node_from, node_to)
+1434			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1547:10
+1546				for id_scenario in scenarios:
+1547					sql = "insert into node ({}, id_scenario) values ({}, {});".format(column, value, id_scenario[0])
+1548					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1612:9
+1611			for id_scenario in scenarios:
+1612				sql = """update node set id = {0} {1}
+1613						where id = {0} and id_scenario = {2}
+1614						""".format(_id, update, id_scenario[0])
+1615				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1627:9
+1626			for id_scenario in scenarios:
+1627				sql = "delete from node where id={} and id_scenario = {};".format(_id, id_scenario[0])
+1628				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1636:9
+1635			if external==1:
+1636				sql = "update zone set name='{1}', external={2}, internal_cost_factor=NULL where id={0}; ".format(id, name, external)
+1637			else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1638:9
+1637			else:
+1638				sql = "update zone set name='{1}', external={2}, internal_cost_factor={3} where id={0}; ".format(id, name, external, internal_cost_factor)
+1639			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1650:8
+1649			
+1650			sql = "delete from zone where id = '{}';".format(id)
+1651			conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1656:8
+1655	
+1656			sql = "delete from zone where id = '{}';".format(id)
+1657			conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1662:12
+1661	
+1662			sql = f"""delete from exogenous_trips where id_zone_from = '{id}' or id_zone_to = '{id}';"""
+1663			conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1700:9
+1699			for id_scenario in scenarios:
+1700				sql = "insert into operator (id_scenario, id, name, description, id_mode, type, \
+1701					   basics_modal_constant, basics_time_factor, basics_occupency, \
+1702					   basics_fixed_wating_factor, basics_boarding_tariff, basics_distance_tariff, basics_time_tariff, \
+1703					   energy_min, energy_max, energy_slope, energy_cost, \
+1704					   cost_time_operation, cost_porc_paid_by_user,\
+1705					   stops_min_stop_time, stops_unit_boarding_time, \
+1706					   stops_unit_alight_time, color) values ({},{},'{}','{}',{},'{}',\
+1707					   {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});".format(id_scenario[0], _id, _name, _description, _id_mode, _type,
+1708					   basics_modal_constant, basics_time_factor, basics_occupency,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1750:9
+1749			for id_scenario in scenarios:
+1750				sql = """update operator set name='{}', description='{}', id_mode={}, type='{}', 
+1751					   basics_modal_constant={}, basics_time_factor={}, basics_occupency={}, 
+1752					   basics_fixed_wating_factor={}, basics_boarding_tariff={}, basics_distance_tariff={}, basics_time_tariff={}, 
+1753					   energy_min={}, energy_max={}, energy_slope={}, energy_cost={}, 
+1754					   cost_time_operation={}, cost_porc_paid_by_user={},
+1755					   stops_min_stop_time={}, stops_unit_boarding_time={}, 
+1756					   stops_unit_alight_time={}, color={} where id = {} and id_scenario = {};""".format(_name, _description, _id_mode, _type,
+1757					   basics_modal_constant, basics_time_factor, basics_occupency,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1776:10
+1775				for id_scenario in scenarios:
+1776					sql = """insert into operator_category 
+1777						(id_scenario, id_operator, id_category, tariff_factor, penal_factor ) 
+1778						values ({0},{1},{2},{3},{4});""".format(id_scenario[0], id_operator, id_category, tariff_factor, penal_factor)
+1779					cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1809:10
+1808				for id_scenario in scenarios:
+1809					sql = """update operator_category set tariff_factor = {0}, penal_factor={1} 
+1810						where id_operator = {2} and id_category = {3} and id_scenario = {4}""".format(tariff_factor, penal_factor, id_operator, id_category, id_scenario[0])
+1811				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1826:11
+1825					if len(result) > 0:
+1826						qry = """update transfer_operator_cost set cost={3}
+1827							where id_scenario = {0} and id_operator_from = {1} and id_operator_to ={2};""".format(valor[0], id_from, id_to, cost)
+1828					else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1829:11
+1828					else:
+1829						qry = """insert into transfer_operator_cost 
+1830							(id_scenario, id_operator_from, id_operator_to, cost) 
+1831							values ({0},{1},{2},{3});""".format(valor[0], id_from, id_to, cost)
+1832					
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1847:10
+1846				if cost!='':
+1847					qry = """update  transfer_operator_cost set cost = {2} where id_operator_from = {0} and id_operator_to = {1} and id_scenario={3};""".format(id_from, id_to, cost, id_scenario[0])
+1848				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1849:10
+1848				else:
+1849					qry = """delete from transfer_operator_cost where id_operator_from={0} and id_operator_to={1} and id_scenario={2}""".format(id_from, id_to, id_scenario[0])
+1850			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1862:8
+1861	
+1862			qry = """delete from operator where id = %s;""" % (id)
+1863			cursor.execute(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1866:8
+1865	
+1866			qry = """delete from operator_category where id_operator = %s;""" % (id)
+1867			cursor.execute(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1870:8
+1869	
+1870			qry = """delete from transfer_operator_cost where id_operator_from = %s or id_operator_to = %s;""" % (id, id)
+1871			cursor.execute(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1874:8
+1873	
+1874			qry = """delete from link_type_operator where id_operator = %s;""" % (id)
+1875			cursor.execute(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1885:8
+1884	
+1885			sql = "update scenario set code='{}', name='{}', cod_previous='{}' where code = '{}';".format(code, name, cod_previous, old_code)
+1886			cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1890:9
+1889			if code != old_code:
+1890				sql = "update scenario set cod_previous='{}' where cod_previous = '{}';".format(code, old_code)
+1891				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1902:8
+1901	
+1902			sql = "delete from scenario where code in (\
+1903			WITH RECURSIVE \
+1904	  			antecesores(n) AS (\
+1905		    		VALUES('{}')\
+1906		    		UNION\
+1907		    			SELECT code\
+1908						FROM scenario, antecesores\
+1909						WHERE scenario.cod_previous=antecesores.n\
+1910		  			)\
+1911			SELECT code FROM scenario\
+1912			WHERE scenario.code IN antecesores);".format(code)
+1913			cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1917:11
+1916			for id_scenario in scenarios:
+1917				sql = f" delete from administrator where id_scenario = {id_scenario[0]};"
+1918				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1920:11
+1919				conn.commit()
+1920				sql = f" delete from category where id_scenario = {id_scenario[0]};"
+1921				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1923:11
+1922				conn.commit()
+1923				sql = f" delete from operator where id_scenario = {id_scenario[0]};"
+1924				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1926:11
+1925				conn.commit()
+1926				sql = f" delete from operator_category where id_scenario = {id_scenario[0]};"
+1927				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1929:11
+1928				conn.commit()
+1929				sql = f" delete from transfer_operator_cost where id_scenario = {id_scenario[0]};"
+1930				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1932:11
+1931				conn.commit()
+1932				sql = f" delete from route where id_scenario = {id_scenario[0]};"
+1933				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1935:11
+1934				conn.commit()
+1935				sql = f" delete from node where id_scenario = {id_scenario[0]};"
+1936				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1938:11
+1937				conn.commit()
+1938				sql = f" delete from link_type where id_scenario = {id_scenario[0]};"
+1939				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1941:11
+1940				conn.commit()
+1941				sql = f" delete from link_type_operator where id_scenario = {id_scenario[0]};"
+1942				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1944:11
+1943				conn.commit()
+1944				sql = f" delete from link where id_scenario = {id_scenario[0]};"
+1945				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1947:11
+1946				conn.commit()
+1947				sql = f" delete from exogenous_trips where id_scenario = {id_scenario[0]};"
+1948				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1950:11
+1949				conn.commit()
+1950				sql = f" delete from sector where id_scenario = {id_scenario[0]};"
+1951				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1953:11
+1952				conn.commit()
+1953				sql = f" delete from inter_sector_inputs where id_scenario = {id_scenario[0]};"
+1954				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1956:11
+1955				conn.commit()
+1956				sql = f" delete from inter_sector_transport_cat where id_scenario = {id_scenario[0]};"
+1957				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1959:11
+1958				conn.commit()
+1959				sql = f" delete from zonal_data where id_scenario = {id_scenario[0]};"
+1960				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1967:10
+1966		def addProjectConfig(self, name, description, author, config_model):
+1967			sql_a = " insert into project (name, description, author) values ('{}','{}','{}');".format(name, description, author)
+1968			sql_b = " insert into config_model (type, iterations, convergence, smoothing_factor, route_similarity_factor) values ('{}','{}','{}','{}','{}' );".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1968:10
+1967			sql_a = " insert into project (name, description, author) values ('{}','{}','{}');".format(name, description, author)
+1968			sql_b = " insert into config_model (type, iterations, convergence, smoothing_factor, route_similarity_factor) values ('{}','{}','{}','{}','{}' );".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+1969			sql_c = " insert into config_model (type, iterations, convergence, smoothing_factor, def_internal_cost_factor) values ('{}','{}','{}','{}', {} );".format(config_model[1]['type'], config_model[1]['iterations'], config_model[1]['convergence'], config_model[1]['smoothing_factor'], config_model[1]['internal_cost_factor'])
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1969:10
+1968			sql_b = " insert into config_model (type, iterations, convergence, smoothing_factor, route_similarity_factor) values ('{}','{}','{}','{}','{}' );".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+1969			sql_c = " insert into config_model (type, iterations, convergence, smoothing_factor, def_internal_cost_factor) values ('{}','{}','{}','{}', {} );".format(config_model[1]['type'], config_model[1]['iterations'], config_model[1]['convergence'], config_model[1]['smoothing_factor'], config_model[1]['internal_cost_factor'])
+1970	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1984:10
+1983		def updateProjectConfig(self, name, description, author, config_model):
+1984			sql_a = "update project set name='{}', description='{}', author='{}'".format(name, description, author)
+1985			sql_b = "update config_model set type='{0}', iterations='{1}', convergence='{2}', smoothing_factor='{3}', route_similarity_factor='{4}' where type='{0}'".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1985:10
+1984			sql_a = "update project set name='{}', description='{}', author='{}'".format(name, description, author)
+1985			sql_b = "update config_model set type='{0}', iterations='{1}', convergence='{2}', smoothing_factor='{3}', route_similarity_factor='{4}' where type='{0}'".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+1986			sql_c = "update config_model set type='{0}', iterations='{1}', convergence='{2}', smoothing_factor='{3}', def_internal_cost_factor={4} where type='{0}'".format(config_model[1]['type'], config_model[1]['iterations'], config_model[1]['convergence'], config_model[1]['smoothing_factor'], config_model[1]['internal_cost_factor'])
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:1986:10
+1985			sql_b = "update config_model set type='{0}', iterations='{1}', convergence='{2}', smoothing_factor='{3}', route_similarity_factor='{4}' where type='{0}'".format(config_model[0]['type'], config_model[0]['iterations'], config_model[0]['convergence'], config_model[0]['smoothing_factor'], config_model[0]['route_similarity_factor'])
+1986			sql_c = "update config_model set type='{0}', iterations='{1}', convergence='{2}', smoothing_factor='{3}', def_internal_cost_factor={4} where type='{0}'".format(config_model[1]['type'], config_model[1]['iterations'], config_model[1]['convergence'], config_model[1]['smoothing_factor'], config_model[1]['internal_cost_factor'])
+1987	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2006:10
+2005				if transportable == '0':
+2006					sql = "insert into sector \
+2007						(id_scenario, id, name, description, transportable, atractor_factor, price_factor, substitute) \
+2008						values ({},'{}','{}','{}','{}','{}','{}','{}');".format(
+2009							id_scenario[0], ident, name, description, transportable, atractor_factor, price_factor, sustitute
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2012:10
+2011				else:
+2012					sql = "insert into sector \
+2013						(id_scenario, id, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, substitute) \
+2014						values ({}, '{}','{}','{}','{}','{}','{}','{}','{}');".format(
+2015							id_scenario[0], ident, name, description, transportable, location_choice_elasticity, atractor_factor, price_factor, sustitute
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2029:9
+2028			for id_scenario in scenarios:
+2029				sql = "update sector set  \
+2030					 id={}, name='{}', description='{}', transportable={}, location_choice_elasticity={}, atractor_factor={}, price_factor={}, substitute={}  \
+2031					 where id = {} and id_scenario = {};".format(
+2032						ident, name, description, transportable, location_choice_elasticity_value, atractor_factor, price_factor, sustitute, ident, id_scenario[0]
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2043:8
+2042	
+2043			sql = "insert into mode \
+2044				(id, name, description, path_overlapping_factor, maximum_number_paths) \
+2045				values ({},'{}','{}','{}','{}');".format(
+2046					id, name, description, path_overlapping_factor, maximum_number_paths
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2057:8
+2056			
+2057			sql = "update mode set  \
+2058				 id={}, name='{}', description='{}', path_overlapping_factor={}, maximum_number_paths={}  \
+2059				 where id = {};".format(
+2060					id, name, description, path_overlapping_factor, maximum_number_paths, id
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2072:12
+2071	
+2072			sql = f"""select  b.code scenario, a.name category
+2073				from category a 
+2074				join scenario b on (a.id_scenario = b.id) 
+2075				where id_mode = {id_mode}"""
+2076			categories = self.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2078:12
+2077	
+2078			sql = f"""select  b.code scenario, a.name operator, a.id id_operator
+2079					from operator a 
+2080					join scenario b on (a.id_scenario = b.id) 
+2081					where id_mode = {id_mode}"""
+2082			operators = self.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2084:12
+2083	
+2084			sql = f"""select distinct b.code, c.name origin, d.name destination, a.trip
+2085					from exogenous_trips a
+2086					join scenario b on (a.id_scenario = b.id)
+2087					join zone c on (a.id_zone_from = c.id)
+2088					join zone d on (a.id_zone_from = d.id)
+2089					where id_mode = {id_mode}"""
+2090			exogenous_trips = self.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2100:12
+2099			
+2100			sql = f"""select 
+2101					distinct c.code, a.name operator
+2102					from 
+2103					operator a 
+2104					join operator_category b on (a.id = b.id_operator) 
+2105					join scenario c on (b.id_scenario = c.id)
+2106					where b.id_category = {id_category} and b.id_scenario in ({scenarios})"""
+2107	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2110:12
+2109	
+2110			sql = f"""select b.code, c.name origin, d.name destination, a.trip
+2111					from exogenous_trips a
+2112					join scenario b on (a.id_scenario = b.id)
+2113					join zone c on (a.id_zone_from = c.id)
+2114					join zone d on (a.id_zone_from = d.id)
+2115					where id_category = {id_category} and id_scenario in ({scenarios})"""
+2116			exogenous_trips = self.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2126:12
+2125			
+2126			sql = f"""select distinct b.code scenario, 
+2127				c.name origin_ope, d.name destination_ope, cost
+2128				from transfer_operator_cost a
+2129				join scenario b on (a.id_scenario = b.id)
+2130				join operator c on (a.id_operator_from = c.id)
+2131				join operator d on (a.id_operator_to = d.id)
+2132				where a.id_scenario in ({scenarios}) 
+2133				and (id_operator_from = {id_operator} or id_operator_to = {id_operator})"""
+2134	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2137:12
+2136	
+2137			sql = f"""select distinct b.code, a.name
+2138					from route a
+2139					join scenario b on (a.id_scenario = b.id)
+2140					where a.id_scenario in ({scenarios}) 
+2141					and a.id_operator = {id_operator}"""
+2142			routes = self.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2144:12
+2143	
+2144			sql = f"""select distinct c.code, a.name link_type 
+2145				from link_type a
+2146				join link_type_operator b on (a.id = b.id_linktype)
+2147				join scenario c on (b.id_scenario = c.id)
+2148				where b.id_scenario in ({scenarios}) and id_operator = {id_operator} and speed != '' and speed is not null and speed != 0;"""
+2149				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2160:12
+2159			
+2160			sql = f"""select distinct c.code, b.name adm
+2161				from link_type a
+2162				join administrator b on (a.id_administrator = b.id)
+2163				join scenario c on (b.id_scenario = c.id)
+2164				where b.id_scenario in ({scenarios}) and b.id = {id_administrator}"""
+2165	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2176:12
+2175			
+2176			sql = f"""select distinct c.code, a.linkid
+2177				from link a
+2178				join link_type b on (a.id_linktype = b.id) 
+2179				join scenario c on (a.id_scenario = c.id)
+2180				where c.id in ({scenarios}) and b.id = {id_linktype} """
+2181				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2192:12
+2191			
+2192			sql = f"""select distinct c.code, id_link
+2193				from link_route a 
+2194				join route b on a.id_route = b.id
+2195				join scenario c on b.id_scenario = c.id
+2196				where a.id_scenario in ({scenarios}) and a.id_route = {id_route}"""
+2197				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2208:12
+2207			
+2208			sql = f"""select distinct b.code, linkid
+2209				from link a
+2210				join scenario b on (a.id_scenario = b.id)
+2211				where (node_from = {id_node} or node_to = {id_node}) 
+2212				and id_scenario in ({scenarios})"""
+2213				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2224:12
+2223			
+2224			sql = f"""select distinct  c.code scenario, b.name sector
+2225				from inter_sector_transport_cat a
+2226				join sector b on (a.id_sector = b.id) 
+2227				join scenario c on (a.id_scenario = c.id) 
+2228				where time_factor != 0 or 
+2229				a.volume_factor != 0.0 or a.flow_to_product != 0.0 or flow_to_consumer != 0
+2230				and a.id_scenario in ({scenarios}) and a.id_sector = {id_sector}"""
+2231				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2235:12
+2234	
+2235			sql = f"""select distinct c.code, b.name sector
+2236				from zonal_data a
+2237				join scenario c on (a.id_scenario = c.id)
+2238				join sector b on (a.id_sector = b.id) 
+2239				where b.id = {id_sector} and a.id_scenario in ({scenarios}) and (induced_production != 0.0 )"""
+2240				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2251:12
+2250			
+2251			sql = f"""select distinct b.code, c.name origin, d.name destination, a.trip
+2252					from exogenous_trips a
+2253					join scenario b on (a.id_scenario = b.id)
+2254					join zone c on (a.id_zone_from = c.id)
+2255					join zone d on (a.id_zone_from = d.id)
+2256					where b.id in ({scenarios}) and (c.id = {id_zone} or d.id = {id_zone})"""
+2257				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2260:12
+2259	
+2260			sql = f"""select distinct c.code, b.name zone, d.name sector
+2261				from zonal_data a
+2262				join zone b on (a.id_zone = b.id)
+2263				join scenario c on (a.id_scenario = c.id)
+2264				join sector d on (a.id_zone = d.id) 
+2265				where b.id = {id_zone} and a.id_scenario in ({scenarios}) and (induced_production != 0.0 )"""
+2266				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2279:8
+2278	
+2279			sql = "delete from mode where id = {}".format(id)
+2280			cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2290:9
+2289			for id_scenario in scenarios:
+2290				sql = "insert into administrator \
+2291					(id_scenario, id, name, description) \
+2292					values ({}, {}, '{}','{}');".format(
+2293						id_scenario[0], id, name, description
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2306:9
+2305			for id_scenario in scenarios:
+2306				sql = "update administrator set  \
+2307					 name='{}', description='{}' \
+2308					 where id = {} and id_scenario = {};".format(name, description, id, id_scenario[0])
+2309				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2321:9
+2320			for id_scenario in scenarios:
+2321				sql = "delete from administrator where id = {} and id_scenario = {} ".format(id, id_scenario[0])
+2322				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2334:9
+2333			for id_scenario in scenarios:
+2334				sql = "insert into category \
+2335					(id_scenario, id, id_mode, name, description, volumen_travel_time, value_of_waiting_time, \
+2336					min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity) \
+2337					values ({},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}');".format(
+2338						id_scenario[0], ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2353:9
+2352			for id_scenario in scenarios:		
+2353				sql = "update category set  \
+2354					 id={}, id_mode={}, name='{}', description='{}', volumen_travel_time={},  value_of_waiting_time={}, \
+2355					 min_trip_gener={}, max_trip_gener={}, elasticity_trip_gener={}, choice_elasticity={}\
+2356					 where id = {} and id_scenario = {};".format(
+2357						 ident, id_mode, name, description, volumen_travel_time, value_of_waiting_time, min_trip_gener, max_trip_gener, elasticity_trip_gener, choice_elasticity, ident, id_scenario[0]
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2371:9
+2370			for id_scenario in scenarios:
+2371				sql = "delete from category where id = {} and id_scenario = {}; ".format(id, id_scenario[0])
+2372				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2376:9
+2375			for id_scenario in scenarios:
+2376				sql = "delete from operator_category where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+2377				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2381:9
+2380			for id_scenario in scenarios:
+2381				sql = "delete from exogenous_trips where id_category = {} and id_scenario = {}; ".format(id, id_scenario[0])
+2382				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2430:10
+2429				if result and len(result)>0:
+2430					sql = """update inter_sector_inputs set id_scenario = {0} {3}
+2431						where id_scenario = {0} and id_sector = {1} and id_input_sector = {2} 
+2432						""".format(scenario[0], id_sector, id_input_sector, update)
+2433				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2434:10
+2433				else:
+2434					sql = """insert into inter_sector_inputs (id_scenario, id_sector, id_input_sector {3}) 
+2435					values ( {0}, {1}, {2} {4})""".format(scenario[0], id_sector, id_input_sector, columns, values)
+2436				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2520:10
+2519				if result and len(result)>0:
+2520					sql = """update inter_sector_transport_cat set id_scenario = {0} {3}
+2521						where id_scenario = {0} and id_sector = {1} and id_category = {2} 
+2522						""".format(scenario[0], id_sector, id_category, update)
+2523				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2524:10
+2523				else:
+2524					sql = """insert into inter_sector_transport_cat (id_scenario, id_sector, id_category {3}) 
+2525					values ( {0}, {1}, {2} {4})""".format(scenario[0], id_sector, id_category, columns, values)
+2526				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2537:9
+2536			for valor in scenarios:
+2537				sql = "update inter_sector_inputs set {0} = {1} where id_sector = {2} and id_input_sector = {3} and id_scenario = {4}".format(column, value, id_sector, id_input_sector, valor[0])
+2538				cursor.execute(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2597:10
+2596				if result and len(result)>0:
+2597					sql = """update zonal_data set id_scenario = {0} {3}
+2598						where id_scenario = {0} and id_sector = {1} and id_zone = {2} 
+2599						""".format(scenario[0], id_sector, id_zone, update)
+2600				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2601:10
+2600				else:
+2601					sql = """insert into zonal_data (id_scenario, id_sector, id_zone {3}) 
+2602					values ( {0}, {1}, {2} {4})""".format(scenario[0], id_sector, id_zone, columns, values)
+2603				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2703:10
+2702				if result and len(result)>0:
+2703					sql = """update zonal_data set id_scenario = {0} {3}
+2704						where id_scenario = {0} and id_sector = {1} and id_zone = {2} 
+2705						""".format(scenario[0], id_sector, id_zone, update)
+2706				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2707:10
+2706				else:
+2707					sql = """insert into zonal_data (id_scenario, id_sector, id_zone {3}) 
+2708					values ( {0}, {1}, {2} {4})""".format(scenario[0], id_sector, id_zone, columns, values)
+2709				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2732:10
+2731				if result and len(result)>0:
+2732					sql = """update zonal_data set id_scenario = {0} {3}
+2733						where id_scenario = {0} and id_sector = {1} and id_zone = {2} 
+2734						""".format(scenario[0], id_sector, id_zone, update)
+2735				else:
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2736:10
+2735				else:
+2736					sql = """insert into zonal_data (id_scenario, id_sector, id_zone {3}) 
+2737					values ( {0}, {1}, {2} {4})""".format(scenario[0], id_sector, id_zone, columns, values)
+2738				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2751:9
+2750			for scenario in scenarios:
+2751				sql = "update inter_sector_transport_cat set {0} = {1} where id_sector = {2} and id_category = {3} and id_scenario = {4}".format(column, value, id_sector, id_category, scenario[0])
+2752			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2760:8
+2759		def removeSector(self, id):
+2760			sql = "delete from sector where id = {}".format(id)
+2761	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2771:8
+2770		def selectAll(self, table, where='', columns='*', orderby=''):
+2771			sql = "select {} from {} {} {}".format(columns,table, where, orderby)
+2772			conn = self.connectionSqlite()
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2816:10
+2815		def maxIdTable(self, table, field='id'):
+2816			sql = f"select max({field}) from {table}"
+2817			
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2830:8
+2829	
+2830			sql = "select * from {0} where {2} = {1}".format(table, id, field)
+2831	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2864:14
+2863				
+2864				sql =  f"""delete from results_zones where id = '{id}';"""
+2865				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2895:14
+2894				
+2895				sql =  f"""delete from results_network where id = '{id}';"""
+2896				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\DataBaseSqlite.py:2926:14
+2925				
+2926				sql =  f"""delete from results_matrix where id = '{id}';"""
+2927				
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:132:27
+131	        # 1.1
+132	        qry_internal = f"""select 
+133	                        distinct id_sector, id_zone, coalesce(nullif(exogenous_production, ''),0), coalesce(nullif(induced_production, ''),0), 
+134	                        coalesce(nullif(exogenous_demand, ''),0), coalesce(nullif(base_price, ''),0), coalesce(nullif(value_added, ''),0), coalesce(nullif(attractor, ''),0)
+135	                        from 
+136	                        zonal_data a 
+137	                        join zone b on a.id_zone = b.id
+138	                        where (external is null or external = 0) and b.id > 0 and (exogenous_production > 0 or exogenous_demand > 0 or  base_price > 0  or value_added > 0 or  attractor >  0)
+139	                        and id_scenario =  {id_base_scenario}
+140	                        order by 1, 2""" 
+141	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:146:26
+145	        # 2.1
+146	        qry_exports = f"""select 
+147	                        distinct id_sector, id_zone, coalesce(nullif(exports,''),0)
+148	                        from 
+149	                        zonal_data a 
+150	                        join zone b on a.id_zone = b.id
+151	                        where b.external = 1 and id_zone > 0 and id_scenario = {id_base_scenario} and exports != '' and exports != 0"""
+152	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:157:26
+156	        # 2.2
+157	        qry_imports = f"""select 
+158	                    distinct id_sector, id_zone, coalesce(nullif(min_imports,''), 0), coalesce(nullif(max_imports,''), 0), 
+159	                    coalesce(nullif(base_price,''), 0), coalesce(nullif(attractor,''), 0)
+160	                    from 
+161	                    zonal_data a 
+162	                    join zone b on a.id_zone = b.id
+163	                    where b.external = 1 and id_zone > 0 and id_scenario = 1
+164	                    and (min_imports != '' or max_imports != '' or base_price != '' or attractor != '')
+165	                    and (min_imports != 0 or max_imports != 0 or base_price != 0 or attractor != 0) and id_scenario = {id_base_scenario}"""
+166	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:171:23
+170	        # 3.0
+171	        qry_prod = f"""select 
+172	                distinct id_sector, id_zone, coalesce(nullif(min_production,''), 0), coalesce(nullif(max_production,''), 0), coalesce(nullif(induced_production,''), 0), \
+173	                     coalesce(nullif(exogenous_production,''), 0)
+174	                from 
+175	                    zonal_data a 
+176	                join zone b on a.id_zone = b.id
+177	                where (b.external is null or b.external = 0) and id_zone > 0 
+178	                and min_production = max_production 
+179	                /* and min_production > 0 
+180	                and max_production > 0 */ and id_scenario = {id_base_scenario} """
+181	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:233:24
+232	        int_trans_cat =["Cat","Sector","Type","TimeF","VolumeF","Cons>Pro","Pro>Cons"]
+233	        qry_trans_cat = """select distinct coalesce(nullif(id_category,''),0) id_category, coalesce(nullif(id_sector,''),0) id_sector, coalesce(nullif(type,''),0) type, 
+234	                        coalesce(nullif(time_factor,''),0) time_factor, coalesce(nullif(volume_factor,''),0) volume_factor, coalesce(nullif(flow_to_product,''),0) flow_to_product, coalesce(nullif(flow_to_consumer,''),0) flow_to_consumer
+235	                        from inter_sector_transport_cat
+236	                        where id_scenario = 1 and (type != '' or time_factor != '' 
+237	                         or  volume_factor != '' or flow_to_product != '' or  flow_to_consumer != '') order by 2 ASC""".format(id_scenario)
+238	        result_trans_cat = self.dataBaseSqlite.executeSql(qry_trans_cat) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:257:24
+256	        exogenous_trips_cat =["Cat","Orig","Dest","Trips", "Factor"]
+257	        exogenous_cat = """select id_category, id_zone_from, id_zone_to, 
+258	                        coalesce(trip,0) trip, 1 factor 
+259	                        from exogenous_trips
+260	                        where id_scenario = {}""".format(id_scenario)
+261	        result_exogenous_cat = self.dataBaseSqlite.executeSql(exogenous_cat) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:318:26
+317	        sector_header = ["\nSector","\nName", "Utility\nLev1","\nLev2","Price\nLev1","\nLev2","Logit\nScale","Atrac\nFactor","Price-Cost\nRatio","Sector\nType","Target\nSector"]
+318	        qry_sectors = f"""select distinct id sector, name, 
+319	                        coalesce(nullif(location_choice_elasticity,''),0) utility_lvl1, 
+320	                        coalesce(nullif(location_choice_elasticity,''),0) utility_lvl2, 
+321	                        1 as price_lvl1, 0  as price_lvl2, 1 as logic_scale , 
+322	                        coalesce(nullif(atractor_factor,''),0), 
+323	                        0 price_cost_ratio, 0 sector_type, '' target_sector 
+324	                        from 
+325	                        sector
+326	                        where id_scenario = {id_scenario}"""
+327	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:333:30
+332	        demand_func_para = ["Sector","Input","MinCons","MaxCons","Elast"]
+333	        qry_demand_func = f"""select  distinct id_sector sector, id_input_sector input, 
+334	                            coalesce(nullif(min_demand,''),0) mincons, coalesce(nullif(max_demand,''),0) maxcons, 
+335	                            coalesce(nullif(elasticity,''),0) elast
+336	                            from inter_sector_inputs
+337	                            where id_scenario = {id_scenario} and (nullif(min_demand,'') > 0 or nullif(max_demand,'') > 0 )"""
+338	        result_demand_func = self.dataBaseSqlite.executeSql(qry_demand_func) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:343:30
+342	        demand_subs = ["Sector","SustElast","LogitSc","Subst","Penal .../"]
+343	        qry_demand_subs = f"""
+344	                    select distinct id_sector sector, coalesce(nullif(b.substitute,''),0) subselast, 1 logicsc, id_sector sector, 1 penal 
+345	                    from inter_sector_inputs a
+346	                    join sector b on (a.id_sector = b.id and a.id_scenario = b.id_scenario)
+347	                    where a.id_scenario = {id_scenario} and (a.substitute is not null and a.substitute !='')"""
+348	        result_demand_subs = self.dataBaseSqlite.executeSql(qry_demand_subs) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:354:34
+353	        attrac_exog =["Sect","AttracSe","Lev1","Lev2","ProdFac","PriceFac","CapFac"]
+354	        qry_attractors_exog = f"""select distinct id_sector sector, id_input_sector, coalesce(nullif(exog_prod_attractors,''),0) lvl1, 0 lvl2, 
+355	                                1 prodfact, 0 pricefactor, 0 capfact
+356	                                from inter_sector_inputs 
+357	                                where id_scenario = {id_scenario} and nullif(exog_prod_attractors,'') > 0"""
+358	        result_attra_exog = self.dataBaseSqlite.executeSql(qry_attractors_exog) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:363:28
+362	        attrac_ind =["Sector","Var","Lev1","Lev2"]
+363	        qry_attra_ind = f"""select distinct id_sector sector, id_input_sector var, 
+364	                            coalesce(nullif(ind_prod_attractors,''),0) lvl1, 0 lvl2
+365	                            from inter_sector_inputs 
+366	                            where id_scenario = {id_scenario} and nullif(ind_prod_attractors,'') > 0"""
+367	        result_attra_ind = self.dataBaseSqlite.executeSql(qry_attra_ind) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:464:18
+463	        trans_ope_head =["No","'Name'","Mode","Type","OccRate","Penaliz","MinWait","MaxWait","PathASC"]
+464	        qry_ope = """select a.id, a.name, a.id_mode mode, a.type, coalesce(nullif(a.basics_occupency,''),0) occupency, 
+465	                            coalesce(nullif(a.basics_modal_constant,''),0) penaliz, 
+466	                            coalesce(nullif(a.basics_fixed_wating_factor,''),0)  minwait,  0 maxwait, 0 path_asc 
+467	                            from operator a
+468	                            where id_scenario = {}""".format(id_scenario)
+469	        result_ope = self.dataBaseSqlite.executeSql(qry_ope) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:474:20
+473	        trans_route_head =["No","'Name'","Oper","MinFreq","MaxFreq","Tartet Occ","MaxFleet","Scheduled"]
+474	        qry_route = """select a.id, a.name, a.id_operator, a.frequency_from, 
+475	                    a.frequency_to, 0.70, coalesce(nullif(a.max_fleet,''),0), coalesce(nullif(a.follows_schedule,''),0)
+476	                    from route a
+477	                    where id_scenario = {} and used = 1""".format(id_scenario)
+478	        result_route = self.dataBaseSqlite.executeSql(qry_route) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:483:18
+482	        trans_adm_head =["No","'Name'"]
+483	        qry_adm = """select a.id, name  
+484	                     from administrator a
+485	                     where id_scenario = {} """.format(id_scenario)
+486	        result_adm = self.dataBaseSqlite.executeSql(qry_adm) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:491:20
+490	        trans_lynkt_head =["No","'Name'","Admin","MinMaintCo"]
+491	        qry_lynkt = """select a.id, name, id_administrator, coalesce(nullif(min_maintenance_cost,''),0)
+492	                        from link_type a
+493	                        where a.id_scenario = {}""".format(id_scenario)
+494	        result_lynkt = self.dataBaseSqlite.executeSql(qry_lynkt) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:499:18
+498	        trans_cat_head =["No","'Name'","VofTrTime","VofWtTime", "Available Modes"]
+499	        qry_cat = """select id, name, coalesce(nullif(volumen_travel_time,''),0), coalesce(nullif(value_of_waiting_time,''),0), id_mode 
+500	                    from category
+501	                    where id_scenario = {}""".format(id_scenario)
+502	        result_cat = self.dataBaseSqlite.executeSql(qry_cat) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:507:24
+506	        cost_ener_head =["Oper", "MinCons", "MaxCons","Slope","EnerCost","CtOpCost","TimeOpCost"]
+507	        qry_cost_ener = """select a.id, coalesce(nullif(a.energy_min,''),0) energy_min, coalesce(nullif(a.energy_max,''),0) energy_max, 
+508	                        coalesce(nullif(a.energy_slope,''),0) energy_slope, coalesce(nullif(a.energy_cost,''),0) energy_cost,
+509	                        0 cost_time_operation, 
+510	                        coalesce(nullif(cost_time_operation,''), 0) cost_time_operation
+511	                        from operator a
+512	                        where id_scenario = {}""".format(id_scenario)
+513	        result_cost_ener = self.dataBaseSqlite.executeSql(qry_cost_ener) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:518:19
+517	        cost_header =["Type", "Oper", "Speed","EqVeh","DistCost","Toll","Maint","Penal"]
+518	        qry_cond = """select 
+519	                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(nullif(speed,''),0), coalesce(nullif(equiv_vahicules,''),0), coalesce(nullif(distance_cost,''),0), 
+520	                        coalesce(nullif(charges,''),0) toll, coalesce(nullif(margin_maint_cost,''),0), coalesce(nullif(penaliz,''),0)
+521	                        from link_type_operator a
+522	                        where id_scenario = {} and speed > 0
+523	                        order by 1,2 """.format(id_scenario)
+524	        result_cond = self.dataBaseSqlite.executeSql(qry_cond) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:529:22
+528	        overlap_head =["Type", "Oper", "Overlap"]
+529	        qry_overlap = """select 
+530	                        CAST(a.id_linktype as integer) id_linktype, a.id_operator, coalesce(nullif(overlap_factor,''),0) overlap_factor
+531	                        from link_type_operator a
+532	                        where id_scenario = {} and overlap_factor > 1
+533	                        order by 1,2 """.format(id_scenario)
+534	        result_overlap = self.dataBaseSqlite.executeSql(qry_overlap) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:539:21
+538	        tariff_head =["Oper","MinTarf","TimeTarf","DistTarf.","OperCost"]
+539	        qry_tariff = """select distinct a.id, coalesce(nullif(basics_boarding_tariff,''),0), coalesce(nullif(basics_time_tariff,''),0),  
+540	                        coalesce(nullif(basics_distance_tariff,''),0), coalesce(nullif(cost_porc_paid_by_user/100,''),0)  
+541	                        from operator a
+542	                        where id_scenario = {} 
+543	                        and (basics_boarding_tariff > 0 or basics_time_tariff > 0 or cost_porc_paid_by_user > 0)""".format(id_scenario)
+544	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:550:23
+549	        transfer_head =["FromOper","ToOper","Tariff"]
+550	        qry_transfer = """select id_operator_from, id_operator_to, coalesce(nullif(cost,''),0)
+551	                        from transfer_operator_cost
+552	                        where id_scenario = {} order by 1,2 """.format(id_scenario)
+553	        result_transfer = self.dataBaseSqlite.executeSql(qry_transfer) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:558:23
+557	        cat_cost_head =["Cat","Oper","Penal F.","Tariff F..","ASC"]
+558	        qry_cat_cost = """select id_category, id_operator, coalesce(nullif(penal_factor,''),0), coalesce(nullif(tariff_factor,''),0), 0 asc
+559	                        from operator_category
+560	                        where id_scenario = {}""".format(id_scenario)
+561	        result_cat_cost = self.dataBaseSqlite.executeSql(qry_cat_cost) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:635:18
+634	        net_head =["Src","Dest","GISId","Type","Dist.","Capac.","Delay","Routes..    0 Restricted Turns..../"]
+635	        qry_net = """select distinct node_from, node_to, id, id_linktype, 
+636	                    coalesce(nullif(length,''),0), 
+637	                    case when capacity = 0 then -1 else coalesce(nullif(capacity,''),0) end capacity, 
+638	                    coalesce(nullif(delay,''),0), 0
+639	                    from link
+640	                    where id_scenario = %s
+641	                    order by 1,2;""" % (id_scenario)
+642	        
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:702:23
+701	        ope_simu_head =["Oper","TimeFactor","ConsolPar"]
+702	        qry_ope_simu = """select a.id, coalesce(nullif(basics_time_factor,''),0), -1 cosolpar
+703	                        from operator a
+704	                        where id_scenario = {}""".format(id_scenario)
+705	                    
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:711:20
+710	        restr_head =["Link\nType","% Reduct\nat V/C=1","% Reduct\nMax", "V/C for\nMin Vel","Capacity\nFactor"]
+711	        qry_restr = """select a.id, coalesce(nullif(perc_speed_reduction_vc,''),0), coalesce(nullif(perc_max_speed_reduction,''),0), 
+712	                        coalesce(nullif(vc_max_reduction,''),0), coalesce(nullif(capacity_factor,''),0) 
+713	                        from link_type a
+714	                        where id_scenario = {}""".format(id_scenario)
+715	        result_restr = self.dataBaseSqlite.executeSql(qry_restr) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:720:23
+719	        trip_gen_head =["Cat","MinGen","MaxGen", "GenElast","ModeElast","Logit Sc","CarAvail"]
+720	        qry_trip_gen = """select id, coalesce(nullif(min_trip_gener,''),0), coalesce(nullif(max_trip_gener,''),0), 
+721	                    coalesce(nullif(elasticity_trip_gener,''),0), 1 modeelast, 1 logitsc, 1 caravail 
+722	                    from category
+723	                    where id_scenario = {}""".format(id_scenario)
+724	        result_trip_gen = self.dataBaseSqlite.executeSql(qry_trip_gen) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:729:19
+728	        path_head =["Cat","PathChElas","Logit Sc"]
+729	        qry_path = """select id, coalesce(nullif(choice_elasticity,''),0), 1 logitsc 
+730	                        from category
+731	                    where id_scenario = {}""".format(id_scenario)
+732	        result_path = self.dataBaseSqlite.executeSql(qry_path) 
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:783:27
+782	        global_increments_head = ["Sector","Production","Demand","MinRest","MaxRest"]
+783	        qry_global_incre = """select id_sector,  
+784	                            coalesce(nullif(exogenous_production,''),0), 
+785	                            coalesce(nullif(exogenous_demand,''),0), 
+786	                            coalesce(nullif(min_production,''),0), 
+787	                            coalesce(nullif(max_production,''),0)
+788	                            from 
+789	                                zonal_data a
+790	                            where a.id_zone = 0 and id_scenario = {} and 
+791	                            ((exogenous_production !='' and exogenous_production !=0) 
+792	                            or (exogenous_demand !='' and exogenous_demand != 0) 
+793	                            or (min_production!='' and min_production!=0) 
+794	                            or (max_production!='' and max_production!=0)) order by 1 asc""".format(id_scenario)
+795	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:801:30
+800	        int_exog_prods_head = ["Sector","Zone","Increment"]
+801	        qry_exog_prod_incre = """select distinct id_sector sector, id_zone zone, 
+802	                            coalesce(nullif(exogenous_production,''),0) exogenous_production
+803	                            from zonal_data a
+804	                            where a.id_zone != 0 and id_scenario = {} and (exogenous_production != 0 and exogenous_production != '') order by 2,1""".format(id_scenario)
+805	        result_int_exog_prod = self.dataBaseSqlite.executeSql(qry_exog_prod_incre)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:810:32
+809	        int_exog_demand_head = ["Sector","Zone","Increment"]
+810	        qry_exog_demand_incre = """select distinct id_sector sector, id_zone zone, 
+811	                                coalesce(nullif(exogenous_demand,''),0) exogenous_demand
+812	                                from zonal_data a
+813	                                where a.id_zone != 0 and id_scenario = {} and (exogenous_demand!=0 and exogenous_demand!='')  order by 2,1""".format(id_scenario)
+814	        result_int_demand_prod = self.dataBaseSqlite.executeSql(qry_exog_demand_incre)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:819:27
+818	        int_ext_zone_exp_head = ["Sector","Zone","Increment"]
+819	        qry_ext_zone_exp = """select distinct
+820	                    id_sector sector, id_zone zone, 
+821	                    coalesce(nullif(exports,''), 0) exports
+822	                    from zonal_data a 
+823	                    join zone b on (a.id_zone = b.id)
+824	                    where a.id_zone != 0 and b.external = 1 and id_scenario = {} and (exports != 0 and exports !='') order by 2,1""".format(id_scenario)
+825	        result_ext_zone_prod = self.dataBaseSqlite.executeSql(qry_ext_zone_exp)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:830:27
+829	        int_imp_zone_exp_head = ["Sector","Zone","Min Incr.", "Max Incr.", "Attractor"]
+830	        qry_imp_zone_exp = """select distinct
+831	                                    id_sector sector, id_zone zone, 
+832	                                    coalesce(nullif(min_imports,''), 0) min_imports, 
+833	                                    coalesce(nullif(max_imports,''), 0) max_imports, 
+834	                                    coalesce(nullif(attractor_import,''),0) attractor_import
+835	                                from zonal_data a 
+836	                                join zone b on (a.id_zone = b.id)
+837	                                where b.external = 1 and id_scenario = {} 
+838	                                and (min_imports != 0 and min_imports !='')
+839	                                or (max_imports != 0 and  max_imports != '')
+840	                                or (attractor_import != 0 and attractor_import != '') order by 1""".format(id_scenario)
+841	        result_imp_zone_prod = self.dataBaseSqlite.executeSql(qry_imp_zone_exp)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:846:21
+845	        int_endvar_head = ["Sector","Zone","Attractor"]
+846	        qry_endvar = """select distinct
+847	                        id_sector sector, id_zone zone, 
+848	                        coalesce(nullif(attractor,''), 0) attractor
+849	                        from zonal_data a 
+850	                        join zone b on (a.id_zone = b.id) 
+851	                        where a.id_zone != 0 and a.id_scenario = {} and (attractor != 0 and attractor != '') order by 1,2""".format(id_scenario)
+852	        result_endvar = self.dataBaseSqlite.executeSql(qry_endvar)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:857:19
+856	        int_prod_head = ["Sector","Zone","MinRest", "MaxRest"]
+857	        qry_prod = """select 
+858	                    distinct  id_sector sector, id_zone zone, 
+859	                    coalesce(nullif(min_production,''),0) min_production, 
+860	                    coalesce(nullif(max_production,''),0) max_production
+861	                    from zonal_data 
+862	                    where id_zone != 0 and id_scenario = {} and ((min_production is not null and min_production != 0 and min_production != '') or (max_production is not null and max_production != 0 and max_production != '')) order by 1,2 """.format(id_scenario)
+863	        result_prod = self.dataBaseSqlite.executeSql(qry_prod)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\classes\data\ScenariosFiles.py:868:24
+867	        int_value_add_head = ["Sector","Zone","ValueAdded"]
+868	        qry_value_add = """select distinct 
+869	                                id_sector sector, id_zone zone, 
+870	                                coalesce(nullif(value_added,''),0) value_added
+871	                        from zonal_data
+872	                        where id_zone != 0 and id_scenario = {} and (value_added != 0 and value_added != '') 
+873	                        order by 1,2""".format(id_scenario)
+874	        result_value_add = self.dataBaseSqlite.executeSql(qry_value_add)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\databaseerror_dialog.py:166:14
+165	        linkid = f" and linkid like '%{linkid}%' " if linkid else ''
+166	        qry = """with base as (
+167	                    select distinct case when (a.two_way is null or a.two_way == '') 
+168	                                    then '0' else a.two_way end ||' '||linkid linkid, a.name,  a.id_linktype linktype, 
+169	                                    node_from, node_to
+170	                    from link a
+171	                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+172	                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0) {1}
+173	                    and (b.id is null)
+174	                    group  by 1,2,3,4,5
+175	                ), two_way as (
+176	                select  
+177	                        case when 
+178	                            cast(substr(linkid, 0, instr(linkid, '-')) as integer) < cast(substr(linkid, instr(linkid, '-')+1) as INTEGER) 
+179	                            then '1'||' '||substr(linkid, 0, instr(linkid, '-'))||'-'||substr(linkid, instr(linkid, '-')+1)
+180	                            else '1'||' '||substr(linkid, instr(linkid, '-')+1)||'-'||substr(linkid, 0, instr(linkid, '-')) 
+181	                            end linkid,
+182	                        a.name,
+183	                        a.id_linktype linktype,
+184	                        a.node_from,
+185	                        a.node_to
+186	                    from link a
+187	                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+188	                    where two_way = 1 and a.id_scenario = {0} {1} and (b.id is null)
+189	                    group by 1)
+190	                select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
+191	                from (
+192	                    select linkid, name, linktype, node_from, node_to
+193	                    from base
+194	                    UNION
+195	                    select linkid, name, linktype, node_from, node_to
+196	                    from two_way 
+197	                ) order by node_from, node_to asc""".format(self.idScenario, linkid)
+198	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\databaseerror_dialog.py:251:14
+250	
+251	        sql = """
+252	            select distinct a.id_linktype
+253	            from link a
+254	            left join link_type  b on (a.id_linktype = b.id)
+255	            where b.id is null or b.id = '' and a.id_scenario = %s
+256	            order by 1 
+257	            """ % (self.idScenario)
+258	        result = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\exogenous_trips_dialog.py:243:18
+242	        if id_scenario:
+243	            qry = """
+244	                select b.id||' '||b.name zone_from, 
+245	                c.id|| ' ' ||c.name zone_to, trip
+246	                from exogenous_trips a
+247	                join zone b on a.id_zone_from = b.id
+248	                join zone c on a.id_zone_to = c.id
+249	                where a.id_scenario = {} and a.id_category = {} and trip is not null""".format(id_scenario, id_category)
+250	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\exogenous_trips_dialog.py:311:18
+310	
+311	            qry = """select * from exogenous_trips
+312	            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
+313	            and id_category={}  and trip is not null""".format(id_scenario, id_from, id_to, id_category)
+314	            
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\exogenous_trips_dialog.py:315:20
+314	            
+315	            qry_b = """select * from exogenous_trips
+316	            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
+317	            and id_category={} """.format(id_scenario, id_from, id_to, id_category)
+318	            
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\exogenous_trips_dialog.py:348:18
+347	
+348	            qry = """select * from exogenous_trips
+349	            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
+350	            and id_mode={} and id_category={}  and factor is not null""".format(id_scenario, id_from, id_to, id_category, id_mode)
+351	            
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\exogenous_trips_dialog.py:352:20
+351	            
+352	            qry_b = """select * from exogenous_trips
+353	            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
+354	            and id_mode={} and id_category={} """.format(id_scenario, id_from, id_to, id_category, id_mode)
+355	            
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:275:22
+274	            # Default data of the table
+275	            sql = f"""
+276	                with sectors as (
+277	                        select * 
+278	                        from sector),
+279	                intersectors as (
+280	                    select  a.id, a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+281	                    from sector a 
+282	                    left join inter_sector_inputs b 
+283	                    on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) 
+284	                    where a.id_scenario = {self.idScenario} and id_sector = {sectorId} order by a.id asc)
+285	                select distinct a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors
+286	                from sectors a
+287	                left join intersectors b on a.id = b.id order by a.id asc
+288	                """
+289	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:292:19
+291	
+292	            sqlB = """with categories as (
+293	                        select * from category
+294	                    ), 
+295	                    intersector_transport as (
+296	                        select a.id, a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+297	                        from category a 
+298	                        left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario 
+299	                        where a.id_scenario = %s and id_sector = %s order by a.id asc)
+300	                    select distinct a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+301	                    from categories a 
+302	                    left join intersector_transport b on (a.id = b.id) order by a.id asc""" % (self.idScenario, sectorId)
+303	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:307:31
+306	            if id_prevScenario:
+307	                sql_prev = f"""
+308	                with sectors as (
+309	                        select * 
+310	                        from sector),
+311	                intersectors as (
+312	                    select  a.id, a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors 
+313	                    from sector a 
+314	                    left join inter_sector_inputs b 
+315	                    on (a.id = b.id_input_sector and a.id_scenario = b.id_scenario) 
+316	                    where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc)
+317	                select distinct a.id||" "||a.name sector, b.min_demand, max_demand, case when elasticity > 0 and elasticity != '' then printf("%f",elasticity) else null end as elasticity, b.substitute, exog_prod_attractors, ind_prod_attractors
+318	                from sectors a
+319	                left join intersectors b on a.id = b.id order by a.id asc
+320	                """
+321	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:324:32
+323	
+324	                sqlB_prev = f"""with categories as (
+325	                        select * from category
+326	                    ), 
+327	                    intersector_transport as (
+328	                        select a.id, a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+329	                        from category a 
+330	                        left join inter_sector_transport_cat b on (a.id = b.id_category) and a.id_scenario = b.id_scenario 
+331	                        where a.id_scenario = {id_prevScenario[0][0]} and id_sector = {sectorId} order by a.id asc)
+332	                    select distinct a.id||" "||a.name category, b.type, time_factor, volume_factor, flow_to_product, b.flow_to_consumer 
+333	                    from categories a 
+334	                    left join intersector_transport b on (a.id = b.id) order by a.id asc"""
+335	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:343:22
+342	            if len(resultA)==0:
+343	                sql = """select a.id||" "||a.name sector, '' min_demand, '' max_demand, '' elasticity, '' substitute, '' exog_prod_attractors, '' ind_prod_attractors 
+344	                  from sector a 
+345	                  where id_scenario = {} order by a.id asc """.format(self.idScenario)
+346	                resultA = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\intersectors_dialog.py:349:22
+348	            if len(resultB)==0:
+349	                sql = """select a.id||" "||a.name category, '' type, '' time_factor, '' volume_factor, '' flow_to_product, '' flow_to_consumer 
+350	                    from category a
+351	                    where id_scenario = {} order by a.id asc """.format(self.idScenario)
+352	                resultB = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\link_type_dialog.py:167:14
+166	    
+167	        qry = """select a.id, a.name, a.description 
+168	                 from link_type a
+169	                 where a.id_scenario = %s""" % (self.idScenario)
+170	        result = self.dataBaseSqlite.executeSql(qry)    
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\links_dialog.py:254:14
+253	        linkid = f" and linkid like '%{linkid}%' " if linkid else ''
+254	        qry = """with base as (
+255	                    select distinct case when (a.two_way is null or a.two_way == '') 
+256	                                    then '0' else a.two_way end ||' '||linkid linkid, a.name,  b.id||' '||b.name linktype, 
+257	                                    node_from, node_to
+258	                    from link a
+259	                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+260	                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0) {1}
+261	                    group  by 1,2,3,4,5
+262	                ), two_way as (
+263	                select  
+264	                        case when 
+265	                            cast(substr(linkid, 0, instr(linkid, '-')) as integer) < cast(substr(linkid, instr(linkid, '-')+1) as INTEGER) 
+266	                            then '1'||' '||substr(linkid, 0, instr(linkid, '-'))||'-'||substr(linkid, instr(linkid, '-')+1)
+267	                            else '1'||' '||substr(linkid, instr(linkid, '-')+1)||'-'||substr(linkid, 0, instr(linkid, '-')) 
+268	                            end linkid,
+269	                        a.name,
+270	                        b.id||' '||b.name linktype,
+271	                        a.node_from,
+272	                        a.node_to
+273	                    from link a
+274	                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
+275	                    where two_way = 1 and a.id_scenario = {0} {1}
+276	                    group by 1)
+277	                select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
+278	                from (
+279	                    select linkid, name, linktype, node_from, node_to
+280	                    from base
+281	                    UNION
+282	                    select linkid, name, linktype, node_from, node_to
+283	                    from two_way 
+284	                ) order by node_from, node_to asc""".format(self.idScenario, linkid)
+285	                
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\nodes_dialog.py:194:14
+193	        
+194	        qry = """select id, name, 
+195	                 case WHEN id_type = 1 then 'Internal' 
+196	                      WHEN id_type = 2 then 'External'
+197	                      WHEN id_type = 3 or  id_type = 0 then 'Node'  end type    
+198	                 from node  
+199	                 where id_scenario = %s
+200	                 order by 1 asc """ % (self.idScenario)
+201	        result = self.dataBaseSqlite.executeSql(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\operators_dialog.py:192:14
+191	        
+192	        qry = """select a.id, a.name, a.description 
+193	                 from operator a
+194	                 where a.id_scenario = %s order by 1 asc""" % (self.idScenario)
+195	        result = self.dataBaseSqlite.executeSql(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:523:22
+522	
+523	            qry = f"""select a.linkid 
+524	                from link a
+525	                join scenario b on a.id_scenario = b.id
+526	                where b.code = '{self.scenarioCode}'"""
+527	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:566:23
+565	
+566	            sql =  f"""select 
+567	                    a.id_link, a.id_route, c.color
+568	                    from link_route a
+569	                    join scenario b on (a.id_scenario = b.id)
+570	                    join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
+571	                    where b.code = '{scenario_code}'
+572	                    and id_route in  ({id_routes})"""
+573	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:583:22
+582	            # Get features of the base layer
+583	            qry = f"""select a.linkid 
+584	                from link a
+585	                join scenario b on a.id_scenario = b.id
+586	                where b.code = '{scenario_code}'"""
+587	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:596:27
+595	            for route in id_routes_selected:
+596	                sql =  f"""select 
+597	                    a.id_link, a.id_route, c.color
+598	                    from link_route a
+599	                    join scenario b on (a.id_scenario = b.id)
+600	                    join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
+601	                    where b.code = '{scenario_code}'
+602	                    and id_route = {int(route)}"""
+603	                    
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:609:27
+608	            # Group routes
+609	            sql_test = f"""select 
+610	                a.id_link, a.id_route
+611	                from link_route a
+612	                join scenario b on (a.id_scenario = b.id)
+613	                join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
+614	                where b.code = '{scenario_code}'
+615	                and id_route in ({",".join(id_routes_selected)}) order by 1"""
+616	            
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:757:23
+756	
+757	            sql =  f"""select distinct id_linktype, linkid, c.symbology
+758	                from link a
+759	                join scenario b on (a.id_scenario = b.id)
+760	                join link_type c on (a.id_linktype = c.id)
+761	                where b.code = '{scenario_code}'
+762	                and a.id_linktype in ({id_linktypes})
+763	                order by 1
+764	                """
+765	            data_links_linktypes = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:774:22
+773	            # Get features of the base layer
+774	            qry = f"""select a.linkid 
+775	                from link a
+776	                join scenario b on a.id_scenario = b.id
+777	                where b.code = '{scenario_code}'"""
+778	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\qtranus.py:1255:22
+1254	            
+1255	            qry = f"""select a.color, a.id, a.name
+1256	                        from route a
+1257	                        where id_scenario = {result_scenario_id} order by 2 asc """
+1258	            result = self.dataBaseSqlite.selectAll(' route ', where=f" where id_scenario = '{result_scenario_id}'", columns=' color, id, name ', orderby=' order by 2 asc ')
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\routes_dialog.py:183:18
+182	        if self.idScenario:
+183	            qry = """select a.color, a.id, a.name, a.description 
+184	                     from route a
+185	                     where id_scenario = %s order by 2 asc """ % (self.idScenario)
+186	            result = self.dataBaseSqlite.executeSql(qry)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\run_dialog.py:152:18
+151	    def __validate_links(self):
+152	        sql = f"""select linkid
+153	                from link 
+154	                where id_linktype is null and id_scenario = {self.idScenario}"""
+155	        result = self.dataBaseSqlite.executeSql(sql)
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\transfers_dialog.py:174:18
+173	        if self.idScenario:
+174	            qry = """
+175	                select 
+176	                b.id||' '||b.name operator_from, c.id||' '||c.name operator_to, a.cost,  b.id, c.id
+177	                from 
+178	                transfer_operator_cost a
+179	                join operator b on a.id_operator_from = b.id and a.id_scenario = b.id_scenario
+180	                join operator c on a.id_operator_to = c.id and a.id_scenario = c.id_scenario
+181	                where a.id_scenario = %s order by 4, 5 asc""" % self.idScenario
+182	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\transfers_dialog.py:239:22
+238	
+239	                qry = """select * from transfer_operator_cost
+240	                where id_operator_from={} and id_operator_to={} and id_scenario={}""".format(id_from, id_to, id_scenario)
+241	                
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:309:18
+308	
+309	            sql = """select 
+310	                        zone.id||" "||zone.name zone, zone.external, exogenous_production, 
+311	                        induced_production, min_production, max_production,   
+312	                        exogenous_demand, base_price, value_added, attractor
+313	                    from 
+314	                    (select * from zone) zone
+315	                    left join 
+316	                    (select a.id_zone, exogenous_production, induced_production, min_production, 
+317	                    max_production, exogenous_demand, base_price, value_added, attractor 
+318	                    from zonal_data a
+319	                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+320	                    on zone.id = zonal_data.id_zone
+321	                    where (external is null or external = 0)
+322	                    order by zone.id""".format(id_sector, self.idScenario)
+323	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:325:25
+324	            # Imports Zonal Data
+325	            sql_import = """select 
+326	                        zone.id||" "||zone.name zone,  zone.external, min_imports,  
+327	                        max_imports, base_price, attractor_import
+328	                    from 
+329	                    (select * from zone where external = 1) zone
+330	                    left join 
+331	                    (select a.id_zone,  min_imports, max_imports, base_price,
+332	                    attractor_import
+333	                    from zonal_data a
+334	                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+335	                    on zone.id = zonal_data.id_zone
+336	                    order by zone.id""".format(id_sector, self.idScenario)
+337	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:339:22
+338	            # Exports Zonal Data
+339	            sql_exp = """select 
+340	                        zone.id||" "||zone.name zone,  zone.external, exports
+341	                    from 
+342	                    (select * from zone where external = 1) zone
+343	                    left join 
+344	                    (select a.id_zone, exports
+345	                    from zonal_data a
+346	                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+347	                    on zone.id = zonal_data.id_zone
+348	                    order by zone.id""".format(id_sector, self.idScenario)
+349	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:361:27
+360	                # Internal Zonal Data Prevous Scenario
+361	                sql_prev = """select 
+362	                            zone.id||" "||zone.name zone, zone.external, exogenous_production, 
+363	                            induced_production, min_production, max_production,   
+364	                            exogenous_demand, base_price, value_added, attractor
+365	                        from 
+366	                        (select * from zone) zone
+367	                        left join 
+368	                        (select a.id_zone, exogenous_production, induced_production, 
+369	                        min_production, max_production, exogenous_demand, base_price, value_added, attractor 
+370	                        from zonal_data a
+371	                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+372	                        on zone.id = zonal_data.id_zone
+373	                        where (external is null or external = 0)
+374	                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+375	                
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:377:34
+376	                # Imports Zonal Data
+377	                sql_import_prev = """select 
+378	                            zone.id||" "||zone.name zone,  zone.external, min_imports,
+379	                            max_imports, base_price, attractor_import
+380	                        from 
+381	                        (select * from zone where external = 1) zone
+382	                        left join 
+383	                        (select a.id_zone, max_imports, min_imports, base_price,
+384	                        attractor_import
+385	                        from zonal_data a
+386	                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+387	                        on zone.id = zonal_data.id_zone
+388	                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+389	
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: .\zonaldata_dialog.py:391:31
+390	                # Exports Zonal Data
+391	                sql_exp_prev = """select 
+392	                    zone.id||" "||zone.name zone,  zone.external, exports
+393	                    from 
+394	                    (select * from zone where external = 1) zone
+395	                    left join 
+396	                    (select a.id_zone, exports
+397	                    from zonal_data a
+398	                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+399	                    on zone.id = zonal_data.id_zone
+400	                    order by zone.id""".format(id_sector, id_prevScenario[0][0])
+401	                
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 35462
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 0
+		Medium: 224
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 224
+		Medium: 0
+		High: 0
+Files skipped (0):

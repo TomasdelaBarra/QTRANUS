@@ -320,9 +320,9 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
                     from link_type_operator a
                     join operator b 
                     on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
-                    where a.id_linktype = %s and a.id_scenario = %s and speed is not null """ % (id_linktype, self.idScenario)
+                    where a.id_linktype = ? and a.id_scenario = ? and speed is not null """
             
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (id_linktype, self.idScenario))
             self.id_operators_arr = []
             for value in result:
                 self.id_operators_arr.append(value[0].split(" ")[0])

@@ -244,17 +244,17 @@ class AddCategoryDialog(QtWidgets.QDialog, FORM_CLASS):
                 a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
                 from category a
                 join mode b on (a.id_mode = b.id) 
-                where a.id = {} and a.id_scenario = {}""".format(id_category, id_prevScenario[0][0])
+                where a.id = ? and a.id_scenario = ?"""
 
-            data_prev = self.dataBaseSqlite.executeSql(sql)
-
+            data_prev = self.dataBaseSqlite.executeSql(sql, (id_category, id_prevScenario[0][0]))
+            
         sql = """select a.id, a.name, a.description, a.volumen_travel_time, 
                 a.value_of_waiting_time, a.min_trip_gener, a.max_trip_gener, a.elasticity_trip_gener, a.choice_elasticity, b.name
                 from category a
                 join mode b on (a.id_mode = b.id) 
-                where a.id = {} and a.id_scenario = {}""".format(id_category, self.idScenario)
-
-        data = self.dataBaseSqlite.executeSql(sql)
+                where a.id = ? and a.id_scenario = ?"""
+        
+        data = self.dataBaseSqlite.executeSql(sql, (id_category, self.idScenario))
         
         if data and self.codeCategory:
             self.id.setText(str(data[0][0]))
