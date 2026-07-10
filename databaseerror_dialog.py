@@ -162,41 +162,74 @@ class DatabaseErrorsDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def __get_links_data(self, linkid=None): 
-        linkid = f" and linkid like '%{linkid}%' " if linkid else ''
-        qry = """with base as (
-                    select distinct case when (a.two_way is null or a.two_way == '') 
-                                    then '0' else a.two_way end ||' '||linkid linkid, a.name,  a.id_linktype linktype, 
-                                    node_from, node_to
-                    from link a
-                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0) {1}
-                    and (b.id is null)
-                    group  by 1,2,3,4,5
-                ), two_way as (
-                select  
-                        case when 
-                            cast(substr(linkid, 0, instr(linkid, '-')) as integer) < cast(substr(linkid, instr(linkid, '-')+1) as INTEGER) 
-                            then '1'||' '||substr(linkid, 0, instr(linkid, '-'))||'-'||substr(linkid, instr(linkid, '-')+1)
-                            else '1'||' '||substr(linkid, instr(linkid, '-')+1)||'-'||substr(linkid, 0, instr(linkid, '-')) 
-                            end linkid,
-                        a.name,
-                        a.id_linktype linktype,
-                        a.node_from,
-                        a.node_to
-                    from link a
-                    left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    where two_way = 1 and a.id_scenario = {0} {1} and (b.id is null)
-                    group by 1)
-                select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
-                from (
-                    select linkid, name, linktype, node_from, node_to
-                    from base
-                    UNION
-                    select linkid, name, linktype, node_from, node_to
-                    from two_way 
-                ) order by node_from, node_to asc""".format(self.idScenario, linkid)
+        id_scenario = self.idScenario
 
-        result = self.dataBaseSqlite.executeSql(qry)
+        # Preparamos el valor del LIKE según exista o no linkid
+        if linkid:
+            pattern = f"%{linkid}%"
+        else:
+            pattern = "%"   # Coincide con cualquier linkid (excepto NULL)
+
+        # Consulta estática, SIN .format()
+        sql = """
+        WITH base AS (
+            SELECT DISTINCT 
+                CASE WHEN (a.two_way IS NULL OR a.two_way == '') 
+                    THEN '0' ELSE a.two_way END || ' ' || linkid AS linkid,
+                a.name,  
+                a.id_linktype AS linktype, 
+                node_from, 
+                node_to
+            FROM link a
+            LEFT JOIN link_type b ON (a.id_linktype = b.id) AND (a.id_scenario = b.id_scenario)
+            WHERE a.id_scenario = ? 
+            AND (two_way IS NULL OR two_way == '' OR two_way == 0)
+            AND linkid LIKE ?
+            AND (b.id IS NULL)
+            GROUP BY 1,2,3,4,5
+        ),
+        two_way AS (
+            SELECT  
+                CASE WHEN 
+                    CAST(SUBSTR(linkid, 0, INSTR(linkid, '-')) AS INTEGER) < CAST(SUBSTR(linkid, INSTR(linkid, '-')+1) AS INTEGER) 
+                    THEN '1' || ' ' || SUBSTR(linkid, 0, INSTR(linkid, '-')) || '-' || SUBSTR(linkid, INSTR(linkid, '-')+1)
+                    ELSE '1' || ' ' || SUBSTR(linkid, INSTR(linkid, '-')+1) || '-' || SUBSTR(linkid, 0, INSTR(linkid, '-')) 
+                END AS linkid,
+                a.name,
+                a.id_linktype AS linktype,
+                a.node_from,
+                a.node_to
+            FROM link a
+            LEFT JOIN link_type b ON (a.id_linktype = b.id) AND (a.id_scenario = b.id_scenario)
+            WHERE two_way = 1 
+            AND a.id_scenario = ? 
+            AND linkid LIKE ?
+            AND (b.id IS NULL)
+            GROUP BY 1
+        )
+        SELECT 
+            linkid, 
+            name, 
+            linktype, 
+            CAST(SUBSTR(SUBSTR(linkid,3), 0, INSTR(SUBSTR(linkid,3), '-')) AS INTEGER) AS node_from,
+            CAST(SUBSTR(SUBSTR(linkid,3), INSTR(SUBSTR(linkid,3), '-')+1) AS INTEGER) AS node_to
+        FROM (
+            SELECT linkid, name, linktype, node_from, node_to FROM base
+            UNION
+            SELECT linkid, name, linktype, node_from, node_to FROM two_way 
+        ) 
+        ORDER BY node_from, node_to ASC
+        """
+
+        # Los parámetros siguen el orden de los '?' en la consulta:
+        # 1) id_scenario para base
+        # 2) pattern para base
+        # 3) id_scenario para two_way
+        # 4) pattern para two_way
+        params = [id_scenario, pattern, id_scenario, pattern]
+
+        # Ejecución segura
+        result = self.dataBaseSqlite.executeSql(sql, params)
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Link Type'])
@@ -252,10 +285,10 @@ class DatabaseErrorsDialog(QtWidgets.QDialog, FORM_CLASS):
             select distinct a.id_linktype
             from link a
             left join link_type  b on (a.id_linktype = b.id)
-            where b.id is null or b.id = '' and a.id_scenario = %s
+            where b.id is null or b.id = '' and a.id_scenario = ?
             order by 1 
-            """ % (self.idScenario)
-        result = self.dataBaseSqlite.executeSql(sql)
+            """
+        result = self.dataBaseSqlite.executeSql(sql, (self.idScenario, ))
         
         self.linktypesList = []
         for value in result:

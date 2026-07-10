@@ -191,8 +191,8 @@ class OperatorsDialog(QtWidgets.QDialog, FORM_CLASS):
         
         qry = """select a.id, a.name, a.description 
                  from operator a
-                 where a.id_scenario = %s order by 1 asc""" % (self.idScenario)
-        result = self.dataBaseSqlite.executeSql(qry)
+                 where a.id_scenario = ? order by 1 asc"""
+        result = self.dataBaseSqlite.executeSql(qry, (self.idScenario,))
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

@@ -167,11 +167,11 @@ class CategoriesDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __get_categories_data(self):
 
-        sql = f"""select a.id, a.name, a.description
+        sql = """select a.id, a.name, a.description
                 from category a 
-                where id_scenario = {self.idScenario}"""
-                
-        result = self.dataBaseSqlite.executeSql(sql)
+                where id_scenario = ?"""
+
+        result = self.dataBaseSqlite.executeSql(sql, (self.idScenario,))
 
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

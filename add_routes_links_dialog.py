@@ -98,21 +98,25 @@ class AddRoutesLinksDialog(QtWidgets.QDialog, FORM_CLASS):
         """
             @summary: Find and Set data of the scenario Selected
         """
-        ids_operators = ','.join(self.id_operators_arr)
-        ids_routes_selected = ''
-        criteria = ''
-        if self.parent().id_routes_arr_selected:
-            ids_routes_selected = ','.join(self.parent().id_routes_arr_selected)
-            criteria = """ and a.id not in (%s)""" % ids_routes_selected
+        ids_operators_placeholders = ','.join(['?' for _ in self.id_operators_arr])
+        ids_routes_placeholders = ','.join(['?' for _ in self.parent().id_routes_arr_selected]) if self.parent().id_routes_arr_selected else ''
 
         qry = """select a.id||' '||a.name route
-                from 
-                route a
-                join operator b 
+                from route a
+                join operator b
                 on (a.id_operator = b.id) and (a.id_scenario = b.id_scenario)
-                where a.id_scenario = %s and id_operator in (%s) %s order by 1""" % (self.idScenario, ids_operators, criteria)
-        
-        result = self.dataBaseSqlite.executeSql(qry)
+                where a.id_scenario = ? and id_operator in ({}) {} order by 1"""
+
+        params = [self.idScenario] + list(self.id_operators_arr)
+
+        criteria = ''
+        if self.parent().id_routes_arr_selected:
+            criteria = f" and a.id not in ({ids_routes_placeholders})"
+            params.extend(self.parent().id_routes_arr_selected)
+
+        qry = qry.format(ids_operators_placeholders, criteria)
+
+        result = self.dataBaseSqlite.executeSql(qry, params)
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Routes'])
         for x in range(0, len(result)):

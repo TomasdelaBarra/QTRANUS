@@ -405,40 +405,44 @@ class AddLinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
 				 	from 
 					operator a
 					left join link_type_operator b on a.id = b.id_operator
-					where b.id_linktype = {} """.format(self.linkTypeSelected)
-			existOperatorLinkType = self.dataBaseSqlite.executeSql(sql)
+					where b.id_linktype = ? """
+			existOperatorLinkType = self.dataBaseSqlite.executeSql(sql, (self.linkTypeSelected,))
 		else:
 			existOperatorLinkType = []	
 
 		if self.linkTypeSelected and len(existOperatorLinkType) > 0:
 			sql = """
 				WITH operator_base as (
-						SELECT id, name, id_scenario from operator
-					),
-					link_type_data as (
-						select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
-						b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost, a.id_scenario
-						from 
-						operator a
-						left join link_type_operator b on (a.id = b.id_operator) and (a.id_scenario = b.id_scenario)
-						where b.id_linktype = {0} and a.id_scenario = {1}
-					)
-					select case WHEN b.name is null then a.id||' '||a.name else b.name end name, b.speed, b.charges, b.penaliz, 
-						b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
-					from 
-						operator_base a
-					left join link_type_data b on a.id = b.id and a.id_scenario = b.id_scenario 
-					WHERE a.id_scenario = {1}
-					""".format(self.linkTypeSelected, self.idScenario)
+					SELECT id, name, id_scenario from operator
+				),
+				link_type_data as (
+					select a.id, a.id||' '||a.name as name, b.speed, b.charges, b.penaliz, b.distance_cost,
+					b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost, a.id_scenario
+					from
+					operator a
+					left join link_type_operator b on (a.id = b.id_operator) and (a.id_scenario = b.id_scenario)
+					where b.id_linktype = ? and a.id_scenario = ?
+				)
+				select case WHEN b.name is null then a.id||' '||a.name else b.name end name, b.speed, b.charges, b.penaliz,
+					b.distance_cost, b.equiv_vahicules, b.overlap_factor, b.margin_maint_cost
+				from
+					operator_base a
+				left join link_type_data b on a.id = b.id and a.id_scenario = b.id_scenario
+				WHERE a.id_scenario = ?
+			"""
+			
+			params = (self.linkTypeSelected, self.idScenario, self.idScenario)
 		else:
 			sql = """select a.id||' '||a.name, '' speed, '' charges, '' penaliz, '' distance_cost,
-					 '' equiv_vahicules, '' overlap_factor, '' margin_maint_cost 
-				 	from
-				 		operator a 
-				 	where id_scenario = %s
-					""" % (self.idScenario)
+             '' equiv_vahicules, '' overlap_factor, '' margin_maint_cost
+            from
+                operator a
+            where id_scenario = ?
+            """
+
+			params = (self.idScenario,)
 		
-		result_ope = self.dataBaseSqlite.executeSql(sql)
+		result_ope = self.dataBaseSqlite.executeSql(sql, params)
 		
 		rowsCount = len(result_ope)
 		columsCount = len(result_ope[0])-1

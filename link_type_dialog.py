@@ -166,8 +166,8 @@ class LinkTypeDialog(QtWidgets.QDialog, FORM_CLASS):
     
         qry = """select a.id, a.name, a.description 
                  from link_type a
-                 where a.id_scenario = %s""" % (self.idScenario)
-        result = self.dataBaseSqlite.executeSql(qry)    
+                 where a.id_scenario = ? """
+        result = self.dataBaseSqlite.executeSql(qry, (self.idScenario,))
 
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

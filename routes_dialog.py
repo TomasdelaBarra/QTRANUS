@@ -182,8 +182,8 @@ class RoutesDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario:
             qry = """select a.color, a.id, a.name, a.description 
                      from route a
-                     where id_scenario = %s order by 2 asc """ % (self.idScenario)
-            result = self.dataBaseSqlite.executeSql(qry)
+                     where id_scenario = ? order by 2 asc """
+            result = self.dataBaseSqlite.executeSql(qry, (self.idScenario, ))
         else:
             result = self.dataBaseSqlite.selectAll('route', columns='id, name, description')
 

@@ -246,9 +246,9 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
                 from exogenous_trips a
                 join zone b on a.id_zone_from = b.id
                 join zone c on a.id_zone_to = c.id
-                where a.id_scenario = {} and a.id_category = {} and trip is not null""".format(id_scenario, id_category)
+                where a.id_scenario = ? and a.id_category = ? and trip is not null"""
 
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (id_scenario, id_category))
             #result_b = self.dataBaseSqlite.executeSql(qry_b)
             self.trips_tbl.setRowCount(len(result))
             self.trips_tbl.setColumnCount(3)
@@ -309,15 +309,15 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
             qry = """select * from exogenous_trips
-            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_category={}  and trip is not null""".format(id_scenario, id_from, id_to, id_category)
+            where id_scenario = ? and id_zone_from=? and id_zone_to=? 
+            and id_category=?  and trip is not null"""
             
             qry_b = """select * from exogenous_trips
-            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_category={} """.format(id_scenario, id_from, id_to, id_category)
+            where id_scenario = ? and id_zone_from=? and id_zone_to=? 
+            and id_category=? """
             
-            result = self.dataBaseSqlite.executeSql(qry)
-            result_b = self.dataBaseSqlite.executeSql(qry_b)
+            result = self.dataBaseSqlite.executeSql(qry, (id_scenario, id_from, id_to, id_category))
+            result_b = self.dataBaseSqlite.executeSql(qry_b, (id_scenario, id_from, id_to, id_category))
             if result:
                 self.le_trip.setText('')
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add", "Duplicate values ​​are not allowed.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -346,15 +346,15 @@ class ExogeousTripsDialog(QtWidgets.QDialog, FORM_CLASS):
             scenarios = self.dataBaseSqlite.selectAllScenarios(scenario_code)
 
             qry = """select * from exogenous_trips
-            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_mode={} and id_category={}  and factor is not null""".format(id_scenario, id_from, id_to, id_category, id_mode)
+            where id_scenario = ? and id_zone_from = ? and id_zone_to = ? 
+            and id_mode=? and id_category=?  and factor is not null"""
             
             qry_b = """select * from exogenous_trips
-            where id_scenario ={} and id_zone_from={} and id_zone_to={} 
-            and id_mode={} and id_category={} """.format(id_scenario, id_from, id_to, id_category, id_mode)
+            where id_scenario = ? and id_zone_from = ? and id_zone_to = ? 
+            and id_mode=? and id_category=? """
             
-            result = self.dataBaseSqlite.executeSql(qry)
-            result_b = self.dataBaseSqlite.executeSql(qry_b)
+            result = self.dataBaseSqlite.executeSql(qry, (id_scenario, id_from, id_to, id_category, id_mode))
+            result_b = self.dataBaseSqlite.executeSql(qry_b, (id_scenario, id_from, id_to, id_category, id_mode))
             if result:
                 self.le_trip.setText('')
                 messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add", "Duplicate values ​​are not allowed.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)

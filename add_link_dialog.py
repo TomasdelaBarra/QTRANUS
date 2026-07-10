@@ -358,46 +358,58 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
         #header = ['Turn To','Delay']
 
         if self.codeLink:
-            qry = f"""select id_node node_to, delay
-            from intersection_delay 
-            where id_link = '{id_origin}-{id_destination}'
-            and id_scenario = {self.idScenario}""" 
-            result_a = self.dataBaseSqlite.executeSql(qry)
-            if not result_a:
-                qry = f"""select node_to, delay 
-                    from link
-                    where node_from = {id_destination} 
-                    and id_scenario = {self.idScenario}
-                    order by 1"""
-        else:
-            qry = f"""select node_to, delay 
-                    from link
-                    where node_from = {id_destination} 
-                    and id_scenario = {self.idScenario}
-                    order by 1"""
-        qry = f"""select distinct node_to, b.delay 
-            from link a
-            left join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
-            where node_from = {id_destination} 
-            and a.id_scenario = {self.idScenario} and node_to != {id_origin} order by 1"""
-        qry = f"""select todo.node_to, sum(delay)
-            from 
-            (
-                select distinct node_to, b.delay 
-                from link a
-                left join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
-                where node_from = {id_destination}
-                and a.id_scenario = {self.idScenario} and node_to != {id_origin} and b.id is null
-                union
-                select b.id_node, b.delay 
-                from link a
-                join intersection_delay b on (a.linkid = b.id_link and a.id_scenario = b.id_scenario)
-                where a.id_scenario = {self.idScenario} and b.id_link = '{id_origin}-{id_destination}'
-                order by 1 )
-            todo 
-            group by 1"""
+            qry = """SELECT id_node AS node_to, delay
+                    FROM intersection_delay 
+                    WHERE id_link = ?
+                    AND id_scenario = ?"""
 
-        result = self.dataBaseSqlite.executeSql(qry)
+            link_id = f"{id_origin}-{id_destination}"
+            result_a = self.dataBaseSqlite.executeSql(qry, (link_id, self.idScenario))
+
+            if not result_a:
+                qry = """SELECT node_to, delay 
+                        FROM link
+                        WHERE node_from = ? 
+                        AND id_scenario = ?
+                        ORDER BY 1"""
+                params = (id_destination, self.idScenario)
+        else:
+            qry = """SELECT node_to, delay 
+             FROM link
+             WHERE node_from = ? 
+             AND id_scenario = ?
+             ORDER BY 1"""
+            params = (id_destination, self.idScenario)
+
+        qry = """SELECT todo.node_to, SUM(delay)
+                FROM 
+                (
+                    SELECT DISTINCT node_to, b.delay 
+                    FROM link a
+                    LEFT JOIN intersection_delay b ON (a.linkid = b.id_link AND a.id_scenario = b.id_scenario)
+                    WHERE node_from = ?
+                    AND a.id_scenario = ? 
+                    AND node_to != ? 
+                    AND b.id IS NULL
+                    UNION
+                    SELECT b.id_node, b.delay 
+                    FROM link a
+                    JOIN intersection_delay b ON (a.linkid = b.id_link AND a.id_scenario = b.id_scenario)
+                    WHERE a.id_scenario = ? 
+                    AND b.id_link = ?
+                    ORDER BY 1 
+                ) todo 
+                GROUP BY 1"""
+        
+        params = (
+            id_destination, 
+            self.idScenario, 
+            id_origin, 
+            self.idScenario, 
+            f"{id_origin}-{id_destination}"
+        )
+
+        result = self.dataBaseSqlite.executeSql(qry, params)
 
         if result:
             rowsCount = len(result)
@@ -675,14 +687,14 @@ class AddLinkDialog(QtWidgets.QDialog, FORM_CLASS):
             self.used_in_scenario.setChecked(used_in_scenario)
             
             # Routes
-            qry = f"""select distinct c.id||' '||c.name, b.type_route
+            qry = """select distinct c.id||' '||c.name, b.type_route
                     from link a
                     join link_route b on (a.linkid = b.id_link) and (a.id_scenario = b.id_scenario)
                     join route c on (b.id_route = c.id) and (a.id_scenario = c.id_scenario)
-                    where a.linkid = '{self.codeLink}' and a.id_scenario = {self.idScenario}
+                    where a.linkid = ? and a.id_scenario = ?
                     order by 1"""
 
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (self.codeLink, self.idScenario))
 
             self.modelRoutes.clear()
             self.modelRoutes.setHorizontalHeaderLabels(['Routes'])

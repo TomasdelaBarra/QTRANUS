@@ -316,10 +316,10 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     (select a.id_zone, exogenous_production, induced_production, min_production, 
                     max_production, exogenous_demand, base_price, value_added, attractor 
                     from zonal_data a
-                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                    where a.id_sector = ? and a.id_scenario = ?) zonal_data
                     on zone.id = zonal_data.id_zone
                     where (external is null or external = 0)
-                    order by zone.id""".format(id_sector, self.idScenario)
+                    order by zone.id"""
 
             # Imports Zonal Data
             sql_import = """select 
@@ -331,9 +331,9 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     (select a.id_zone,  min_imports, max_imports, base_price,
                     attractor_import
                     from zonal_data a
-                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                    where a.id_sector = ? and a.id_scenario = ?) zonal_data
                     on zone.id = zonal_data.id_zone
-                    order by zone.id""".format(id_sector, self.idScenario)
+                    order by zone.id"""
 
             # Exports Zonal Data
             sql_exp = """select 
@@ -343,14 +343,14 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     left join 
                     (select a.id_zone, exports
                     from zonal_data a
-                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                    where a.id_sector = ? and a.id_scenario = ?) zonal_data
                     on zone.id = zonal_data.id_zone
-                    order by zone.id""".format(id_sector, self.idScenario)
+                    order by zone.id"""
 
 
-            result = self.dataBaseSqlite.executeSql(sql)
-            result_imp = self.dataBaseSqlite.executeSql(sql_import)
-            result_exp = self.dataBaseSqlite.executeSql(sql_exp)
+            result = self.dataBaseSqlite.executeSql(sql, (id_sector, self.idScenario))
+            result_imp = self.dataBaseSqlite.executeSql(sql_import, (id_sector, self.idScenario))
+            result_exp = self.dataBaseSqlite.executeSql(sql_exp, (id_sector, self.idScenario))
 
             result_prev = None
             result_imp_prev = None
@@ -368,10 +368,10 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                         (select a.id_zone, exogenous_production, induced_production, 
                         min_production, max_production, exogenous_demand, base_price, value_added, attractor 
                         from zonal_data a
-                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                        where a.id_sector = ? and a.id_scenario = ?) zonal_data
                         on zone.id = zonal_data.id_zone
                         where (external is null or external = 0)
-                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+                        order by zone.id"""
                 
                 # Imports Zonal Data
                 sql_import_prev = """select 
@@ -383,9 +383,9 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                         (select a.id_zone, max_imports, min_imports, base_price,
                         attractor_import
                         from zonal_data a
-                        where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                        where a.id_sector = ? and a.id_scenario = ?) zonal_data
                         on zone.id = zonal_data.id_zone
-                        order by zone.id""".format(id_sector, id_prevScenario[0][0])
+                        order by zone.id"""
 
                 # Exports Zonal Data
                 sql_exp_prev = """select 
@@ -395,13 +395,13 @@ class ZonalDataDialog(QtWidgets.QDialog, FORM_CLASS):
                     left join 
                     (select a.id_zone, exports
                     from zonal_data a
-                    where a.id_sector = {} and a.id_scenario = {}) zonal_data
+                    where a.id_sector = ? and a.id_scenario = ?) zonal_data
                     on zone.id = zonal_data.id_zone
-                    order by zone.id""".format(id_sector, id_prevScenario[0][0])
+                    order by zone.id"""
                 
-                result_prev = self.dataBaseSqlite.executeSql(sql_prev)
-                result_imp_prev = self.dataBaseSqlite.executeSql(sql_import_prev)
-                result_exp_prev = self.dataBaseSqlite.executeSql(sql_exp_prev)
+                result_prev = self.dataBaseSqlite.executeSql(sql_prev, (id_sector, id_prevScenario[0][0]))
+                result_imp_prev = self.dataBaseSqlite.executeSql(sql_import_prev, (id_sector, id_prevScenario[0][0]))
+                result_exp_prev = self.dataBaseSqlite.executeSql(sql_exp_prev, (id_sector, id_prevScenario[0][0]))
             
             if len(result)==0:
                     sql = """select 

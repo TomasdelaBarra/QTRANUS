@@ -193,8 +193,8 @@ class AdministratorsDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.idScenario:
             qry = """select a.id, a.name, a.description 
                      from administrator a
-                     where id_scenario = %s""" % (self.idScenario)
-            result = self.dataBaseSqlite.executeSql(qry)
+                     where id_scenario = ?"""
+            result = self.dataBaseSqlite.executeSql(qry, (self.idScenario,))
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Description'])

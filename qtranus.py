@@ -520,12 +520,12 @@ class QTranus:
             # Selecciono un layer
             dataBaseSqlite = DataBaseSqlite(self.project_file)
 
-            qry = f"""select a.linkid 
+            qry = """select a.linkid 
                 from link a
                 join scenario b on a.id_scenario = b.id
-                where b.code = '{self.scenarioCode}'"""
+                where b.code = ?"""
 
-            result = dataBaseSqlite.executeSql(qry)
+            result = dataBaseSqlite.executeSql(qry, (self.scenarioCode, ))
             
             linksIds = ",".join([f"'{value[0]}'" for value in result])
 
@@ -563,15 +563,15 @@ class QTranus:
 
             id_routes = ", ".join(id_routes_selected)
 
-            sql =  f"""select 
+            sql =  """select 
                     a.id_link, a.id_route, c.color
                     from link_route a
                     join scenario b on (a.id_scenario = b.id)
                     join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
-                    where b.code = '{scenario_code}'
-                    and id_route in  ({id_routes})"""
+                    where b.code = ?        
+                    and id_route in  (?)"""
 
-            data_links_routes = self.dataBaseSqlite.executeSql(sql)
+            data_links_routes = self.dataBaseSqlite.executeSql(sql, (scenario_code, ))
             links_routes ="','".join( [ link[0] for link in data_links_routes ] ) 
             
             memory_route_lyr = QgsVectorLayer(f"LineString?crs=epsg:{epsg}", "Network_routes", "memory")
@@ -580,12 +580,12 @@ class QTranus:
             memory_data.addAttributes([QgsField("route_id",  QVariant.String), QgsField("link_id",  QVariant.String)])
 
             # Get features of the base layer
-            qry = f"""select a.linkid 
+            qry = """select a.linkid 
                 from link a
                 join scenario b on a.id_scenario = b.id
-                where b.code = '{scenario_code}'"""
+                where b.code = ?"""
 
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (scenario_code, ))
             links_ids = ",".join([f"'{value[0]}'" for value in result])
             features_network = [feat for feat in layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"{self.project['links_shape_field_id']}\" IN ({links_ids}) "))]
 
@@ -593,28 +593,28 @@ class QTranus:
             
             links_x_route = []
             for route in id_routes_selected:
-                sql =  f"""select 
+                sql =  """select 
                     a.id_link, a.id_route, c.color
                     from link_route a
                     join scenario b on (a.id_scenario = b.id)
                     join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
-                    where b.code = '{scenario_code}'
-                    and id_route = {int(route)}"""
+                    where b.code = ?
+                    and id_route = ?"""
                     
-                link_list = self.dataBaseSqlite.executeSql(sql)
+                link_list = self.dataBaseSqlite.executeSql(sql, ( scenario_code, int(route) ))
                 link_list = [ f"'{value[0]}'"  for value in link_list]
                 links_x_route.append(( int(route) , link_list))
 
             # Group routes
-            sql_test = f"""select 
+            sql_test = """select 
                 a.id_link, a.id_route
                 from link_route a
                 join scenario b on (a.id_scenario = b.id)
                 join route c on (a.id_route = c.id and c.id_scenario = a.id_scenario)
-                where b.code = '{scenario_code}'
-                and id_route in ({",".join(id_routes_selected)}) order by 1"""
+                where b.code = ?
+                and id_route in (?) order by 1"""
             
-            routes_x_link_arr = self.dataBaseSqlite.executeSql(sql_test)
+            routes_x_link_arr = self.dataBaseSqlite.executeSql(sql_test, (scenario_code, ",".join(id_routes_selected)))
             
             # Dictionary to buil offset expression
             routes_links_new = {}
@@ -754,15 +754,15 @@ class QTranus:
             #if len(id_linktypes_selected) > 0:
             id_linktypes = ", ".join(id_linktypes_selected)
 
-            sql =  f"""select distinct id_linktype, linkid, c.symbology
+            sql =  """select distinct id_linktype, linkid, c.symbology
                 from link a
                 join scenario b on (a.id_scenario = b.id)
                 join link_type c on (a.id_linktype = c.id)
-                where b.code = '{scenario_code}'
-                and a.id_linktype in ({id_linktypes})
+                where b.code = ?
+                and a.id_linktype in (?)
                 order by 1
                 """
-            data_links_linktypes = self.dataBaseSqlite.executeSql(sql)
+            data_links_linktypes = self.dataBaseSqlite.executeSql(sql, (scenario_code, id_linktypes))
             links_routes ="','".join( [ link[1] for link in data_links_linktypes ] ) 
             links_routes = f"'{links_routes}'"
 
@@ -771,12 +771,12 @@ class QTranus:
             memory_data.addAttributes([QgsField("linktype_id",  QVariant.Int), QgsField("link_id",  QVariant.String)])
 
             # Get features of the base layer
-            qry = f"""select a.linkid 
+            qry = """select a.linkid
                 from link a
                 join scenario b on a.id_scenario = b.id
-                where b.code = '{scenario_code}'"""
+                where b.code = ? """
 
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (scenario_code,))
             links_ids = ",".join([f"'{value[0]}'" for value in result])
             features_network = [feat for feat in layer_network.getFeatures(QgsFeatureRequest().setFilterExpression( f"\"LinkId\" IN ({links_ids}) "))]
 
@@ -1252,9 +1252,6 @@ class QTranus:
             result_scenario_id = self.dataBaseSqlite.selectAll(" scenario ", where=f" where code = '{scenario_code}'")
             result_scenario_id = result_scenario_id[0][0]
             
-            qry = f"""select a.color, a.id, a.name
-                        from route a
-                        where id_scenario = {result_scenario_id} order by 2 asc """
             result = self.dataBaseSqlite.selectAll(' route ', where=f" where id_scenario = '{result_scenario_id}'", columns=' color, id, name ', orderby=' order by 2 asc ')
 
             model = QtGui.QStandardItemModel()

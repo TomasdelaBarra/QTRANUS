@@ -196,9 +196,9 @@ class NodesDialog(QtWidgets.QDialog, FORM_CLASS):
                       WHEN id_type = 2 then 'External'
                       WHEN id_type = 3 or  id_type = 0 then 'Node'  end type    
                  from node  
-                 where id_scenario = %s
-                 order by 1 asc """ % (self.idScenario)
-        result = self.dataBaseSqlite.executeSql(qry)
+                 where id_scenario = ?
+                 order by 1 asc """
+        result = self.dataBaseSqlite.executeSql(qry, (self.idScenario,))
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Type'])
         for x in range(0, len(result)):

@@ -257,7 +257,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                                     node_from, node_to
                     from link a
                     left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    WHERE a.id_scenario = {0} and (two_way is null or two_way == '' or two_way == 0) {1}
+                    WHERE a.id_scenario = ? and (two_way is null or two_way == '' or two_way == 0) and linkid like '%' || ? || '%'
                     group  by 1,2,3,4,5
                 ), two_way as (
                 select  
@@ -272,7 +272,7 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                         a.node_to
                     from link a
                     left join link_type b on (a.id_linktype = b.id) and (a.id_scenario = b.id_scenario)
-                    where two_way = 1 and a.id_scenario = {0} {1}
+                    where two_way = 1 and a.id_scenario = ? and linkid like '%' || ? || '%'
                     group by 1)
                 select linkid, name, linktype, cast(substr(substr(linkid,3), 0, instr(substr(linkid,3), '-')) as INTEGER)  node_from, cast(substr(substr(linkid,3), instr(substr(linkid,3), '-')+1) as INTEGER) node_to
                 from (
@@ -281,9 +281,9 @@ class LinksDialog(QtWidgets.QDialog, FORM_CLASS):
                     UNION
                     select linkid, name, linktype, node_from, node_to
                     from two_way 
-                ) order by node_from, node_to asc""".format(self.idScenario, linkid)
+                ) order by node_from, node_to asc"""
                 
-        result = self.dataBaseSqlite.executeSql(qry)
+        result = self.dataBaseSqlite.executeSql(qry, (self.idScenario, linkid, self.idScenario, linkid))
         
         model = QtGui.QStandardItemModel()
         model.setHorizontalHeaderLabels(['Id','Name', 'Link Type'])

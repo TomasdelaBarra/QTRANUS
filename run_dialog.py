@@ -149,10 +149,10 @@ class RunDialog(QtWidgets.QDialog, FORM_CLASS):
             self.chck_fixed_transportable.setChecked(False)
 
     def __validate_links(self):
-        sql = f"""select linkid
+        sql = """select linkid
                 from link 
-                where id_linktype is null and id_scenario = {self.idScenario}"""
-        result = self.dataBaseSqlite.executeSql(sql)
+                where id_linktype is null and id_scenario = ?"""
+        result = self.dataBaseSqlite.executeSql(sql, (self.idScenario,))
 
         if result:
             links = ''

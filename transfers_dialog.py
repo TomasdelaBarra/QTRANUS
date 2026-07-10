@@ -178,11 +178,11 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                 transfer_operator_cost a
                 join operator b on a.id_operator_from = b.id and a.id_scenario = b.id_scenario
                 join operator c on a.id_operator_to = c.id and a.id_scenario = c.id_scenario
-                where a.id_scenario = %s order by 4, 5 asc""" % self.idScenario
+                where a.id_scenario = ? order by 4, 5 asc"""
 
             id_prevScenario = self.dataBaseSqlite.previousScenario(self.idScenario)
 
-            result = self.dataBaseSqlite.executeSql(qry)
+            result = self.dataBaseSqlite.executeSql(qry, (self.idScenario,))
 
             self.transfers_table.setRowCount(len(result))
             self.transfers_table.setColumnCount(3)
@@ -237,9 +237,9 @@ class TransfersDialog(QtWidgets.QDialog, FORM_CLASS):
                     return False
 
                 qry = """select * from transfer_operator_cost
-                where id_operator_from={} and id_operator_to={} and id_scenario={}""".format(id_from, id_to, id_scenario)
+                where id_operator_from=? and id_operator_to=? and id_scenario=?"""
                 
-                result = self.dataBaseSqlite.executeSql(qry)
+                result = self.dataBaseSqlite.executeSql(qry, (id_from, id_to, id_scenario))
                 if result:
                     self.tariff.setText('')
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "Add", "Duplicate values ​​are not allowed.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)

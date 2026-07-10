@@ -566,52 +566,64 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		if self.operatorSelected:
 			sql =""" select a.name category, b.penal_factor, b.tariff_factor 
 					from category a left join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
-					where b.id_operator = %s and a.id_scenario = %s """ % (self.operatorSelected, self.idScenario)
-			existOperatorCategory = self.dataBaseSqlite.executeSql(sql)
+					where b.id_operator = ? and a.id_scenario = ? """
+			existOperatorCategory = self.dataBaseSqlite.executeSql(sql, (self.operatorSelected, self.idScenario))
 		else:
 			existOperatorCategory = []
 
-		operatorSql = " b.id_operator = {0}".format(self.operatorSelected) if self.operatorSelected else  'b.id_operator is null '
-		# Table data
-		sql = """with base as (
-			select a.id||' '||a.name category, b.penal_factor, b.tariff_factor, a.id
-			from category a 
-			join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
-			where {0} and a.id_scenario = {1}
+		# Preparamos los parámetros
+		id_op = self.operatorSelected if self.operatorSelected else None
+		id_scenario = self.idScenario
+
+		# Consulta completamente estática (sin .format, f-strings ni concatenaciones)
+		sql = """
+		WITH base AS (
+			SELECT a.id || ' ' || a.name AS category, b.penal_factor, b.tariff_factor, a.id
+			FROM category a 
+			JOIN operator_category b ON (a.id = b.id_category AND a.id_scenario = b.id_scenario)
+			WHERE (b.id_operator = ? OR (? IS NULL AND b.id_operator IS NULL))
+			AND a.id_scenario = ?
 		),
-		operator_only as (
-			select id||' '||name category, '' penal_factor, '' tariff_factor, id
-			from category where id_scenario = {1}
+		operator_only AS (
+			SELECT id || ' ' || name AS category, '' AS penal_factor, '' AS tariff_factor, id
+			FROM category 
+			WHERE id_scenario = ?
 		)
-		SELECT * FROM
-			base
+		SELECT * FROM base
 		UNION
-			select * from 
-			operator_only
-			where category not in (select category from base)
-		ORDER BY 4""".format(operatorSql, self.idScenario)
-		
-		result_cat = self.dataBaseSqlite.executeSql(sql) 
+		SELECT * FROM operator_only
+		WHERE category NOT IN (SELECT category FROM base)
+		ORDER BY 4
+		"""
+
+		# Los parámetros deben seguir el orden exacto de los marcadores '?' en la consulta:
+		# 1) id_operator para "b.id_operator = ?"
+		# 2) id_operator para "? IS NULL" (el mismo valor)
+		# 3) id_scenario para base
+		# 4) id_scenario para operator_only
+		params = (id_op, id_op, id_scenario, id_scenario)
+
+		result_cat = self.dataBaseSqlite.executeSql(sql, params)
 		result_cat_prev = ''
 		if id_prevScenario and self.operatorSelected:
 			sql = """with base as (
 				select a.id||' '||a.name category, b.penal_factor, b.tariff_factor 
 				from category a 
 				join operator_category b on (a.id = b.id_category and a.id_scenario = b.id_scenario)
-				where b.id_operator = {0} and a.id_scenario = {1}
+				where b.id_operator = ? and a.id_scenario = ?
 			),
 			operator_only as (
 				select id||' '||name category, '' penal_factor, '' tariff_factor 
-				from category where id_scenario = {1}
+				from category where id_scenario = ?
 			)
 			select * from 
 				base
 			UNION
 				select * from 
 				operator_only
-				where category not in (select category from base)""".format(self.operatorSelected, id_prevScenario[0][0])
+				where category not in (select category from base)"""
 
-			result_cat_prev = self.dataBaseSqlite.executeSql(sql)
+			result_cat_prev = self.dataBaseSqlite.executeSql(sql, (self.operatorSelected, id_prevScenario[0][0], id_prevScenario[0][0]))
 		
 		rowsCount = len(result_cat)
 		columsCount = len(result_cat[0])-2
