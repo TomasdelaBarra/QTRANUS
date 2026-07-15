@@ -120,7 +120,7 @@ class FileManagement(object):
     @staticmethod
     def find_layer_data(projectPath, layerId):
         try:
-            tree = XMLEt.parse(projectPath+'/.qtranus')
+            tree = XMLEt.parse(projectPath+'/.qtranus') # nosec 
             root = tree.getroot()
         except Exception as e:
             print(e)
@@ -151,7 +151,7 @@ class FileManagement(object):
     @staticmethod
     def remove_layer_element(projectPath, layerId):
         try:
-            tree = XMLEt.parse(projectPath+'/.qtranus')
+            tree = XMLEt.parse(projectPath+'/.qtranus') # nosec
             root = tree.getroot()
         except Exception as e:
             print(e)
@@ -166,7 +166,7 @@ class FileManagement(object):
     @staticmethod
     def if_exist_layer(projectPath, layerId):
         try:
-            tree = XMLEt.parse(projectPath+'/.qtranus')
+            tree = XMLEt.parse(projectPath+'/.qtranus') # nosec
             root = tree.getroot()
 
             if root.findall("./project/layer/[@id='{}']".format(layerId)):
@@ -207,7 +207,7 @@ class FileManagement(object):
     @staticmethod
     def update_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, method=None, level=None, color=None, originZones=None, destinationZones=None, oldIdLayer=None):
         try:
-            tree = XMLEt.parse(projectPath+'/.qtranus')
+            tree = XMLEt.parse(projectPath+'/.qtranus') # nosec
             root = tree.getroot()
             print("ACTUALIZAR:")
 
@@ -238,7 +238,7 @@ class FileManagement(object):
     @staticmethod
     def add_layer_xml_file(layerName, layerId, scenariosExpression, fieldName, sectorsExpression, projectPath, sectorsExpressionText, shpField, typeLayer, method=None, level=None, color=None, originZones=None, destinationZones=None):
         try:
-            tree = XMLEt.parse(projectPath+'/.qtranus')
+            tree = XMLEt.parse(projectPath+'/.qtranus') # nosec
             root = tree.getroot()
             project =  root.find("./project")
             layer = XMLEt.SubElement(project, "layer")

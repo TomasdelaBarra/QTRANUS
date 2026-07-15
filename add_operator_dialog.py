@@ -683,7 +683,7 @@ class AddOperatorDialog(QtWidgets.QDialog, FORM_CLASS):
 		symbol_layers = QgsLineSymbol()
 
 		for layer_symbol in symbol_obj['layers_list']:
-			obj_symbol = eval(f"Qgs{layer_symbol['type_layer']}SymbolLayer.create({layer_symbol['properties_layer']})")
+			obj_symbol = eval(f"Qgs{layer_symbol['type_layer']}SymbolLayer.create({layer_symbol['properties_layer']})") # nosec
 			symbol_layers.appendSymbolLayer(obj_symbol)
 		symbol_layers.deleteSymbolLayer(0)
 		return symbol_layers

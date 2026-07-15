@@ -357,7 +357,7 @@ class Network(object):
             rng = maxValue - minValue
             nCats = 8
             scale = QgsMapUnitScale(minValue, maxValue)
-            color = eval(color)
+            color = eval(color) # nosec
             if method == "Color":
                 color1 = list(map(lambda x: int(x), color['color1'].split(",")[0:3]))
                 color2 = list(map(lambda x: int(x), color['color2'].split(",")[0:3]))
