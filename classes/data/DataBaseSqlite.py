@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys, os, re
+import sys, os, re, json
 
 import sqlite3
 from sqlite3 import OperationalError, IntegrityError, ProgrammingError
@@ -1296,7 +1296,7 @@ class DataBaseSqlite():
 		conn = self.connectionSqlite()
 		cursor = conn.cursor()
 
-		print(type(symbology))
+		symbology = json.dumps(symbology) if symbology is not None else None
 
 		for id_scenario in scenarios:
 			sql = """insert into link_type (id_scenario, id, name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology)
@@ -1312,6 +1312,9 @@ class DataBaseSqlite():
 		cursor = conn.cursor()
 
 		for id_scenario in scenarios:
+
+			symbology = json.dumps(symbology) if symbology is not None else None
+			
 			sql = """update link_type set name=?, description=?, id_administrator=?, capacity_factor=?, min_maintenance_cost=?, perc_speed_reduction_vc=?, perc_max_speed_reduction=?, vc_max_reduction=?, symbology=?
 		 	where id = ? and id_scenario = ?;"""
 			cursor.execute(sql, (name, description, id_administrator, capacity_factor, min_maintenance_cost, perc_speed_reduction_vc, perc_max_speed_reduction, vc_max_reduction, symbology, id, id_scenario[0]))
