@@ -483,8 +483,19 @@ class DataBaseSqlite():
 				link_shape_file_codscenario, link_shape_file_origin, link_shape_file_destination, link_shape_file_id, link_shape_file_name, link_shape_file_type, link_shape_file_length, link_shape_file_direction, 
 				link_shape_file_capacity, node_shape_file, node_shape_file_id, node_shape_file_name, node_shape_file_type,
 				node_shape_file_x, node_shape_file_y) values (
-				?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
-			param = (dataList['zone_shape_file'], dataList['zone_shape_file_id'], dataList['zone_shape_file_name'], dataList['link_shape_file'], dataList['link_shape_file_codscenario'], dataList['link_shape_file_origin'], dataList['link_shape_file_destination'], dataList['link_shape_file_id'], dataList['link_shape_file_name'], dataList['link_shape_file_type'], dataList['link_shape_file_length'], dataList['link_shape_file_direction'], dataList['link_shape_file_capacity'], dataList['node_shape_file'], dataList['node_shape_file_id'], dataList['node_shape_file_name'], dataList['node_shape_file_type'], dataList['node_shape_file_x'], dataList['node_shape_file_y'])
+				?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+			param = (
+				dataList['zone_shape_file'], dataList['zone_shape_file_id'], 
+				dataList['zone_shape_file_name'], dataList['link_shape_file'], 
+				dataList['link_shape_file_codscenario'], dataList['link_shape_file_origin'], 
+				dataList['link_shape_file_destination'], dataList['link_shape_file_id'], 
+				dataList['link_shape_file_name'], dataList['link_shape_file_type'], 
+				dataList['link_shape_file_length'], dataList['link_shape_file_direction'], 
+				dataList['link_shape_file_capacity'], dataList['node_shape_file'], 
+				dataList['node_shape_file_id'], dataList['node_shape_file_name'], 
+				dataList['node_shape_file_type'], dataList['node_shape_file_x'], 
+				dataList['node_shape_file_y']
+				)
 
 		conn.execute(sql, param)
 		conn.commit()
@@ -529,39 +540,30 @@ class DataBaseSqlite():
 		routes = "     ".join([str(value[0]) for value in result])+" 0  "+restricted_turn if result else "0  "+restricted_turn
 		
 		return routes
-		
+
 
 	def selectAllScenarios(self, codeScenario, columns='*', orderby='1 asc'):
-		# 1. VALIDACIÓN ESTRICTA
-		if not re.match(r'^[\w\s,\.\*]+$', columns):
-			return False
-			
-		if not re.match(r'^[\w\s,\.]+$', orderby):
-			return False
-
-		# 2. CONSTRUCCIÓN DEL SQL (Añadimos # nosec B608 al final de la asignación)
-		sql = f"""WITH RECURSIVE
+		
+		sql = """WITH RECURSIVE
 		hierarchy_scenario(n) AS (
-				VALUES(?)
+				VALUES('%s')
 			UNION
 				SELECT code FROM scenario, hierarchy_scenario
-					WHERE scenario.cod_previous=hierarchy_scenario.n
+			 		WHERE scenario.cod_previous=hierarchy_scenario.n
 		)
-		SELECT {columns} FROM scenario
+		SELECT * FROM scenario
 		WHERE scenario.code IN hierarchy_scenario
-		ORDER BY {orderby};""" # nosec B608
+		ORDER BY %s;""" % (codeScenario, orderby)
+
 
 		conn = self.connectionSqlite()
 		try:
-			# En algunas versiones de Bandit, la alerta se genera aquí al ejecutarlo.
-			# Si sigue fallando, puedes mover o duplicar el '# nosec B608' en esta línea:
-			data = conn.execute(sql, (codeScenario,)) # nosec B608
+			data = conn.execute(sql)
 			result = data.fetchall()
+			conn.close()
 			return result
 		except Exception as e:
-			return False
-		finally:
-			conn.close()
+			return False	
 
 
 	def _sanitize_orderby(self, orderby):
@@ -611,7 +613,6 @@ class DataBaseSqlite():
 		elif not isinstance(first, (tuple, list)):
 			dataArray = [(first,)]
 
-		print(f"DENTRO DE DELETE EXTRA FIELD: {dataArray}")
 	
 		try:
 			cursor = conn.cursor()
@@ -1517,18 +1518,12 @@ class DataBaseSqlite():
 
 		for row in data_list:
 			scenarios = self.selectAllScenarios(row[0], columns='id')
-			print("SCENARIOS")
-			print(row[0])
+			
 			for id_scenario in scenarios:
 				if typeSql=='REPLACE':
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], row[8], 1))
 				else:
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], str(row[8])))
-		
-		# print("SQL ARRAY")
-		# print(sql_arr)
-		# print("SQL")
-		# aprint(sql)
 
 		cursor.executemany(sql, sql_arr)
 		conn.commit()
