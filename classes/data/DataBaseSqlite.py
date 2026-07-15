@@ -1511,19 +1511,25 @@ class DataBaseSqlite():
 		sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name) 
 			values (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-
 		if typeSql=='REPLACE':
 			sql = """INSERT OR """+str(typeSql)+""" INTO link (id_scenario, linkid, node_from, node_to, id_linktype, length, two_way, capacity, name, used_in_scenario) 
 				values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
 		for row in data_list:
 			scenarios = self.selectAllScenarios(row[0], columns='id')
-			
+			print("SCENARIOS")
+			print(row[0])
 			for id_scenario in scenarios:
 				if typeSql=='REPLACE':
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], row[8], 1))
 				else:
 					sql_arr.append((int(id_scenario[0]), str(row[1]), row[2], row[3], row[4], row[5], row[6], row[7], str(row[8])))
+		
+		# print("SQL ARRAY")
+		# print(sql_arr)
+		# print("SQL")
+		# aprint(sql)
+
 		cursor.executemany(sql, sql_arr)
 		conn.commit()
 		conn.close()
