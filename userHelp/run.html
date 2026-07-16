@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+        <title>QTranus User Help</title>
+        <link rel="stylesheet" href="css/main.css" type="text/css">
+    </head>
+    <body>
+        <div class="flex-container">
+            <header><h1>QTranus User Help</h1></header>
+            <nav class="nav">
+                <h2>Content</h2>
+                <ul>
+                    <li>
+                    	<a href='index.html'>Home</a>
+                    	<ul class="listLevel">
+                    		<li><a href='project.html'>Project Configuration</a></li>
+                    		<li><a href="data.html">Data</a></li>
+                    		<li><a href="#">Run</a></li>
+                    		<li>
+                    			<a href='results.html'>Data</a>
+                    			<ul class="listLevel">
+                    				<li><a href='zones.html'>Zone-based Maps</a></li>
+									<li><a href='matrix.html'>Matrix</a></li>
+									<li><a href='network.html'>Network</a></li>
+                    			</ul>
+                			</li>
+                    	</ul>
+                    </li>
+                </ul>
+            </nav>
+            <article class="article">
+                <h1>Run</h1>
+                <p>This part of the program is used to enter all the necessary information for the TRANUS Model. In this manual we are using the model of Swindon as an example. This model and all related data may be downloaded from:</p>
+				<a href="http://www.tranus.com/tranus-english/download-install">TRANUS site</a>
+				<p>To begin the process, a simple window is presented with three buttons: Zones, Network, Matrix.</p>
+                <figure>
+                    <img src="img/run1.png">
+                    <figcaption>QTranus Results Window.</figcaption>
+                </figure>
+                <p>In (1) the scenario tree is displayed as a reference, and in (2) manage the list of created layers.</p>
+                <h3>File</h3>
+                <p>Jumps to the Zones Window, where zone-based maps are produced, such as population by zone, employment density by zone, etc.</p>
+                <h3>Input File</h3>
+                <p>Jumps to the Zones Window, where zone-based maps are produced, such as population by zone, employment density by zone, etc.</p>
+                <h3>Project</h3>
+				<p>Jumps to the Zones Window, where zone-based maps are produced, such as population by zone, employment density by zone, etc.</p>
+				<h3>Land Use</h3>
+                <p>Jumps to the Network Maps Window to produce maps on a link basis, such as vehicle volumes, speeds, level of service, and so on.</p>
+				<h3>Transport</h3>
+				<p>Jumps to the Matrix Flow Maps Window, where there are tools to produce flow maps from O-D matrix data, such as trips to work, or heavy freight.</p>
+                <hr>
+                <a href="zones.html">File</a>
+				<a class="linkSpace" href="network.html">Input File</a>
+				<a class="linkSpace" href="matrix.html">Project</a>
+                <a class="linkSpace" href="matrix.html">Land Use</a>
+                <a class="linkSpace" href="matrix.html">Transport</a>
+			</article>
+            <footer id="year">
+            </footer>
+        </div>
+    </body>
+</html>
+<script type="text/javascript">        
+    var d = new Date();
+    document.getElementById("year").innerHTML = "QTranus "+d.getFullYear();
+</script>
