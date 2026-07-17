@@ -1221,6 +1221,48 @@ class QTranusProject(object):
 
         return True, network_shape_fields
 
+    
+    def load_prepared_network_links_shape_file(self, file_path):
+        self.network_link_shape_path = file_path
+        
+        registry = QgsProject.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(self.network_link_shape_path, 'Prepared_Network', 'ogr')
+        
+        if not layer.isValid():
+            self['network_links_shape_file_path'] = ''
+            self['network_links_shape_id'] = ''
+            return False, False
+
+        if layer.geometryType() != 1:
+            raise ExceptionGeometryType(self['network_links_shape_file_path'])
+            return False, None
+
+        if self['network_prepared_links_shape_id'] :
+            existing_tree = self.proj.layerTreeRoot().findLayer(self['network_prepared_links_shape_id'])
+            if existing_tree:
+                existing = existing_tree.layer()
+                registry.removeMapLayer(existing.id())
+
+        network_shape_fields = [field.name() for field in layer.fields()]    
+        registry.addMapLayer(layer, False)
+        group.insertLayer(0, layer)
+        self['network_prepared_links_shape_file_path'] = layer.source()
+        self['network_prepared_links_shape_id'] = layer.id()
+
+        # add listener to layer
+        self.networkLayer = self.proj.mapLayersByName("Prepared_Network")
+        if self.networkLayer:
+            
+            for value in self.networkLayer[0].dataProvider().getFeatures():
+                self.networkDPFeatures.append((value.id(), value.attributes()[0]))    
+
+            #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
+            #self.networkLayer[0].committedFeaturesRemoved.connect(self.featuresDeletedFunct)
+            #self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
+
+        return True, network_shape_fields
+
 
     def featuresDeletedFunct(self, featuresList):
         

@@ -77,6 +77,7 @@ class QTranus:
         # initialize elements of scenarios selector widget 
         self.main_window = self.iface.mainWindow()
         self.canvas = None
+        self.prepare_network_dialog = None
 
         # Load layput dock Scenarios
         # Routes tab
@@ -150,6 +151,7 @@ class QTranus:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'QTranus')
         self.toolbar.setObjectName(u'QTranus')
+        
         
         
 
@@ -1413,6 +1415,12 @@ class QTranus:
 
     def open_prepare_network_layer_window(self):
 
-        dialog = PrepareNetworkDialog(parent=self)
-        dialog.show()
-        result = dialog.exec_()
+        if self.prepare_network_dialog is None:
+            self.prepare_network_dialog = PrepareNetworkDialog(
+                parent=self.dlg,
+                project=self.project
+            )
+
+        self.prepare_network_dialog.show()
+        self.prepare_network_dialog.raise_()
+        self.prepare_network_dialog.activateWindow()
