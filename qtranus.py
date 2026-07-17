@@ -56,6 +56,7 @@ from .add_route_dialog import AddRouteDialog
 from .add_linktype_dialog import AddLinkTypeDialog
 from .reasign_linktype import ReasignLintype
 from .classes.Paths import Paths
+from .prepare_network_dialog import PrepareNetworkDialog
 
 
 class QTranus:
@@ -1373,26 +1374,35 @@ class QTranus:
         else:
             self.tab_widget_main.setTabEnabled(3, False)
 
+
     def add_menu_button(self, icon_path, text, callback, parent=None):
         menu = QMenu(parent)
 
-        action_open = menu.addAction("Abrir QTranus")
-        action_routes = menu.addAction("Rutas")
-        action_linktypes = menu.addAction("Tipos de link")
+        action_open = menu.addAction("Configuration")
+        action_data = menu.addAction("Data")
+        action_run = menu.addAction("Run")
+        action_results = menu.addAction("Results")
+        action_open.setEnabled(False)
+        action_data.setEnabled(False) 
+        action_run.setEnabled(False)
+        action_results.setEnabled(False)
+
+        tools_menu = menu.addMenu("Tools")
+        action_prepare_network = tools_menu.addAction("Prepare network layer")
 
         action_open.triggered.connect(self.run)
-        action_routes.triggered.connect(self.load_routes)
-        action_linktypes.triggered.connect(self.load_linktypes)
+        # action_data.triggered.connect(self.load_data)
+        # action_run.triggered.connect(self.run_model)
+        # action_results.triggered.connect(self.show_results)
+        action_prepare_network.triggered.connect(self.open_prepare_network_layer_window)
 
         button = QToolButton(parent)
         button.setIcon(QIcon(icon_path))
         button.setText(text)
         button.setToolTip(text)
 
-        # clic en el icono principal
         button.clicked.connect(callback)
 
-        # flecha a la derecha
         button.setMenu(menu)
         button.setPopupMode(QToolButton.MenuButtonPopup)
 
@@ -1400,3 +1410,9 @@ class QTranus:
 
         return button, menu
 
+
+    def open_prepare_network_layer_window(self):
+
+        dialog = PrepareNetworkDialog(parent=self)
+        dialog.show()
+        result = dialog.exec_()
