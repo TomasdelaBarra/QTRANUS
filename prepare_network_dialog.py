@@ -194,16 +194,6 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                     return
                 layer.updateFields()
                 link_id_field_index = layer.fields().indexFromName('LinkID')
-            """
-            source_link_id_field_index = layer.fields().indexFromName(link_id_source_field)
-            for feature in layer.getFeatures():
-                if feature.attribute(link_id_field_index) in (None, ''):
-                    layer.changeAttributeValue(
-                        feature.id(),
-                        link_id_field_index,
-                        feature.attributes()[source_link_id_field_index],
-                    )
-            """
 
             expression = f"\"{direction_field}\" IS NULL OR to_int(\"{direction_field}\") IN (0, 2)"
             request = QgsFeatureRequest().setFilterExpression(expression)
