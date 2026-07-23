@@ -9,7 +9,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import * 
 from PyQt5.QtGui import *
 from PyQt5.Qt import QMessageBox
-from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsFeature, QgsGeometry
+from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsFeature, QgsGeometry, QgsField
 from qgis.utils import iface
 
 
@@ -21,6 +21,8 @@ from .classes.data.ScenariosModel import ScenariosModel
 from .scenarios_model_sqlite import ScenariosModelSqlite
 from .classes.general.QTranusMessageBox import QTranusMessageBox
 from .classes.general.Validators import validatorExpr # validatorExpr: For Validate Text use Example: validatorExpr('alphaNum',limit=3) ; 'alphaNum','decimal'
+
+from .prepare_network_summary_dialog import PrepareNetworkSummaryDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'prepare_network_dialog.ui'))
@@ -34,26 +36,41 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             @type parent: QTranusProject class 
         """
         super(PrepareNetworkDialog, self).__init__(parent)
+        self.parent = parent
         self.setupUi(self)
         self.project = project 
-
-        self.links_shape_codscenario = self.findChild(QtWidgets.QComboBox, 'links_shape_codscenario')
+        self.prepare_network_summary_dialog = None
+        
         self.links_shape_origin = self.findChild(QtWidgets.QComboBox, 'links_shape_origin')
         self.links_shape_destination = self.findChild(QtWidgets.QComboBox, 'links_shape_destination')
-        self.links_shape_fields = self.findChild(QtWidgets.QComboBox, 'links_shape_fields')
+        self.links_shape_id = self.findChild(QtWidgets.QComboBox, 'links_shape_id')
         self.links_shape_length = self.findChild(QtWidgets.QComboBox, 'links_shape_length')
         self.links_shape_name = self.findChild(QtWidgets.QComboBox, 'links_shape_name')
         self.links_shape_type = self.findChild(QtWidgets.QComboBox, 'links_shape_type')
         self.links_shape_direction = self.findChild(QtWidgets.QComboBox, 'links_shape_direction')
         self.links_shape_capacity = self.findChild(QtWidgets.QComboBox, 'links_shape_capacity')
+        self.links_offset = self.findChild(QtWidgets.QDoubleSpinBox, 'links_offset')
+        self.links_offset.setValue(0.00006)
+
+        self.links_shape_origin.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_destination.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_id.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_length.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_name.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_type.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_shape_direction.currentIndexChanged.connect(self.validate_form_fields)
+        self.links_offset.valueChanged.connect(self.validate_form_fields)
 
         self.network_links_shape = self.findChild(QtWidgets.QLineEdit, 'network_links_shape')
         self.network_links_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_links_shape_btn')
         self.network_process_links_shape_btn = self.findChild(QtWidgets.QPushButton, 'processButton')
+        self.progress_bar = self.findChild(QtWidgets.QProgressBar, 'progressBar')
 
-        self.network_process_links_shape_btn.clicked.connect(self.prepare_network_layer)
+        self.network_process_links_shape_btn.clicked.connect(self.confirm_network_layer)
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
         
+        self.network_process_links_shape_btn.setEnabled(False)
+        self.progress_bar.setVisible(False)
 
     def save_new_network(self):
         id_scenario = self.idScenario
@@ -143,81 +160,122 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             @param fields: Network shape fields
             @type fields: List object
         """
-        layer = QgsProject.instance().mapLayer(self.project['network_prepared_links_shape_id'])
-        
-        # Validar que haya una capa seleccionada y que sea vectorial
-        if not layer or layer.type() != layer.VectorLayer:
-            print("Por favor, selecciona una capa vectorial activa.")
-            return
+        try:
+            direction_field = self.links_shape_direction.currentText()
+            link_id_source_field = self.links_shape_id.currentText()
+            layer_id = self.project['network_prepared_links_shape_id']
+            layer = QgsProject.instance().mapLayer(layer_id)
 
-        # Validar que el campo "DIR" exista en la capa
-        if layer.fields().indexFromName("DIR") == -1:
-            print("Error: La capa no tiene un campo llamado 'DIR'.")
-            return
+            # Wating time
+            self.progress_bar.show()
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(0)
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            # Wating time
 
-        # Crear la solicitud (Query) para filtrar los elementos
-        # Usamos tanto '0' (texto) como 0 (número) por si el campo es de tipo String o Integer
-        expresion = "\"DIR\" = '0' OR \"DIR\" = 0"
-        request = QgsFeatureRequest().setFilterExpression(expresion)
-        
-        # Obtener los elementos que cumplen la condición
-        elementos_a_duplicar = list(layer.getFeatures(request))
-        
-        if not elementos_a_duplicar:
-            print("No se encontraron elementos con valor '0' en el campo 'DIR'.")
-            return
+            if not layer or layer.type() != layer.VectorLayer:
+                print("Please select an active vector layer.")
+                self.progress_bar.setVisible(False)
+                return
 
-        # Poner la capa en modo edición
-        layer.startEditing()
-        nuevos_elementos = []
-        
-        for feature in elementos_a_duplicar:
-            # Crear un nuevo elemento vacío con la estructura de la capa
+            if layer.fields().indexFromName(direction_field) == -1:
+                print(f"Error: The layer does not have a field named '{direction_field}'.")
+                self.progress_bar.setVisible(False)
+                return
+
+
+            layer.startEditing()
+
+            link_id_field_index = layer.fields().indexFromName('LinkID')
+            if link_id_field_index == -1:
+                if not layer.dataProvider().addAttributes([QgsField('LinkID', QVariant.String)]):
+                    print("Error: The field 'LinkID' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+                link_id_field_index = layer.fields().indexFromName('LinkID')
             """
-            nuevo_feature = QgsFeature(layer.fields())
-            
-            # 1. Copiar la Geometría
-            nueva_geometria = QgsGeometry(feature.geometry())
-            nueva_geometria.translate(0.0001, 0.0001)  # desplaza +5 en X y 0 en Y
-
-            #nueva_geometria = feature.geometry().offsetCurve(0.2, 8, Qgis.JoinStyle.Round, 2)
-            #nuevo_feature.setGeometry(nueva_geometria)
-            nuevo_feature.setGeometry(nueva_geometria)
-            # 2. Copiar los Atributos
-            nuevo_feature.setAttributes(feature.attributes())
-            # Añadir a la lista
-            nuevos_elementos.append(nuevo_feature)
+            source_link_id_field_index = layer.fields().indexFromName(link_id_source_field)
+            for feature in layer.getFeatures():
+                if feature.attribute(link_id_field_index) in (None, ''):
+                    layer.changeAttributeValue(
+                        feature.id(),
+                        link_id_field_index,
+                        feature.attributes()[source_link_id_field_index],
+                    )
             """
-            nuevo_feature = QgsFeature(layer.fields())
-            geom = feature.geometry()
-            
-            # Generar la curva paralela (offset)
-            # Parámetros: distancia, segmentos (curvas), estilo de unión, límite de inglete
-            distancia = 0.00006
-            geom_paralela = geom.offsetCurve(distancia, 8, Qgis.JoinStyle.Round, 2.0)
-            
-            # Validar que la generación de la paralela no haya fallado
-            if geom_paralela and not geom_paralela.isEmpty():
-                nuevo_feature.setGeometry(geom_paralela)
+
+            expression = f"\"{direction_field}\" IS NULL OR to_int(\"{direction_field}\") IN (0, 2)"
+            request = QgsFeatureRequest().setFilterExpression(expression)
+
+            features_to_duplicate = list(layer.getFeatures(request))
+
+            if not features_to_duplicate:
+                print(f"No features were found with values 0, 2 or NULL in '{direction_field}'.")
+                self.progress_bar.setVisible(False)
+                return
+
+            new_features = []
+
+            # Wating time
+            total_features = len(features_to_duplicate)
+            progress_step = max(1, total_features // 100)
+            # Wating time
+
+            for index, feature in enumerate(features_to_duplicate, start=1):
+                geometry = feature.geometry()
+                new_feature = QgsFeature(layer.fields())
+
+                offset_distance = self.links_offset.value() 
+                offset_geometry = geometry.offsetCurve((offset_distance * -1), 8, Qgis.JoinStyle.Round, 2.0)
+
+                if offset_geometry and not offset_geometry.isEmpty():
+                    new_feature.setGeometry(offset_geometry)
+                else:
+                    new_feature.setGeometry(geometry)
+
+                new_feature.setAttributes(feature.attributes())
+                new_features.append(new_feature)
+
+                # Wating time
+                if index % progress_step == 0 or index == total_features:
+                    progress_value = min(100, int((index * 100) / total_features))
+                    self.progress_bar.setValue(progress_value)
+                    QApplication.processEvents()
+                # Wating time
+
+            success = layer.addFeatures(new_features)
+
+            if success:
+                # layer.commitChanges()
+                iface.mapCanvas().refresh()
+                self.progress_bar.setVisible(False)
+                added_links_count = len(new_features)
+                removed_links_count = 0  # Assuming no links are removed in this process
+                final_links_count = len(list(layer.getFeatures()))
+                self.accept()
+
+                if self.prepare_network_summary_dialog is None:
+                    self.prepare_network_summary_dialog = PrepareNetworkSummaryDialog(
+                        parent=self.parent,
+                        added_links=added_links_count,
+                        removed_links=removed_links_count,
+                        final_links=final_links_count,
+                    )
+
+                self.prepare_network_summary_dialog.show()
+                self.prepare_network_summary_dialog.raise_()
+                self.prepare_network_summary_dialog.activateWindow()
+
             else:
-                # Si falla (por auto-intersecciones extremas), usamos la original
-                nuevo_feature.setGeometry(geom)
-                
-            nuevo_feature.setAttributes(feature.attributes())
-            nuevos_elementos.append(nuevo_feature)
-            
-        # Añadir los nuevos elementos a la capa
-        exito = layer.addFeatures(nuevos_elementos)
-        
-        if exito:
-            # Refrescar el mapa
-            iface.mapCanvas().refresh()
-            print(f"Éxito: Se han duplicado {len(nuevos_elementos)} elemento(s) con DIR = 0.")
-        else:
-            print("Hubo un error al añadir los elementos a la capa.")
-        
-        # layer.commitChanges()
-        # Opcional: layer.commitChanges() para guardar automáticamente
+                layer.rollBack()
+                self.progress_bar.setVisible(False)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            print(traceback.format_exc())
+        finally:
+            self.progress_bar.setVisible(False)
+            QApplication.restoreOverrideCursor()
 
 
     def load_network_shape_fields(self, fields):
@@ -232,11 +290,6 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             print ("There are no fields to load.")
         else:
             fields.insert(0,'Select')
-            self.links_shape_codscenario.setEnabled(True)
-            self.links_shape_codscenario.clear()
-            self.links_shape_codscenario.addItems(fields)
-            linkScenarioTxt = self.links_shape_codscenario.findText('scenario', Qt.MatchContains) if self.links_shape_codscenario.findText('scenario', Qt.MatchContains) != -1 else 0
-            self.links_shape_codscenario.setCurrentIndex(linkScenarioTxt)
 
             self.links_shape_origin.setEnabled(True)
             self.links_shape_origin.clear()
@@ -250,11 +303,11 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             linkDestinationTxt = self.links_shape_destination.findText('destination', Qt.MatchContains) if self.links_shape_destination.findText('destination', Qt.MatchContains) != -1 else 0
             self.links_shape_destination.setCurrentIndex(linkDestinationTxt)
 
-            self.links_shape_fields.setEnabled(True)
-            self.links_shape_fields.clear()
-            self.links_shape_fields.addItems(fields)
-            linkIdTxt = self.links_shape_fields.findText('id', Qt.MatchContains) if self.links_shape_fields.findText('id', Qt.MatchContains) != -1 else 0
-            self.links_shape_fields.setCurrentIndex(linkIdTxt)
+            self.links_shape_id.setEnabled(True)
+            self.links_shape_id.clear()
+            self.links_shape_id.addItems(fields)
+            linkIdTxt = self.links_shape_id.findText('id', Qt.MatchContains) if self.links_shape_id.findText('id', Qt.MatchContains) != -1 else 0
+            self.links_shape_id.setCurrentIndex(linkIdTxt)
 
             self.links_shape_length.setEnabled(True)
             self.links_shape_length.clear()
@@ -285,3 +338,42 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             self.links_shape_capacity.addItems(fields)
             capacityTxt = self.links_shape_capacity.findText('capacity', Qt.MatchContains) if self.links_shape_capacity.findText('capacity', Qt.MatchContains) != -1 else 0
             self.links_shape_capacity.setCurrentIndex(capacityTxt)
+
+            self.validate_form_fields()
+
+
+    def validate_form_fields(self):
+        """
+            @summary: Validate required combo values in the form.
+            @return: True when all required fields are different from Select.
+            @rtype: bool
+        """
+        required_fields = [
+            self.links_shape_direction
+        ]
+
+        has_valid_fields = all(field.currentText().strip() != 'Select' for field in required_fields)
+        has_valid_offset = self.links_offset.value() != 0.0
+        is_valid = has_valid_fields and has_valid_offset
+        self.network_process_links_shape_btn.setEnabled(is_valid)
+        return is_valid
+
+
+    def confirm_network_layer(self, message):
+        """
+            @summary: Show a warning message box with the provided message.
+            @param message: The message to display in the warning box.
+            @type message: str
+        """
+        results = QMessageBox.question(
+            self,
+            "Alert",
+            "Caution: This operation will modify the features of the active layer and permanently update the source shapefile (.shp). This action cannot be undone. Do you wish to continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No  # Este es el botón seleccionado por defecto
+        )
+
+        # Evaluar la respuesta del usuario
+        if results == QMessageBox.StandardButton.Yes:
+            self.prepare_network_layer()
+                    

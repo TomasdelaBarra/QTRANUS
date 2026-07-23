@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>772</width>
-    <height>134</height>
+    <width>885</width>
+    <height>157</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,99 +18,12 @@
     <layout class="QVBoxLayout" name="verticalLayout_7">
      <item>
       <layout class="QFormLayout" name="formLayout">
-       <item row="1" column="1">
-        <layout class="QGridLayout" name="gridLayout_4">
-         <item row="1" column="6">
-          <widget class="QLabel" name="label_18">
-           <property name="text">
-            <string>Capacity</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="8">
-          <widget class="QLabel" name="label_19">
-           <property name="text">
-            <string>Name</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="5">
-          <widget class="QComboBox" name="links_shape_direction"/>
-         </item>
-         <item row="1" column="7">
-          <widget class="QComboBox" name="links_shape_capacity"/>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_29">
-           <property name="text">
-            <string>Type</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="4">
-          <widget class="QLabel" name="label_30">
-           <property name="text">
-            <string>Direction</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="9">
-          <widget class="QComboBox" name="links_shape_name"/>
-         </item>
-         <item row="1" column="2">
-          <widget class="QLabel" name="label_28">
-           <property name="text">
-            <string>Length</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QComboBox" name="links_shape_codscenario"/>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="links_shape_type"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_31">
-           <property name="text">
-            <string>Scenario Code</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="7">
-          <widget class="QComboBox" name="links_shape_fields"/>
-         </item>
-         <item row="0" column="5">
-          <widget class="QComboBox" name="links_shape_destination"/>
-         </item>
-         <item row="1" column="3">
-          <widget class="QComboBox" name="links_shape_length"/>
-         </item>
-         <item row="0" column="6">
-          <widget class="QLabel" name="label_33">
-           <property name="text">
-            <string>Id</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="4">
-          <widget class="QLabel" name="label_32">
-           <property name="text">
-            <string>Destination</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_34">
-           <property name="text">
-            <string>Origin</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QComboBox" name="links_shape_origin"/>
-         </item>
-        </layout>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Network links shape file:</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -130,17 +43,108 @@
          </item>
         </layout>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Network links shape file:</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="lbl_links_id">
          <property name="text">
           <string>Select links shape Fields:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="1" column="8">
+          <widget class="QLabel" name="label_29">
+           <property name="text">
+            <string>Type:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="9">
+          <widget class="QComboBox" name="links_shape_type"/>
+         </item>
+         <item row="1" column="7">
+          <widget class="QComboBox" name="links_shape_capacity"/>
+         </item>
+         <item row="0" column="8">
+          <widget class="QLabel" name="label_19">
+           <property name="text">
+            <string>Name:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="6">
+          <widget class="QLabel" name="label_18">
+           <property name="text">
+            <string>Capacity:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="5">
+          <widget class="QComboBox" name="links_shape_direction"/>
+         </item>
+         <item row="0" column="7">
+          <widget class="QComboBox" name="links_shape_id"/>
+         </item>
+         <item row="0" column="5">
+          <widget class="QComboBox" name="links_shape_destination"/>
+         </item>
+         <item row="1" column="3">
+          <widget class="QComboBox" name="links_shape_length"/>
+         </item>
+         <item row="1" column="4">
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>Direction (*):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="label_28">
+           <property name="text">
+            <string>Length:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="9">
+          <widget class="QComboBox" name="links_shape_name"/>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="label_32">
+           <property name="text">
+            <string>Destination:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QLabel" name="label_33">
+           <property name="text">
+            <string>Id:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QComboBox" name="links_shape_origin"/>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="label_34">
+           <property name="text">
+            <string>Origin:</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Links offset:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="links_offset">
+         <property name="decimals">
+          <number>5</number>
          </property>
         </widget>
        </item>
