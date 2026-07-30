@@ -1,10 +1,7 @@
 #encoding=UTF-8
 
 from __future__ import unicode_literals
-import os
-import re
-import random
-import string
+import os, re, random, string, shutil, glob
 import numpy as np
 from pickle import NONE
 from os import listdir
@@ -16,7 +13,7 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QMessageBox
 
 import qgis.utils
-from qgis.core import QgsMessageLog, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol
+from qgis.core import QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsVectorFileWriter
 
 from .tranus import TranusProject
 from .classes.GeneralObject import GeneralObject
@@ -27,7 +24,7 @@ from .classes.ZoneCentroid import ZoneCentroid
 from .classes.TripMatrix import TripMatrix
 from .classes.network.Network import Network
 from .classes.general.QTranusMessageBox import QTranusMessageBox
-from .classes.general.Helpers import Helpers, ExceptionGeometryType
+from .classes.general.Helpers import Helpers, ExceptionGeometryType, ExceptionCRSNotDefined
 from .classes.general.FileManagement import FileManagement as FileMXML
 from .classes.ExpressionData import ExpressionData
 from .classes.CustomExceptions import InputFileSourceError
@@ -1262,6 +1259,114 @@ class QTranusProject(object):
             #self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
 
         return True, network_shape_fields
+
+    def generate_nodes_from_lines(self, line_layer):
+        """
+        @summary: Generates nodes from the selected line layer in QGIS.
+        @param line_layer: The QgsVectorLayer object representing the line layer.
+        @type line_layer: QgsVectorLayer
+        """
+        if not line_layer or line_layer.geometryType() != QgsWkbTypes.LineGeometry:
+            print("Por favor, selecciona una capa de líneas (polylines) en el panel de capas.")
+            return
+        else:
+            # 2. Create a temporary point layer in memory for the nodes.
+            crs = line_layer.crs().authid()
+            group = self.get_layers_group()
+
+            if not crs:
+                raise ExceptionCRSNotDefined()
+
+            point_layer = QgsVectorLayer(f"Point?crs={crs}", "Nodes", "memory")
+            pr = point_layer.dataProvider()
+            
+            # Add the NodeID field with an integer type.
+            pr.addAttributes([QgsField("NodeID", QVariant.Int)])
+            point_layer.updateFields()
+
+            # 3. Prepare variables for topology processing and ID assignment.
+            unique_nodes = {} # Dictionary used to track coordinates: {(x, y): NodeID}
+            current_node_id = 1
+            new_features = []
+            
+            # Decimal tolerance used to compare coordinates and avoid floating-point precision issues.
+            tolerancia = 5 
+
+            # 4. Iterate through the lines to extract endpoint nodes.
+            for feat in line_layer.getFeatures():
+                geom = feat.geometry()
+                if geom.isNull():
+                    continue
+                    
+                # Handle either simple polylines or multipart polylines.
+                if geom.isMultipart():
+                    lines = geom.asMultiPolyline()
+                else:
+                    lines = [geom.asPolyline()]
+                    
+                for line in lines:
+                    if not line or len(line) < 2: 
+                        continue
+                    
+                    # Identify the start and end points.
+                    start_pt = line[0]
+                    end_pt = line[-1]
+                    
+                    for pt in (start_pt, end_pt):
+                        # Round the coordinates to build a unique key.
+                        coord_key = (round(pt.x(), tolerancia), round(pt.y(), tolerancia))
+                        
+                        # Create a new node only if the coordinate has not been seen before.
+                        if coord_key not in unique_nodes:
+                            unique_nodes[coord_key] = current_node_id
+                            
+                            # Create the new point feature.
+                            new_feat = QgsFeature()
+                            new_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(pt.x(), pt.y())))
+                            new_feat.setAttributes([current_node_id])
+                            new_features.append(new_feat)
+                            
+                            current_node_id += 1 # Increment the running identifier.
+
+            # 5. Add the generated points to the layer and refresh its extents.
+            pr.addFeatures(new_features)
+            point_layer.updateExtents()
+
+            QgsProject.instance().addMapLayer(point_layer)
+            
+            print(f"Proceso completado. Se generaron {current_node_id - 1} nodos únicos.")
+            return point_layer.id()
+
+    
+    def copy_network_shape_file(self, base_path, final_path):
+        # Copy every shapefile sidecar file that shares the same base name.
+        source_base_path, _ = os.path.splitext(base_path)
+        target_base_path, _ = os.path.splitext(final_path)
+        associated_files = glob.glob(source_base_path + '.*')
+
+        if not associated_files:
+            print("No associated files were found to copy.")
+            return False
+
+        new_shp_path = False
+        for source_file_path in associated_files:
+            # Preserve the current sidecar file extension, for example '.shp' or '.dbf'.
+            file_extension = os.path.splitext(source_file_path)[1]
+
+            # Build the target file path with the same extension.
+            target_file_path = target_base_path + file_extension
+
+            shutil.copy(source_file_path, target_file_path)
+            print(f"Copied: {target_file_path}")
+
+            if file_extension.lower() == '.shp':
+                new_shp_path = target_file_path
+
+        if not new_shp_path:
+            return False
+
+        print("Physical copy completed.")
+        return new_shp_path
 
 
     def featuresDeletedFunct(self, featuresList):

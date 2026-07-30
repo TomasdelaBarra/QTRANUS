@@ -352,5 +352,17 @@ class ExceptionNullValue(Exception):
 
     def __str__(self):
         return f'Field: {self._field}  id: {self._id} value is null'
+
+
+class ExceptionCRSNotDefined(Exception):
+    """
+    @summary: Exception for undefined CRS
+    """
+    def __init__(self, message="CRS is not defined"):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'CRS Error: {self.message}'
          
                 

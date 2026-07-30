@@ -49,6 +49,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_type = self.findChild(QtWidgets.QComboBox, 'links_shape_type')
         self.links_shape_direction = self.findChild(QtWidgets.QComboBox, 'links_shape_direction')
         self.links_shape_capacity = self.findChild(QtWidgets.QComboBox, 'links_shape_capacity')
+        self.links_shape_network_filename = self.findChild(QtWidgets.QLineEdit, 'links_shape_network_filename')
+        self.links_shape_load_links = self.findChild(QtWidgets.QPushButton, 'links_shape_load_links')
         self.links_offset = self.findChild(QtWidgets.QDoubleSpinBox, 'links_offset')
         self.links_offset.setValue(0.00006)
 
@@ -66,10 +68,12 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.network_process_links_shape_btn = self.findChild(QtWidgets.QPushButton, 'processButton')
         self.progress_bar = self.findChild(QtWidgets.QProgressBar, 'progressBar')
 
+        self.links_shape_load_links.clicked.connect(self.select_network_links_shape)
         self.network_process_links_shape_btn.clicked.connect(self.confirm_network_layer)
-        self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.select_network_links_shape))
+        self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.process_file_names))
         
         self.network_process_links_shape_btn.setEnabled(False)
+        self.links_shape_load_links.setEnabled(False)
         self.progress_bar.setVisible(False)
 
     def save_new_network(self):
@@ -130,17 +134,22 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         return select_file
 
 
-    def select_network_links_shape(self, file_name):
+    def select_network_links_shape(self):
         try:
-            file_name = file_name if isinstance(file_name,str) else file_name[0]
-            result, networkShapeFields = self.project.load_prepared_network_links_shape_file(file_name)
-        
-            if result:
-                self.network_links_shape.setText(file_name)
-                self.load_network_shape_fields(networkShapeFields)
-            else:
-                self.network_links_shape.setText('')
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            base_name = self.network_links_shape.text()
+            copy_name = self.links_shape_network_filename.text()
+            directory, file = os.path.split(base_name)
+            copy_name = os.path.join(directory, copy_name)
+            self.project.copy_network_shape_file(base_name, copy_name)
 
+            result, networkShapeFields = self.project.load_prepared_network_links_shape_file(copy_name)
+            if result:
+                self.load_network_shape_fields(networkShapeFields)
+                iface.messageBar().pushSuccess("Success", "Layer was created successfully.")
+            else:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "There is a issue.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
         except ExceptionGeometryType:
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Wrong Geometry Type.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
@@ -150,10 +159,47 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
             messagebox.exec_()
         finally:
+            QApplication.restoreOverrideCursor()
             print('finally')
             #self.check_configure()
 
-    
+
+    def process_file_names(self, file_name):
+        """
+            @summary: Process the selected file name to extract the directory, file name, and extension
+            @param file_name: The full path of the selected file
+            @type file_name: str
+        """
+        file_name = file_name if isinstance(file_name,str) else file_name[0]
+        directory, file = os.path.split(file_name)
+        name_without_ext, extension = os.path.splitext(file)
+
+        self.network_links_shape.setText(file_name)
+        self.links_shape_network_filename.setText(f"{name_without_ext}_copy{extension}")
+        self.validate_base_network_shape_file()
+        
+        
+    def validate_base_network_shape_file(self):
+        """
+            @summary: Validate the base network shape file before processing
+            @return: True if the base network shape file is valid, False otherwise
+            @rtype: bool
+        """
+        base_name = self.network_links_shape.text()
+        if not base_name:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a base network shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
+        if not os.path.isfile(base_name):
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "The selected base network shape file does not exist.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+        
+        self.links_shape_load_links.setEnabled(True) 
+
+        return True
+
     def prepare_network_layer(self):
         """
             @summary: Prepare network layer to be used in QTranus
@@ -165,6 +211,17 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             link_id_source_field = self.links_shape_id.currentText()
             layer_id = self.project['network_prepared_links_shape_id']
             layer = QgsProject.instance().mapLayer(layer_id)
+            
+            
+
+            origin_field = self.links_shape_origin.currentText() if self.links_shape_origin.currentText() != 'Select' else None
+            destination_field = self.links_shape_destination.currentText() if self.links_shape_destination.currentText() != 'Select' else None
+            length_field = self.links_shape_length.currentText() if self.links_shape_length.currentText() != 'Select' else None
+            capacity_field = self.links_shape_capacity.currentText() if self.links_shape_capacity.currentText() != 'Select' else None
+            type_field = self.links_shape_type.currentText() if self.links_shape_type.currentText() != 'Select' else None
+            name_field = self.links_shape_name.currentText() if self.links_shape_name.currentText() != 'Select' else None
+            id_field = self.links_shape_id.currentText() if self.links_shape_id.currentText() != 'Select' else None
+            direction_field = self.links_shape_direction.currentText() if self.links_shape_direction.currentText() != 'Select' else None
 
             # Wating time
             self.progress_bar.show()
@@ -183,18 +240,116 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.progress_bar.setVisible(False)
                 return
 
-
             layer.startEditing()
 
-            link_id_field_index = layer.fields().indexFromName('LinkID')
-            if link_id_field_index == -1:
-                if not layer.dataProvider().addAttributes([QgsField('LinkID', QVariant.String)]):
+            scenario_code_index = layer.fields().indexFromName('SceCode')
+            if scenario_code_index == -1:
+                if not layer.dataProvider().addAttributes([QgsField('SceCode', QVariant.String)]):
+                    print("Error: The field 'ScenarioCode' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+                scenario_code_index = layer.fields().indexFromName('SceCode')
+            
+            # Direction
+            direction_index = layer.fields().indexOf(direction_field) if direction_field else -1
+            if direction_index != -1:
+                if layer.dataProvider().renameAttributes({direction_index: 'Direction'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Direction', QVariant.Int)]):
+                    print("Error: The field 'Direction' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # ID
+            id_index = layer.fields().indexOf(id_field) if id_field else -1
+            if id_index != -1:
+                if layer.dataProvider().renameAttributes({id_index: 'LinkID'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('LinkID', QVariant.Int)]):
                     print("Error: The field 'LinkID' could not be added to the layer.")
                     layer.rollBack()
                     return
                 layer.updateFields()
-                link_id_field_index = layer.fields().indexFromName('LinkID')
+            
+            # Origin 
+            origin_index = layer.fields().indexOf(origin_field) if origin_field else -1
+            if origin_index != -1:
+                if layer.dataProvider().renameAttributes({origin_index: 'Origin'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Origin', QVariant.Int)]):
+                    print("Error: The field 'Origin' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
 
+            # Destination
+            destination_index = layer.fields().indexOf(destination_field) if destination_field else -1
+            if destination_index != -1:
+                if layer.dataProvider().renameAttributes({destination_index: 'Dest'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Dest', QVariant.Int)]):
+                    print("Error: The field 'Destination' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # Length
+            length_index = layer.fields().indexOf(length_field) if length_field else -1
+            if length_index != -1:
+                if layer.dataProvider().renameAttributes({length_index: 'Length'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Length', QVariant.Double)]):
+                    print("Error: The field 'Length' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # Capacity
+            capacity_index = layer.fields().indexOf(capacity_field) if capacity_field else -1
+            if capacity_index != -1:
+                if layer.dataProvider().renameAttributes({capacity_index: 'Capacity'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Capacity', QVariant.Double)]):
+                    print("Error: The field 'Capacity' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # Type
+            type_index = layer.fields().indexOf(type_field) if type_field else -1
+            if type_index != -1:
+                if layer.dataProvider().renameAttributes({type_index: 'Type'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Type', QVariant.String)]):
+                    print("Error: The field 'Type' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # Name
+            name_index = layer.fields().indexOf(name_field) if name_field else -1
+            if name_index != -1:
+                if layer.dataProvider().renameAttributes({name_index: 'Name'}):
+                    layer.updateFields()
+            else:
+                if not layer.dataProvider().addAttributes([QgsField('Name', QVariant.String)]):
+                    print("Error: The field 'Name' could not be added to the layer.")
+                    layer.rollBack()
+                    return
+                layer.updateFields()
+
+            # Create nodes from lines if the layer is valid
+            nodes_layer_id = self.project.generate_nodes_from_lines(layer)
+            
             expression = f"\"{direction_field}\" IS NULL OR to_int(\"{direction_field}\") IN (0, 2)"
             request = QgsFeatureRequest().setFilterExpression(expression)
 
@@ -252,7 +407,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                         removed_links=removed_links_count,
                         final_links=final_links_count,
                     )
-
+                
+                # Show summary Dialog
                 self.prepare_network_summary_dialog.show()
                 self.prepare_network_summary_dialog.raise_()
                 self.prepare_network_summary_dialog.activateWindow()
@@ -263,6 +419,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         except Exception as e:
             print(f"An error occurred: {e}")
             print(traceback.format_exc())
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", str(e), ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
         finally:
             self.progress_bar.setVisible(False)
             QApplication.restoreOverrideCursor()
