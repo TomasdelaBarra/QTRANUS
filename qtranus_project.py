@@ -1279,10 +1279,22 @@ class QTranusProject(object):
 
             point_layer = QgsVectorLayer(f"Point?crs={crs}", "Nodes", "memory")
             pr = point_layer.dataProvider()
+            line_provider = line_layer.dataProvider()
             
             # Add the NodeID field with an integer type.
             pr.addAttributes([QgsField("NodeID", QVariant.Int)])
             point_layer.updateFields()
+
+            link_id_index = line_layer.fields().indexFromName("LinkID")
+            if link_id_index == -1:
+                line_provider.addAttributes([QgsField("LinkID", QVariant.String)])
+                line_layer.updateFields()
+                link_id_index = line_layer.fields().indexFromName("LinkID")
+
+            started_editing = False
+            if not line_layer.isEditable():
+                line_layer.startEditing()
+                started_editing = True
 
             # 3. Prepare variables for topology processing and ID assignment.
             unique_nodes = {} # Dictionary used to track coordinates: {(x, y): NodeID}
@@ -1291,6 +1303,22 @@ class QTranusProject(object):
             
             # Decimal tolerance used to compare coordinates and avoid floating-point precision issues.
             tolerancia = 5 
+
+            def get_or_create_node_id(point):
+                nonlocal current_node_id
+                coord_key = (round(point.x(), tolerancia), round(point.y(), tolerancia))
+
+                if coord_key not in unique_nodes:
+                    unique_nodes[coord_key] = current_node_id
+
+                    new_feat = QgsFeature()
+                    new_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(point.x(), point.y())))
+                    new_feat.setAttributes([current_node_id])
+                    new_features.append(new_feat)
+
+                    current_node_id += 1
+
+                return unique_nodes[coord_key]
 
             # 4. Iterate through the lines to extract endpoint nodes.
             for feat in line_layer.getFeatures():
@@ -1303,6 +1331,9 @@ class QTranusProject(object):
                     lines = geom.asMultiPolyline()
                 else:
                     lines = [geom.asPolyline()]
+
+                feature_origin_node_id = None
+                feature_destination_node_id = None
                     
                 for line in lines:
                     if not line or len(line) < 2: 
@@ -1311,24 +1342,22 @@ class QTranusProject(object):
                     # Identify the start and end points.
                     start_pt = line[0]
                     end_pt = line[-1]
-                    
-                    for pt in (start_pt, end_pt):
-                        # Round the coordinates to build a unique key.
-                        coord_key = (round(pt.x(), tolerancia), round(pt.y(), tolerancia))
-                        
-                        # Create a new node only if the coordinate has not been seen before.
-                        if coord_key not in unique_nodes:
-                            unique_nodes[coord_key] = current_node_id
-                            
-                            # Create the new point feature.
-                            new_feat = QgsFeature()
-                            new_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(pt.x(), pt.y())))
-                            new_feat.setAttributes([current_node_id])
-                            new_features.append(new_feat)
-                            
-                            current_node_id += 1 # Increment the running identifier.
+
+                    if feature_origin_node_id is None:
+                        feature_origin_node_id = get_or_create_node_id(start_pt)
+                    else:
+                        get_or_create_node_id(start_pt)
+
+                    feature_destination_node_id = get_or_create_node_id(end_pt)
+
+                if feature_origin_node_id is not None and feature_destination_node_id is not None:
+                    link_id = f"{feature_origin_node_id}-{feature_destination_node_id}"
+                    line_layer.changeAttributeValue(feat.id(), link_id_index, link_id)
 
             # 5. Add the generated points to the layer and refresh its extents.
+            if started_editing:
+                line_layer.commitChanges()
+
             pr.addFeatures(new_features)
             point_layer.updateExtents()
 

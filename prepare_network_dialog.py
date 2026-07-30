@@ -212,7 +212,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             layer_id = self.project['network_prepared_links_shape_id']
             layer = QgsProject.instance().mapLayer(layer_id)
             
-            
+            # Create nodes from lines if the layer is valid
+            nodes_layer_id = self.project.generate_nodes_from_lines(layer)
 
             origin_field = self.links_shape_origin.currentText() if self.links_shape_origin.currentText() != 'Select' else None
             destination_field = self.links_shape_destination.currentText() if self.links_shape_destination.currentText() != 'Select' else None
@@ -347,9 +348,6 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                     return
                 layer.updateFields()
 
-            # Create nodes from lines if the layer is valid
-            nodes_layer_id = self.project.generate_nodes_from_lines(layer)
-            
             expression = f"\"{direction_field}\" IS NULL OR to_int(\"{direction_field}\") IN (0, 2)"
             request = QgsFeatureRequest().setFilterExpression(expression)
 
@@ -367,6 +365,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             progress_step = max(1, total_features // 100)
             # Wating time
 
+            """
             for index, feature in enumerate(features_to_duplicate, start=1):
                 geometry = feature.geometry()
                 new_feature = QgsFeature(layer.fields())
@@ -390,7 +389,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Wating time
 
             success = layer.addFeatures(new_features)
-
+            """ 
+            
             if success:
                 # layer.commitChanges()
                 iface.mapCanvas().refresh()
