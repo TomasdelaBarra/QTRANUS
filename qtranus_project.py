@@ -10,7 +10,7 @@ from os.path import isfile, join
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor, QIcon
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QApplication
 
 import qgis.utils
 from qgis.core import QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsVectorFileWriter
@@ -1260,7 +1260,7 @@ class QTranusProject(object):
 
         return True, network_shape_fields
 
-    def generate_nodes_from_lines(self, line_layer, path=None, start_node_id=None):
+    def generate_nodes_from_lines(self, line_layer, path=None, start_node_id=None, progress_bar_obj=None):
         """
         @summary: Generates nodes from the selected line layer in QGIS.
         @param line_layer: The QgsVectorLayer object representing the line layer.
@@ -1270,6 +1270,12 @@ class QTranusProject(object):
             print("Por favor, selecciona una capa de líneas (polylines) en el panel de capas.")
             return
         else:
+            if progress_bar_obj is not None:
+                progress_bar_obj.setValue(0)
+                progress_bar_obj.setFormat("Generating nodes from line layer...")
+                progress_bar_obj.setVisible(True)
+                # QApplication.processEvents()
+                
             options = QgsVectorFileWriter.SaveVectorOptions()
             options.driverName = "ESRI Shapefile" # Define el formato
             options.fileEncoding = "UTF-8"
@@ -1352,8 +1358,15 @@ class QTranusProject(object):
 
                 feature_origin_node_id = None
                 feature_destination_node_id = None
-                    
-                for line in lines:
+
+                lenlines = len(lines)
+                progress_step = 100.0 / lenlines if lenlines else 100.0
+                
+                for index, line in enumerate(lines):
+                    """if progress_bar_obj is not None:
+                        progress_bar_obj.setValue(min(100, int(round((index + 1) * progress_step))))"""
+                        # QApplication.processEvents()
+
                     if not line or len(line) < 2: 
                         continue
                     
@@ -1382,7 +1395,12 @@ class QTranusProject(object):
             registry = QgsProject.instance()
             registry.addMapLayer(point_layer, False)
             group.insertLayer(0, point_layer)
-            
+
+            """
+            if progress_bar_obj is not None:
+                progress_bar_obj.setValue(100)
+            """
+
             print(f"Process completed. {current_node_id - 1} unique nodes were generated.")
                 
             return point_layer.id(), (current_node_id - 1)

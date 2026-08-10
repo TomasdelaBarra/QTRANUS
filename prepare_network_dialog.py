@@ -79,6 +79,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.progress_bar.setVisible(False)
 
 
+
     def save_new_network(self):
         id_scenario = self.idScenario
         scenario_code = self.dataBaseSqlite.selectAll('scenario', columns=' code ', where=' where id = %s ' % id_scenario)[0][0]
@@ -232,8 +233,10 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             # Wating time
             self.progress_bar.show()
             self.progress_bar.setRange(0, 100)
+            self.progress_bar.setFormat('Preparing network layer...')
             self.progress_bar.setValue(0)
             QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.processEvents()
             # Wating time
 
             initial_node_id = self.links_initial_node_id.value()
@@ -269,12 +272,27 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.progress_bar.setVisible(False)
                 return
             """
-            print("FUERA DEL IF 2")
             if not self.validate_if_network_nodes_exist():
+                self.progress_bar.setFormat('Generating nodes from Network layer...')
+                QApplication.processEvents()
+                generated_nodes_result = self.project.generate_nodes_from_lines(
+                    layer,
+                    path=copy_name,
+                    start_node_id=initial_node_id,
+                    progress_bar_obj=self.progress_bar
+                )
 
-                nodes_layer_id, added_nodes = self.project.generate_nodes_from_lines(layer, path=copy_name, start_node_id=initial_node_id)
+                if not generated_nodes_result:
+                    messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Nodes could not be generated from the selected network layer.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                    messagebox.exec_()
+                    self.progress_bar.setVisible(False)
+                    QApplication.restoreOverrideCursor()
+                    return
 
-                print("DENTRO DEL IF 2")
+                nodes_layer_id, added_nodes = generated_nodes_result
+                self.progress_bar.setFormat(f"{added_nodes} nodes generated.")
+                QApplication.processEvents()
+
                 layer.startEditing()
 
                 # Update the network layer attributes to match the expected schema.
@@ -304,6 +322,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 total_features = len(features_to_duplicate)
                 progress_step = max(1, total_features // 100)
                 # Wating time
+
+                self.progress_bar.setFormat('Editing network links...')
 
                 for index, feature in enumerate(features_to_duplicate, start=1):
                     geometry = feature.geometry()
@@ -377,6 +397,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 else:
                     layer.rollBack()
                     self.progress_bar.setVisible(False)
+        
             else:
                 if not self.layer_has_field(layer, canonical_direction_field):
                     messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", f"The layer does not have the attribute '{canonical_direction_field}'.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
@@ -391,7 +412,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 layer = self.get_layer_by_name('Prepared_Network')
                 self.update_offset_parallel(features_to_duplicate, layer, self.links_offset.value())
-
+        
         except Exception as e:
             print(f"An error occurred: {e}")
             print(traceback.format_exc())

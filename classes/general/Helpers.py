@@ -338,7 +338,7 @@ class ExceptionWrongDataType(Exception):
 
     def __str__(self):
         return f'Field: {self._field}  id: {self._id} data type is wrong'
-
+        
 
 class ExceptionNullValue(Exception):
     """
