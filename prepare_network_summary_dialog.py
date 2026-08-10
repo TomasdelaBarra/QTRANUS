@@ -4,13 +4,14 @@ from qgis.utils import iface
 
 
 class PrepareNetworkSummaryDialog(QDialog):
-    def __init__(self, parent=None, added_links=None, removed_links=None, final_links=None):
+    def __init__(self, parent=None, added_links=None, removed_links=None, final_links=None, added_nodes=None):
         super().__init__(parent)
         self.setWindowTitle("Network Processing Summary")
         self.resize(600, 500)
         self.added_links = added_links if added_links is not None else 0
         self.removed_links = removed_links if removed_links is not None else 0
         self.final_links = final_links if final_links is not None else 0
+        self.added_nodes = added_nodes if added_nodes is not None else 0
 
         # 1. Aseguramos explícitamente que la ventana NO sea modal
         self.setModal(False)
@@ -85,6 +86,13 @@ class PrepareNetworkSummaryDialog(QDialog):
                     <div class="card total">
                         <span>Final Links</span>
                         <span class="number">""" + str(self.final_links) + """</span>
+                    </div>
+                </td>
+                <td class="card-cell">
+                    <div class="card added">
+                        <span>Nodes Added</span>
+                        <br>
+                        <span class="number">+""" + str(self.added_nodes) + """</span>
                     </div>
                 </td>
             </tr>

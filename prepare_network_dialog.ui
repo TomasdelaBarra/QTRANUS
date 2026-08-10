@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>885</width>
-    <height>200</height>
+    <width>936</width>
+    <height>214</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -168,6 +168,23 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="links_initial_node_id">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>99999999</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Initial node ID</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

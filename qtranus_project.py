@@ -1,7 +1,7 @@
 #encoding=UTF-8
 
 from __future__ import unicode_literals
-import os, re, random, string, shutil, glob
+import os, re, random, string, shutil, glob, processing
 import numpy as np
 from pickle import NONE
 from os import listdir
@@ -13,7 +13,7 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QMessageBox
 
 import qgis.utils
-from qgis.core import QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsProject, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsVectorFileWriter
+from qgis.core import QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsVectorFileWriter
 
 from .tranus import TranusProject
 from .classes.GeneralObject import GeneralObject
@@ -1260,7 +1260,7 @@ class QTranusProject(object):
 
         return True, network_shape_fields
 
-    def generate_nodes_from_lines(self, line_layer):
+    def generate_nodes_from_lines(self, line_layer, path=None, start_node_id=None):
         """
         @summary: Generates nodes from the selected line layer in QGIS.
         @param line_layer: The QgsVectorLayer object representing the line layer.
@@ -1270,20 +1270,38 @@ class QTranusProject(object):
             print("Por favor, selecciona una capa de líneas (polylines) en el panel de capas.")
             return
         else:
-            # 2. Create a temporary point layer in memory for the nodes.
+            options = QgsVectorFileWriter.SaveVectorOptions()
+            options.driverName = "ESRI Shapefile" # Define el formato
+            options.fileEncoding = "UTF-8"
+            target_path = path if path else 'in_memory.shp'
+
+            print(f"Generating nodes from line layer: {target_path}")
+            # 2. Create the physical point layer that will store the generated nodes.
             crs = line_layer.crs().authid()
             group = self.get_layers_group()
 
             if not crs:
                 raise ExceptionCRSNotDefined()
 
-            point_layer = QgsVectorLayer(f"Point?crs={crs}", "Nodes", "memory")
+            write_result = QgsVectorFileWriter.writeAsVectorFormatV3(
+                QgsVectorLayer(f"Point?crs={crs}&field=NodeID:integer", "Prepared_Nodes", "memory"),
+                target_path,
+                QgsProject.instance().transformContext(),
+                options
+            )
+            resultado = write_result[0]
+            mensaje = write_result[1] if len(write_result) > 1 else ""
+
+            if resultado != QgsVectorFileWriter.NoError:
+                print(mensaje)
+                return False
+
+            point_layer = QgsVectorLayer(target_path, "Prepared_Nodes", "ogr")
+            if not point_layer.isValid():
+                return False
+
             pr = point_layer.dataProvider()
             line_provider = line_layer.dataProvider()
-            
-            # Add the NodeID field with an integer type.
-            pr.addAttributes([QgsField("NodeID", QVariant.Int)])
-            point_layer.updateFields()
 
             link_id_index = line_layer.fields().indexFromName("LinkID")
             if link_id_index == -1:
@@ -1298,7 +1316,7 @@ class QTranusProject(object):
 
             # 3. Prepare variables for topology processing and ID assignment.
             unique_nodes = {} # Dictionary used to track coordinates: {(x, y): NodeID}
-            current_node_id = 1
+            current_node_id = 1 if start_node_id == None else start_node_id
             new_features = []
             
             # Decimal tolerance used to compare coordinates and avoid floating-point precision issues.
@@ -1361,10 +1379,13 @@ class QTranusProject(object):
             pr.addFeatures(new_features)
             point_layer.updateExtents()
 
-            QgsProject.instance().addMapLayer(point_layer)
+            registry = QgsProject.instance()
+            registry.addMapLayer(point_layer, False)
+            group.insertLayer(0, point_layer)
             
-            print(f"Proceso completado. Se generaron {current_node_id - 1} nodos únicos.")
-            return point_layer.id()
+            print(f"Process completed. {current_node_id - 1} unique nodes were generated.")
+                
+            return point_layer.id(), (current_node_id - 1)
 
     
     def copy_network_shape_file(self, base_path, final_path):
