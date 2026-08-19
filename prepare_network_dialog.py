@@ -293,6 +293,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         # return 'Prepared_Nodes' in layer_names and 'Prepared_Network' in layer_names
         return 'Prepared_Nodes' in layer_names
 
+
     def prepare_network_layer(self):
         """
             @summary: Prepare network layer to be used in QTranus
@@ -362,6 +363,12 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 nodes_layer_id, added_nodes = generated_nodes_result
                 self.progress_bar.setFormat(f"{added_nodes} nodes generated.")
                 QApplication.processEvents()
+                
+                # Get nodes layer and polygon layer
+                QApplication.processEvents()
+                polygon_layer = self.get_layer_by_name('Prepared_Zone')
+                nodes_layer = QgsProject.instance().mapLayer(nodes_layer_id)
+                self.project.generate_centroids_from_polygons(polygon_layer=polygon_layer, node_layer=nodes_layer, progress_bar_obj=self.progress_bar)
 
                 layer.startEditing()
 

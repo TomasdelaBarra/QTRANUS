@@ -13,7 +13,11 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QMessageBox, QApplication
 
 import qgis.utils
-from qgis.core import QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsVectorLayer, QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer , QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, QgsVectorFileWriter
+from qgis.core import (QgsMessageLog, QgsWkbTypes, QgsPointXY, QgsVectorLayer, 
+                        QgsFields, QgsFeature, QgsGeometry, QgsField, QgsFeature, QgsSymbolLayerRegistry, 
+                        QgsSingleSymbolRenderer, QgsRendererRange, QgsStyle, QgsGraduatedSymbolRenderer, 
+                        QgsSymbol, QgsVectorLayerJoinInfo, QgsProject, QgsMapUnitScale, QgsSimpleLineSymbolLayer, QgsLineSymbol, 
+                        QgsVectorFileWriter, QgsMarkerSymbol, QgsRendererCategory, QgsCategorizedSymbolRenderer)
 
 from .tranus import TranusProject
 from .classes.GeneralObject import GeneralObject
@@ -1448,6 +1452,96 @@ class QTranusProject(object):
             print(f"Process completed. {current_node_id - 1} unique nodes were generated.")
                 
             return point_layer.id(), (current_node_id - 1)
+
+    
+    def generate_centroids_from_polygons(self, polygon_layer, node_layer, progress_bar_obj=None):
+        """
+        @summary: Generates centroids from the specified polygon layer and adds them to the specified node layer.
+        @param polygon_layer: The polygon layer.
+        @type polygon_layer: QgsVectorLayer
+        @param node_layer: The node layer.
+        @type node_layer: QgsVectorLayer
+        """
+        if polygon_layer is None:
+            raise ValueError("Polygon layer was not found.")
+
+        if node_layer is None:
+            raise ValueError("Node layer was not found.")
+
+
+        regular_node_type = "0"
+        centroid_node_type = "1"
+
+        default_symbol = QgsMarkerSymbol.createSimple({'name': 'circle', 'color': '#43993A', 'size': '1'})
+        default_category = QgsRendererCategory(regular_node_type, default_symbol, 'Regular Node')
+
+        # Create a distinct symbol for zone centroids.
+        centroid_symbol = QgsMarkerSymbol.createSimple({'name': 'triangle', 'color': '#F54A2A', 'size': '2'})
+        centroid_category = QgsRendererCategory(centroid_node_type, centroid_symbol, 'Zone Centroid')
+
+        # Apply categorized rendering using the node type field.
+        categorized_renderer = QgsCategorizedSymbolRenderer('type', [default_category, centroid_category])
+
+        started_editing = False
+        if not node_layer.isEditable():
+            started_editing = node_layer.startEditing()
+            if not started_editing:
+                raise RuntimeError(f"Node layer '{node_layer.name()}' could not be switched to edit mode.")
+
+        if node_layer.fields().indexOf('type') == -1:
+            print("Field 'type' does not exist. Creating it...")
+            field_added = node_layer.dataProvider().addAttributes([
+                QgsField('type', QVariant.Int, 'integer', 10, 0)
+            ])
+            if not field_added:
+                raise RuntimeError("Field 'type' could not be created in the node layer.")
+            node_layer.updateFields()
+
+        type_field_index = node_layer.fields().indexOf('type')
+        if type_field_index == -1:
+            raise RuntimeError("Field 'type' is not available in the node layer.")
+
+        for existing_node_feature in node_layer.getFeatures():
+            if existing_node_feature['type'] in (None, ''):
+                node_layer.changeAttributeValue(
+                    existing_node_feature.id(),
+                    type_field_index,
+                    regular_node_type
+                )
+
+        added_node_count = 0
+        if progress_bar_obj is not None:
+            progress_bar_obj.setVisible(True)
+            progress_bar_obj.setFormat("Generating centroids from polygon layer...")
+
+        for polygon_feature in polygon_layer.getFeatures():
+            geometry = polygon_feature.geometry()
+            if geometry is None or geometry.isEmpty():
+                continue
+
+            centroid_geometry = geometry.centroid()
+            if centroid_geometry is None or centroid_geometry.isEmpty():
+                continue
+
+            new_node_feature = QgsFeature(node_layer.fields())
+            new_node_feature.setGeometry(centroid_geometry)
+            new_node_feature.setAttribute('type', centroid_node_type)
+
+            if node_layer.addFeature(new_node_feature):
+                added_node_count += 1
+        
+        # Apply the updated renderer after the centroid features are created.
+        node_layer.setRenderer(categorized_renderer)
+
+        if started_editing:
+            if not node_layer.commitChanges():
+                raise RuntimeError(f"Changes to node layer '{node_layer.name()}' could not be committed.")
+        else:
+            node_layer.updateExtents()
+
+        node_layer.triggerRepaint()
+            
+        print(f"Process completed. {added_node_count} new 'Zone_Centroid' nodes were added.")
 
     
     def copy_network_shape_file(self, base_path, final_path):
