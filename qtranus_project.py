@@ -50,6 +50,7 @@ class QTranusProject(object):
         self.db_path = None
         self.networkLayer = None
         self.networkDPFeatures = []
+        self.zoneDPFeatures = []
         self.custom_variables_dict = dict()
         self.dataBaseSqlite = None
         self.load()
@@ -1260,6 +1261,49 @@ class QTranusProject(object):
 
         return True, network_shape_fields
 
+    
+    def load_prepared_zone_shape_file(self, file_path):
+        self.zone_shape_path = file_path
+        
+        registry = QgsProject.instance()
+        group = self.get_layers_group()
+        layer = QgsVectorLayer(self.zone_shape_path, 'Prepared_Zone', 'ogr')
+        
+        if not layer.isValid():
+            self['zone_shape_file_path'] = ''
+            self['zone_shape_id'] = ''
+            return False, False
+
+        if layer.geometryType() != QgsWkbTypes.PolygonGeometry:
+            raise ExceptionGeometryType(self['zone_shape_file_path'])
+            return False, None
+
+        if self['zone_prepared_shape_id'] :
+            existing_tree = self.proj.layerTreeRoot().findLayer(self['zone_prepared_shape_id'])
+            if existing_tree:
+                existing = existing_tree.layer()
+                registry.removeMapLayer(existing.id())
+
+        zone_shape_fields = [field.name() for field in layer.fields()]    
+        registry.addMapLayer(layer, False)
+        group.insertLayer(1, layer)
+        self['zone_prepared_shape_file_path'] = layer.source()
+        self['zone_prepared_shape_id'] = layer.id()
+
+        # add listener to layer
+        self.zoneLayer = self.proj.mapLayersByName("Prepared_Zone")
+        if self.zoneLayer:
+            
+            for value in self.zoneLayer[0].dataProvider().getFeatures():
+                self.zoneDPFeatures.append((value.id(), value.attributes()[0]))    
+
+            #self.networkLayer[0].featuresDeleted.connect(self.featuresDeletedFunct)
+            #self.networkLayer[0].committedFeaturesRemoved.connect(self.featuresDeletedFunct)
+            #self.networkLayer[0].committedFeaturesAdded.connect(self.featuresAddedFunct)
+
+        return True, zone_shape_fields
+
+
     def generate_nodes_from_lines(self, line_layer, path=None, start_node_id=None, progress_bar_obj=None):
         """
         @summary: Generates nodes from the selected line layer in QGIS.
@@ -1407,6 +1451,36 @@ class QTranusProject(object):
 
     
     def copy_network_shape_file(self, base_path, final_path):
+        # Copy every shapefile sidecar file that shares the same base name.
+        source_base_path, _ = os.path.splitext(base_path)
+        target_base_path, _ = os.path.splitext(final_path)
+        associated_files = glob.glob(source_base_path + '.*')
+
+        if not associated_files:
+            print("No associated files were found to copy.")
+            return False
+
+        new_shp_path = False
+        for source_file_path in associated_files:
+            # Preserve the current sidecar file extension, for example '.shp' or '.dbf'.
+            file_extension = os.path.splitext(source_file_path)[1]
+
+            # Build the target file path with the same extension.
+            target_file_path = target_base_path + file_extension
+
+            shutil.copy(source_file_path, target_file_path)
+            print(f"Copied: {target_file_path}")
+
+            if file_extension.lower() == '.shp':
+                new_shp_path = target_file_path
+
+        if not new_shp_path:
+            return False
+
+        print("Physical copy completed.")
+        return new_shp_path
+    
+    def copy_zone_shape_file(self, base_path, final_path):
         # Copy every shapefile sidecar file that shares the same base name.
         source_base_path, _ = os.path.splitext(base_path)
         target_base_path, _ = os.path.splitext(final_path)

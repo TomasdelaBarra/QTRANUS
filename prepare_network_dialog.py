@@ -65,6 +65,8 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_direction.currentIndexChanged.connect(self.validate_form_fields)
         self.links_offset.valueChanged.connect(self.validate_form_fields)
 
+        self.zone_shape = self.findChild(QtWidgets.QLineEdit, 'zone_shape')
+        self.zone_shape_btn = self.findChild(QtWidgets.QToolButton, 'zone_shape_btn')
         self.network_links_shape = self.findChild(QtWidgets.QLineEdit, 'network_links_shape')
         self.network_links_shape_btn = self.findChild(QtWidgets.QToolButton, 'network_links_shape_btn')
         self.network_process_links_shape_btn = self.findChild(QtWidgets.QPushButton, 'processButton')
@@ -73,6 +75,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_load_links.clicked.connect(self.select_network_links_shape)
         self.network_process_links_shape_btn.clicked.connect(self.confirm_network_layer)
         self.network_links_shape_btn.clicked.connect(self.select_network_links_shape_file(self.process_file_names))
+        self.zone_shape_btn.clicked.connect(self.select_zone_shape_file(self.process_zone_file_names))
         
         self.network_process_links_shape_btn.setEnabled(False)
         self.links_shape_load_links.setEnabled(False)
@@ -136,6 +139,15 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                 callback(file_name)
         
         return select_file
+    
+    
+    def select_zone_shape_file(self, callback):
+        def select_file():
+            file_name = QtWidgets.QFileDialog.getOpenFileName(parent=self, caption='Select zone shape file', directory=str(''), filter='*.*, *.shp')
+            if file_name:
+                callback(file_name)
+        
+        return select_file
 
 
     def select_network_links_shape(self):
@@ -164,7 +176,30 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             messagebox.exec_()
         finally:
             QApplication.restoreOverrideCursor()
-            print('finally')
+            #self.check_configure()
+
+
+    def select_zone_shape(self):
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            zones_filename = self.zone_shape.text()
+
+            result, zoneShapeFields = self.project.load_prepared_zone_shape_file(zones_filename)
+            if result:
+                iface.messageBar().pushSuccess("Success", "Layer was created successfully.")
+            else:
+                messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "There is a issue.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+                messagebox.exec_()
+        except ExceptionGeometryType:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Wrong Geometry Type.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+        except Exception as e:
+            print('Error while reading files: %s' % str(e))
+            print(traceback.format_exc())
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Error while reading files.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+        finally:
+            QApplication.restoreOverrideCursor()
             #self.check_configure()
 
 
@@ -182,7 +217,22 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
         self.links_shape_network_filename.setText(f"{name_without_ext}_copy{extension}")
         self.validate_base_network_shape_file()
         
-        
+    
+    def process_zone_file_names(self, file_name):
+        """
+            @summary: Process the selected file name to extract the directory, file name, and extension
+            @param file_name: The full path of the selected file
+            @type file_name: str
+        """
+        file_name = file_name if isinstance(file_name,str) else file_name[0]
+        directory, file = os.path.split(file_name)
+        name_without_ext, extension = os.path.splitext(file)
+
+        self.zone_shape.setText(file_name)
+        self.validate_base_zone_shape_file()
+        self.select_zone_shape()
+
+
     def validate_base_network_shape_file(self):
         """
             @summary: Validate the base network shape file before processing
@@ -201,6 +251,26 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
         
         self.links_shape_load_links.setEnabled(True) 
+
+        return True
+
+    
+    def validate_base_zone_shape_file(self):
+        """
+            @summary: Validate the base zone shape file before processing
+            @return: True if the base zone shape file is valid, False otherwise
+            @rtype: bool
+        """
+        base_name = self.zone_shape.text()
+        if not base_name:
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "Please select a base zone shape file.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
+
+        if not os.path.isfile(base_name):
+            messagebox = QTranusMessageBox.set_new_message_box(QtWidgets.QMessageBox.Warning, "QTranus", "The selected base zone shape file does not exist.", ":/plugins/QTranus/icon.png", self, buttons = QtWidgets.QMessageBox.Ok)
+            messagebox.exec_()
+            return False
 
         return True
 
@@ -304,7 +374,7 @@ class PrepareNetworkDialog(QtWidgets.QDialog, FORM_CLASS):
                     layer.rollBack()
                     self.progress_bar.setVisible(False)
                     return
-
+                
                 expression = f'"{canonical_direction_field}" IS NULL OR to_int("{canonical_direction_field}") IN (0, 2)'
                 request = QgsFeatureRequest().setFilterExpression(expression)
 
